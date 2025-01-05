@@ -8,8 +8,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 
@@ -33,11 +31,13 @@ public class MainActivity extends AppCompatActivity {
 
 		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
 			Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-			v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+			//v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+			v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);	//Shows behind bottom navBar
 			return insets;
 		});
 
 
+		//https://developer.android.com/guide/navigation/use-graph/animate-transitions
 		//NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
 		//appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
 		//NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
