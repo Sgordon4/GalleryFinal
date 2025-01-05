@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/DirectoryFragment">
+
+    <fragment
+        android:id="@+id/DirectoryFragment"
+        android:name="aaa.sgordon.galleryfinal.DirFragment"
+        android:label="directory_fragment_label"
+        tools:layout="@layout/fragment_directory">
+
+        <action
+            android:id="@+id/action_DirFragment_to_DirFragment"
+            app:destination="@id/DirectoryFragment" />
+    </fragment>
+</navigation>
