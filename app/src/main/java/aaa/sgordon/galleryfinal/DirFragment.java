@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +15,9 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
@@ -38,11 +41,11 @@ public class DirFragment extends Fragment {
 		System.out.println("Inside directory, Activity has been recreated "+viewModel.testInt+" times.");
 
 
-		String[] items = IntStream.rangeClosed(0, 50).mapToObj(String::valueOf).toArray(String[]::new);
+		List<String> data = IntStream.rangeClosed(0, 20).mapToObj(String::valueOf).collect(Collectors.toList());
 
 		RecyclerView recyclerView = binding.recyclerview;
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-		recyclerView.setAdapter(new DirRVAdapter(items));
+		recyclerView.setAdapter(new DirRVAdapter(data));
 
 		if(savedInstanceState != null) {
 			Parcelable rvState = savedInstanceState.getParcelable("rvState_"+thisFragmentUUID.toString());
@@ -57,6 +60,18 @@ public class DirFragment extends Fragment {
 		binding.buttonDrilldown.setOnClickListener(view1 ->
 				NavHostFragment.findNavController(DirFragment.this)
 						.navigate(R.id.action_DirFragment_to_DirFragment));
+
+
+
+		Handler handler = new Handler(getContext().getMainLooper());
+
+		Runnable runnable = () -> {
+			data.add(0 , "New");
+			recyclerView.getAdapter().notifyItemChanged(0);
+			handler.postDelayed((Runnable) this, 2000);
+		};
+
+		handler.postDelayed(runnable, 2000);
 	}
 
 	@Override
