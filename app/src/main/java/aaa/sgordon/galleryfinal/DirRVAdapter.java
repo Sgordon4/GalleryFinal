@@ -11,10 +11,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
-	private List<String> localDataSet;
+	private List<String> data;
 
-	public DirRVAdapter(List<String> localDataSet) {
-		this.localDataSet = localDataSet;
+	public DirRVAdapter(List<String> data) {
+		this.data = data;
 	}
 
 	@NonNull
@@ -28,28 +28,34 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	@Override
 	public void onBindViewHolder(@NonNull DirRVAdapter.ViewHolder holder, int position) {
-		holder.getTextView().setText(localDataSet.get(position));
+		holder.getTextView().setText(data.get(position));
 	}
 
 	@Override
 	public int getItemCount() {
-		return localDataSet.size();
+		return data.size();
 	}
 
 
 	//---------------------------------------------------------------------------------------------
 
-	public static class ViewHolder extends RecyclerView.ViewHolder {
+	public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 		private final TextView textView;
 
 		public ViewHolder(@NonNull View itemView) {
 			super(itemView);
 
 			textView = itemView.findViewById(R.id.textView);
+			itemView.setOnClickListener(this);
 		}
 
 		public TextView getTextView() {
 			return textView;
+		}
+
+		@Override
+		public void onClick(View view) {
+			System.out.println("Clicking "+getAdapterPosition());
 		}
 	}
 }
