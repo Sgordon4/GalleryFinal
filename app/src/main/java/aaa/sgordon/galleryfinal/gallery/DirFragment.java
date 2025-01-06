@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal;
+package aaa.sgordon.galleryfinal.gallery;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.Collections;
 import java.util.UUID;
 
+import aaa.sgordon.galleryfinal.MainViewModel;
+import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 
 public class DirFragment extends Fragment {

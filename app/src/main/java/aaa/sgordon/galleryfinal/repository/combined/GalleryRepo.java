@@ -9,7 +9,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import aaa.sgordon.galleryfinal.MyApplication;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.GAccount;
 import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.GFile;
 import aaa.sgordon.galleryfinal.repository.combined.domain.DomainAPI;

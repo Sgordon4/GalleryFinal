@@ -2,7 +2,7 @@ package aaa.sgordon.galleryfinal.repository.server;
 
 import android.util.Log;
 
-import aaa.sgordon.galleryfinal.MyApplication;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.server.servertypes.SJournal;
 
 import java.io.IOException;

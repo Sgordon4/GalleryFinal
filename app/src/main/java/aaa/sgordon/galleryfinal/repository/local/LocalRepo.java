@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 
-import aaa.sgordon.galleryfinal.MyApplication;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.combined.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.local.account.LAccount;
 import aaa.sgordon.galleryfinal.repository.local.content.LContent;

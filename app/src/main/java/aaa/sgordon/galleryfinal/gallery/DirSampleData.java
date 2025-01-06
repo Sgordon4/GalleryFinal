@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal;
+package aaa.sgordon.galleryfinal.gallery;
 
 import android.util.Pair;
 

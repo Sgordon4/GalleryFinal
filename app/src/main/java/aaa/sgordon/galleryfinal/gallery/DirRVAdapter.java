@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal;
+package aaa.sgordon.galleryfinal.gallery;
 
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 import java.util.UUID;
+
+import aaa.sgordon.galleryfinal.R;
 
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
 	private List<Pair<UUID, String>> data;

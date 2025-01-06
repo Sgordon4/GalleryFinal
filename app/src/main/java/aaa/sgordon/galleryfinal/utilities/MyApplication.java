@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal;
+package aaa.sgordon.galleryfinal.utilities;
 
 import android.annotation.SuppressLint;
 import android.app.Application;

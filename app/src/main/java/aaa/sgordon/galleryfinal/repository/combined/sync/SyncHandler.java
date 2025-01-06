@@ -12,7 +12,7 @@ import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 
-import aaa.sgordon.galleryfinal.MyApplication;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.combined.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.combined.GalleryRepo;
 import aaa.sgordon.galleryfinal.repository.combined.PersistedMapQueue;

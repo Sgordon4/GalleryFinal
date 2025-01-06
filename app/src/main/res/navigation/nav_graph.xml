@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/DirectoryFragment"
-        android:name="aaa.sgordon.galleryfinal.DirFragment"
+        android:name="aaa.sgordon.galleryfinal.gallery.DirFragment"
         android:label="directory_fragment_label"
         tools:layout="@layout/fragment_directory">
 

@@ -8,8 +8,8 @@ import androidx.lifecycle.AndroidViewModel;
 import aaa.sgordon.galleryfinal.repository.combined.GalleryRepo;
 
 public class MainViewModel extends AndroidViewModel {
-	GalleryRepo galleryRepo;
-	int testInt;
+	public GalleryRepo galleryRepo;
+	public int testInt;
 
 	public MainViewModel(@NonNull Application application) {
 		super(application);

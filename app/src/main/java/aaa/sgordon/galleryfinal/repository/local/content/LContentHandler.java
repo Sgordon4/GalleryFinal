@@ -6,7 +6,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import aaa.sgordon.galleryfinal.MyApplication;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.combined.ContentsNotFoundException;
 
 import java.io.File;
