@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal;
 
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,11 +10,12 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
+import java.util.UUID;
 
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
-	private List<String> data;
+	private List<Pair<UUID, String>> data;
 
-	public DirRVAdapter(List<String> data) {
+	public DirRVAdapter(List<Pair<UUID, String>> data) {
 		this.data = data;
 	}
 
@@ -28,7 +30,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	@Override
 	public void onBindViewHolder(@NonNull DirRVAdapter.ViewHolder holder, int position) {
-		holder.getTextView().setText(data.get(position));
+		holder.getTextView().setText(data.get(position).second);
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,15 +41,18 @@ public class DirFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		MainViewModel viewModel = new ViewModelProvider(getActivity()).get(MainViewModel.class);
-		System.out.println("Inside directory, Activity has been recreated "+viewModel.testInt+" times.");
+		MainViewModel mainViewModel = new ViewModelProvider(getActivity()).get(MainViewModel.class);
+		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
+
+		DirectoryViewModel dirViewModel = new ViewModelProvider(this).get(DirectoryViewModel.class);
+		dirViewModel.setCurrDir(UUID.randomUUID());
+		System.out.println("Directory data list has "+dirViewModel.currData.size()+" items.");
 
 
-		List<String> data = IntStream.rangeClosed(0, 20).mapToObj(String::valueOf).collect(Collectors.toList());
 
 		RecyclerView recyclerView = binding.recyclerview;
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-		recyclerView.setAdapter(new DirRVAdapter(data));
+		recyclerView.setAdapter(new DirRVAdapter(dirViewModel.currData));
 
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		recyclerView.addItemDecoration(dividerItemDecoration);
@@ -89,7 +93,7 @@ public class DirFragment extends Fragment {
 			public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
 				int fromPosition = viewHolder.getAdapterPosition();
 				int toPosition = target.getAdapterPosition();
-				Collections.swap(data, fromPosition, toPosition);
+				Collections.swap(dirViewModel.currData, fromPosition, toPosition);
 				recyclerView.getAdapter().notifyItemMoved(fromPosition, toPosition);
 				return false;
 			}
@@ -108,13 +112,13 @@ public class DirFragment extends Fragment {
 
 		Runnable runnable = new Runnable() {
 			public void run() {
-				data.add(4 , "New");
+				dirViewModel.currData.add(4 , new Pair<>(UUID.randomUUID(), "New"));
 				recyclerView.getAdapter().notifyItemInserted(4);
 
 				handler.postDelayed(this, 2000);
 			}
 		};
-		handler.postDelayed(runnable, 2000);
+		//handler.postDelayed(runnable, 2000);
 
 
 
