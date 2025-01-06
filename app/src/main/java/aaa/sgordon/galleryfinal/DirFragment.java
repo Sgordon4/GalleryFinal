@@ -19,10 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 
@@ -46,13 +43,13 @@ public class DirFragment extends Fragment {
 
 		DirectoryViewModel dirViewModel = new ViewModelProvider(this).get(DirectoryViewModel.class);
 		dirViewModel.setCurrDir(UUID.randomUUID());
-		System.out.println("Directory data list has "+dirViewModel.currData.size()+" items.");
+		System.out.println("Directory data list has "+dirViewModel.completeList.size()+" items.");
 
 
 
 		RecyclerView recyclerView = binding.recyclerview;
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-		recyclerView.setAdapter(new DirRVAdapter(dirViewModel.currData));
+		recyclerView.setAdapter(new DirRVAdapter(dirViewModel.completeList));
 
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		recyclerView.addItemDecoration(dividerItemDecoration);
@@ -93,7 +90,7 @@ public class DirFragment extends Fragment {
 			public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
 				int fromPosition = viewHolder.getAdapterPosition();
 				int toPosition = target.getAdapterPosition();
-				Collections.swap(dirViewModel.currData, fromPosition, toPosition);
+				Collections.swap(dirViewModel.completeList, fromPosition, toPosition);
 				recyclerView.getAdapter().notifyItemMoved(fromPosition, toPosition);
 				return false;
 			}
@@ -112,13 +109,13 @@ public class DirFragment extends Fragment {
 
 		Runnable runnable = new Runnable() {
 			public void run() {
-				dirViewModel.currData.add(4 , new Pair<>(UUID.randomUUID(), "New"));
+				dirViewModel.completeList.add(4 , new Pair<>(UUID.randomUUID(), "New"));
 				recyclerView.getAdapter().notifyItemInserted(4);
 
 				handler.postDelayed(this, 2000);
 			}
 		};
-		//handler.postDelayed(runnable, 2000);
+		handler.postDelayed(runnable, 2000);
 
 
 

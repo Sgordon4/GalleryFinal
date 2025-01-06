@@ -6,31 +6,35 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+//TODO When we update the list, if we're dragging an item we need to move that item
+// to its dragPos in the new list and THEN use DiffUtil, or it will move back
 
 public class DirectoryViewModel extends AndroidViewModel {
 	private DirSampleData sampleData;
 
 	UUID currDir;
-	List<Pair<UUID, String>> currData;
+	List<Pair<UUID, String>> completeList;
 
 	public DirectoryViewModel(@NonNull Application application) {
 		super(application);
+
+		this.completeList = new ArrayList<>();
 	}
 
 	public void setCurrDir(@NonNull UUID currDir) {
 		this.sampleData = new DirSampleData(currDir);
 		this.currDir = currDir;
-		this.currData = new ArrayList<>();
 
-		currData.addAll(traverse(currDir, new HashSet<>()));
+		List<Pair<UUID, String>> newData = traverse(currDir, new HashSet<>());
+
+		completeList.clear();
+		completeList.addAll(newData);
 	}
 
 
