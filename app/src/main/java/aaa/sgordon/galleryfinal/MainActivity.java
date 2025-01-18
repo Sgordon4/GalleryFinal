@@ -20,8 +20,7 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 
 
-		viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-		viewModel.testInt += 1;
+
 
 
 		EdgeToEdge.enable(this);
@@ -42,5 +41,13 @@ public class MainActivity extends AppCompatActivity {
 		//appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
 		//NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+
+		viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+		viewModel.testInt += 1;
 	}
 }

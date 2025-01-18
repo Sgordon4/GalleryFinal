@@ -5,7 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.GFile;
-import aaa.sgordon.galleryfinal.repository.combined.sync.SyncHandler;
+import aaa.sgordon.galleryfinal.repository.combined.jobs.sync.SyncHandler;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.file.LFile;
 import aaa.sgordon.galleryfinal.repository.server.ServerFileObservers;
@@ -86,7 +86,6 @@ public class GFileUpdateObservers {
 				try {
 					//Get the file that the journal is linked to	TODO Authenticate
 					LFile file = localRepo.getFileProps(newJournal.fileuid);
-					if(file == null) throw new IllegalStateException("File not found! ID: '"+newJournal.fileuid+"'");
 
 					//Notify listeners
 					GFile gFile = GFile.fromLocalFile(file);

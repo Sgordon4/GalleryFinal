@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository.combined.sync;
+package aaa.sgordon.galleryfinal.repository.combined.jobs.sync;
 
 import android.content.Context;
 import android.util.Log;
@@ -44,14 +44,12 @@ public class SyncWorker extends Worker {
 		//If the sync fails due to another update happening before we could finish the sync, requeue it for later
 		catch (IllegalStateException e) {
 			Log.w(TAG, "SyncWorker requeueing due to conflicting update!");
-			syncHandler.enqueue(fileUID);
-			return Result.failure();
+			return Result.retry();
 		}
 		//If the sync fails due to server connection issues, requeue it for later
 		catch (ConnectException e) {
 			Log.w(TAG, "SyncWorker requeueing due to connection issues!");
-			syncHandler.enqueue(fileUID);
-			return Result.failure();
+			return Result.retry();
 		}
 
 		return Result.success();

@@ -41,9 +41,6 @@ public class GFile {
 
 
 
-	public GFile(@NonNull UUID accountuid) {
-		this(accountuid, UUID.randomUUID());
-	}
 	public GFile(@NonNull UUID fileuid, @NonNull UUID accountuid) {
 		this.fileuid = fileuid;
 		this.accountuid = accountuid;
@@ -62,6 +59,7 @@ public class GFile {
 
 
 	public JsonObject toJson() {
+		//TODO Doesn't actually work
 		//We want to exclude some fields with default values from the JSON output
 		ExclusionStrategy strategy = new ExclusionStrategy() {
 			@Override

@@ -6,7 +6,7 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
-import aaa.sgordon.galleryfinal.repository.combined.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.server.servertypes.SContent;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -46,7 +46,7 @@ public class ContentConnector {
 	//---------------------------------------------------------------------------------------------
 
 	public SContent getProps(@NonNull String name) throws IOException {
-		//Log.i(TAG, String.format("\nGET CONTENT PROPS called with name='%s'", name));
+		Log.i(TAG, String.format("\nGET CONTENT PROPS called with name='%s'", name));
 		String url = Paths.get(baseServerUrl, "content", name).toString();
 
 		Request request = new Request.Builder().url(url).build();

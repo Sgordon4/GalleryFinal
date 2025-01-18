@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository.combined.domain;
+package aaa.sgordon.galleryfinal.repository.combined.jobs.domain_movement;
 
 import android.content.Context;
 import android.util.Log;
@@ -47,6 +47,17 @@ public class DomainOpWorker extends Worker {
 		int operationsMap = Integer.parseInt(operationsMapString);
 
 
+		//For testing
+		if((operationsMap & DomainAPI.COPY_TO_LOCAL) > 0)
+			Log.d(TAG, "DomWorker is copying to local.");
+		if((operationsMap & DomainAPI.COPY_TO_SERVER) > 0)
+			Log.d(TAG, "DomWorker is copying to server.");
+		if((operationsMap & DomainAPI.REMOVE_FROM_LOCAL) > 0)
+			Log.d(TAG, "DomWorker is removing from local.");
+		if((operationsMap & DomainAPI.REMOVE_FROM_SERVER) > 0)
+			Log.d(TAG, "DomWorker is removing from server.");
+
+
 
 		try {
 			//Note: Having something like both COPY_TO_LOCAL and COPY_TO_SERVER is technically valid.
@@ -86,25 +97,21 @@ public class DomainOpWorker extends Worker {
 			}
 
 
-			if((operationsMap & DomainAPI.REMOVE_FROM_LOCAL) > 0) {
-				Log.v(TAG, "DomWorker removing file from local. FileUID: " + fileUID);
-				domainAPI.removeFileFromLocal(fileUID);
-			}
+			//Do server first in case we can't connect and we're trying to remove both. In that case we want to fail before removing one.
 			if((operationsMap & DomainAPI.REMOVE_FROM_SERVER) > 0) {
 				Log.v(TAG, "DomWorker removing file from server. FileUID: " + fileUID);
 				domainAPI.removeFileFromServer(fileUID);
+			}
+			if((operationsMap & DomainAPI.REMOVE_FROM_LOCAL) > 0) {
+				Log.v(TAG, "DomWorker removing file from local. FileUID: " + fileUID);
+				domainAPI.removeFileFromLocal(fileUID);
 			}
 
 		}
 		//If this fails due to server connection issues, requeue it for later
 		catch (ConnectException e) {
-			try {
-				Log.w(TAG, "DomWorker requeueing due to connection issues!");
-				domainAPI.enqueue(fileUID, operationsMap);
-			} catch (InterruptedException ex) {
-				throw new RuntimeException(ex);
-			}
-			return Result.failure();
+			Log.w(TAG, "DomWorker retrying due to connection issues!");
+			return Result.retry();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository.combined;
+package aaa.sgordon.galleryfinal.repository.combined.combinedtypes;
 
 import java.io.IOException;
 

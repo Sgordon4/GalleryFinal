@@ -9,7 +9,7 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import aaa.sgordon.galleryfinal.repository.combined.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.server.connectors.AccountConnector;
 import aaa.sgordon.galleryfinal.repository.server.connectors.ContentConnector;
 import aaa.sgordon.galleryfinal.repository.server.connectors.FileConnector;
@@ -41,7 +41,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 
-
 public class ServerRepo {
 	private static final String baseServerUrl = "http://10.0.2.2:3306";
 	//private static final String baseServerUrl = "http://localhost:3306";
@@ -60,8 +59,8 @@ public class ServerRepo {
 		client = new OkHttpClient().newBuilder()
 				.addInterceptor(new LogInterceptor())
 				.followRedirects(true)
-				.connectTimeout(5, TimeUnit.SECONDS)
-				.readTimeout(30, TimeUnit.SECONDS)		//Long timeout for longpolling
+				.connectTimeout(2, TimeUnit.SECONDS)
+				.readTimeout(30, TimeUnit.SECONDS)		//Long timeout for longPolling
 				.writeTimeout(5, TimeUnit.SECONDS)
 				.followSslRedirects(true)
 				.build();
@@ -254,13 +253,29 @@ public class ServerRepo {
 	// Contents
 	//---------------------------------------------------------------------------------------------
 
+
+	public SContent getContentProps(@NonNull String name) throws ContentsNotFoundException, ConnectException {
+		try {
+			return contentConn.getProps(name);
+		} catch (ContentsNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			throw e;
+		} catch (SocketTimeoutException | SocketException e) {
+			throw new ConnectException();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
 	public Uri getContentDownloadUri(@NonNull String name) throws ContentsNotFoundException, ConnectException {
 		Log.v(TAG, String.format("\nGET SERVER CONTENT URI called with name='"+name+"'"));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
 		try {
-			//Throws a ContentsNotFound exception if the block properties don't exist
-			contentConn.getProps(name);
+			//Throws a ContentsNotFound exception if the content properties don't exist
+			getContentProps(name);
 
 			//Now that we know the properties exist, return the content uri
 			return Uri.parse(contentConn.getDownloadUrl(name));
@@ -285,7 +300,7 @@ public class ServerRepo {
 	//Source file must be on-disk
 	//Returns the filesize of the provided source
 	//WARNING: DOES NOT UPDATE FILE PROPERTIES
-	public SContent uploadData(@NonNull String name, @NonNull File source) throws FileNotFoundException {
+	public SContent uploadData(@NonNull String name, @NonNull File source) throws FileNotFoundException, ConnectException {
 		Log.i(TAG, "\nPUT SERVER CONTENTS called with source='"+source.getPath()+"'");
 
 		if (!source.exists()) throw new FileNotFoundException("Source file not found! Path: '"+source.getPath()+"'");
@@ -342,6 +357,10 @@ public class ServerRepo {
 			//Now that the data has been written, create a new entry in the content table
 			return contentConn.putProps(name, filesize);
 
+		} catch (ConnectException e) {
+			throw e;
+		} catch (SocketTimeoutException | SocketException e) {
+			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -383,7 +402,7 @@ public class ServerRepo {
 		}
 	}
 
-	public List<SJournal> longpollJournalEntriesAfter(int journalID) throws ConnectException, TimeoutException {
+	public List<SJournal> longpollJournalEntriesAfter(int journalID) throws ConnectException, TimeoutException, SocketTimeoutException {
 		Log.i(TAG, String.format("LONGPOLL SERVER JOURNAL ENTRIES called with journalID='%s'", journalID));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
@@ -391,8 +410,10 @@ public class ServerRepo {
 			return journalConn.longpollJournalEntriesAfter(journalID);
 		} catch (ConnectException e) {
 			throw e;
-		} catch (TimeoutException | SocketTimeoutException | SocketException e) {
+		} catch (TimeoutException | SocketException e) {
 			throw new TimeoutException();
+		} catch (SocketTimeoutException e) {
+			throw e;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

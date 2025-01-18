@@ -7,7 +7,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
-import aaa.sgordon.galleryfinal.repository.combined.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.ContentsNotFoundException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -126,7 +126,7 @@ public class LContentHandler {
 			//Now that the data has been written, create a new entry in the content table
 			LContent contentProps = putProps(name, filesize);
 
-			Log.v(TAG, "Uploading block complete. Name: '"+name+"'");
+			Log.v(TAG, "Uploading content complete. Name: '"+name+"'");
 			return contentProps;
 		} catch (IOException e) {
 			throw new RuntimeException(e);

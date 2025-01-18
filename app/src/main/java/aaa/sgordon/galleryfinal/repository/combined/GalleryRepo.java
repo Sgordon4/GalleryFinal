@@ -9,14 +9,17 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import aaa.sgordon.galleryfinal.repository.local.file.LFile;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
+import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.GAccount;
 import aaa.sgordon.galleryfinal.repository.combined.combinedtypes.GFile;
-import aaa.sgordon.galleryfinal.repository.combined.domain.DomainAPI;
-import aaa.sgordon.galleryfinal.repository.combined.sync.SyncHandler;
+import aaa.sgordon.galleryfinal.repository.combined.jobs.domain_movement.DomainAPI;
+import aaa.sgordon.galleryfinal.repository.combined.jobs.sync.SyncHandler;
+import aaa.sgordon.galleryfinal.repository.combined.jobs.writestalling.WriteStallWorkers;
+import aaa.sgordon.galleryfinal.repository.combined.jobs.writestalling.WriteStalling;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.account.LAccount;
-import aaa.sgordon.galleryfinal.repository.local.file.LFile;
 import aaa.sgordon.galleryfinal.repository.server.ServerRepo;
 import aaa.sgordon.galleryfinal.repository.server.connectors.ContentConnector;
 import aaa.sgordon.galleryfinal.repository.server.servertypes.SAccount;
@@ -40,8 +43,11 @@ public class GalleryRepo {
 	private final LocalRepo localRepo;
 	private final ServerRepo serverRepo;
 
-	private final DomainAPI domainAPI;
-	private final SyncHandler syncHandler;
+	private DomainAPI domainAPI;
+	private SyncHandler syncHandler;
+
+	private WriteStalling writeStalling;
+	private WriteStallWorkers writeStallWorkers;
 
 	private GFileUpdateObservers observers;
 
@@ -57,16 +63,31 @@ public class GalleryRepo {
 		localRepo = LocalRepo.getInstance();
 		serverRepo = ServerRepo.getInstance();
 
+		/*
+		//Configure the WorkManager for this application to use fewer threads
+		//Note: MUST disable the default initializer in App Manifest for this to take effect
+		//Note: This must be done in onCreate of the Application
+		Configuration config = new Configuration.Builder()
+				.setExecutor(Executors.newFixedThreadPool(10)).build();
+		WorkManager.initialize(MyApplication.getAppContext(), config);
+		*/
+	}
+	public void initialize() {
+		observers = new GFileUpdateObservers();
+
 		domainAPI = DomainAPI.getInstance();
 		syncHandler = SyncHandler.getInstance();
 
-		observers = new GFileUpdateObservers();
+		writeStalling = WriteStalling.getInstance();
+		writeStallWorkers = WriteStallWorkers.getInstance();
+
+
+		observers.attachListeners(localRepo, serverRepo);
+
+		writeStallWorkers.startJobs();
+		syncHandler.catchUpOnSyncing();
 	}
 
-	public void initializeSyncing() {
-		syncHandler.catchUpOnSyncing();
-		observers.attachListeners(localRepo, serverRepo);
-	}
 
 	//---------------------------------------------------------------------------------------------
 
@@ -81,7 +102,7 @@ public class GalleryRepo {
 		observers.notifyObservers(file);
 	}
 
-	//TODO Use this with DomainAPI and SyncHandler's doSomething() methods. Also fix this up, doesn't work.
+	//TODO Doesn't actually work
 	public boolean doesDeviceHaveInternet() {
 		ConnectivityManager connectivityManager = (ConnectivityManager)
 				MyApplication.getAppContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -125,22 +146,52 @@ public class GalleryRepo {
 	}
 
 
-	public boolean putAccountPropsLocal(@NonNull GAccount gAccount) {
-		LAccount account = new Gson().fromJson(gAccount.toJson(), LAccount.class);
-		localRepo.putAccountProps(account);
-		return true;
+	public void putAccountProps(@NonNull GAccount gAccount) {
+		throw new RuntimeException("Stub!");
 	}
 
-	public boolean putAccountPropsServer(@NonNull GAccount gAccount) throws ConnectException {
+	protected void putAccountPropsLocal(@NonNull GAccount gAccount) {
+		LAccount account = new Gson().fromJson(gAccount.toJson(), LAccount.class);
+		localRepo.putAccountProps(account);
+	}
+
+	protected void putAccountPropsServer(@NonNull GAccount gAccount) throws ConnectException {
 		SAccount account = new Gson().fromJson(gAccount.toJson(), SAccount.class);
 		serverRepo.putAccountProps(account);
-		return true;
 	}
 
 
 	//---------------------------------------------------------------------------------------------
 	// File Props
 	//---------------------------------------------------------------------------------------------
+
+
+
+	public long requestWriteLock(UUID fileUID) {
+		return writeStalling.requestWriteLock(fileUID);
+	}
+	public void releaseWriteLock(UUID fileUID, long lockStamp) {
+		writeStalling.releaseWriteLock(fileUID, lockStamp);
+	}
+
+
+	//Actually writes to a temp file, which needs to be persisted later
+	//Optimistically assumes the file exists in one of the repos. If not, this temp file will be deleted when we try to persist.
+	public String writeFile(UUID fileUID, byte[] contents, String lastHash, long lockStamp) throws IOException {
+		if(!writeStalling.isStampValid(fileUID, lockStamp))
+			throw new IllegalStateException("Invalid lock stamp! FileUID='"+fileUID+"'");
+
+		//Write to the stall file
+		String fileHash = writeStalling.write(fileUID, contents, lastHash);
+
+		//Launch a worker to persist the file
+		writeStallWorkers.launch(fileUID);
+		return fileHash;
+	}
+	public void writeFile(UUID fileUID, Uri contents, String lastHash, long lockStamp) {
+		throw new RuntimeException("Stub!");
+	}
+
 
 
 	@NonNull
@@ -194,10 +245,7 @@ public class GalleryRepo {
 	//TODO Private these, and just give a "putFileProps" option that figures out where to put things and errors if out of date
 	// Maybe not private them idk
 
-	public GFile createFilePropsLocal(@NonNull GFile gFile) throws IllegalStateException, ContentsNotFoundException, ConnectException {
-		return putFilePropsLocal(gFile, "null", "null");
-	}
-	public GFile putFilePropsLocal(@NonNull GFile gFile) throws ContentsNotFoundException {
+	public GFile createFilePropsLocal(@NonNull GFile gFile) throws IllegalStateException, ContentsNotFoundException {
 		return putFilePropsLocal(gFile, null, null);
 	}
 	public GFile putFilePropsLocal(@NonNull GFile gFile, @Nullable String prevFileHash, @Nullable String prevAttrHash) throws ContentsNotFoundException {
@@ -205,15 +253,14 @@ public class GalleryRepo {
 		try {
 			LFile retFile = localRepo.putFileProps(file, prevFileHash, prevAttrHash);
 			return GFile.fromLocalFile(retFile);
+		} catch (IllegalStateException e) {
+			throw new IllegalStateException("PrevHashes do not match in putFileProps", e);
 		} catch (ContentsNotFoundException e) {
 			throw new ContentsNotFoundException("Cannot put props, Local is missing content!", e);
 		}
 	}
 
 	public GFile createFilePropsServer(@NonNull GFile gFile) throws IllegalStateException, ContentsNotFoundException, ConnectException {
-		return putFilePropsServer(gFile, "null", "null");
-	}
-	public GFile putFilePropsServer(@NonNull GFile gFile) throws IllegalStateException, ContentsNotFoundException, ConnectException {
 		return putFilePropsServer(gFile, null, null);
 	}
 	public GFile putFilePropsServer(@NonNull GFile gFile, @Nullable String prevFileHash, @Nullable String prevAttrHash)
@@ -245,6 +292,23 @@ public class GalleryRepo {
 	// File Contents
 	//---------------------------------------------------------------------------------------------
 
+
+	public boolean doesContentExistLocal(@NonNull String name) {
+		try {
+			localRepo.getContentProps(name);
+			return true;
+		} catch (ContentsNotFoundException e) {
+			return false;
+		}
+	}
+	public boolean doesContentExistServer(@NonNull String name) throws ConnectException {
+		try {
+			serverRepo.getContentProps(name);
+			return true;
+		} catch (ContentsNotFoundException e) {
+			return false;
+		}
+	}
 
 	public Uri getContentUri(@NonNull String name) throws ContentsNotFoundException, ConnectException {
 		//Try to get the file contents from local. If they exist, return that.
@@ -278,7 +342,7 @@ public class GalleryRepo {
 	//Helper method
 	//WARNING: DOES NOT UPDATE FILE PROPERTIES ON SERVER
 	//WARNING: Source file must be on-disk
-	public int putContentsServer(@NonNull String name, @NonNull File source) throws FileNotFoundException {
+	public int putContentsServer(@NonNull String name, @NonNull File source) throws FileNotFoundException, ConnectException {
 		return serverRepo.uploadData(name, source).size;
 	}
 
@@ -298,140 +362,7 @@ public class GalleryRepo {
 			throw new RuntimeException(e);
 		}
 	}
-
-
-	//---------------------------------------------------------------------------------------------
-	// Block
-	//---------------------------------------------------------------------------------------------
-
-	/*
-	@Nullable
-	public GContent getBlockProps(@NonNull String blockHash) throws FileNotFoundException, ConnectException {
-		//Try to get the block data from local. If it exists, return that.
-		try {
-			LContent local = localRepo.getBlockProps(blockHash);
-			return new Gson().fromJson(local.toJson(), GContent.class);
-		}
-		catch (FileNotFoundException e) {
-			//Do nothing
-		}
-
-		//If the block doesn't exist locally, try to get it from the server.
-		try {
-			SContent server = serverRepo.getBlockProps(blockHash);
-			return new Gson().fromJson(server.toJson(), GContent.class);
-		} catch (FileNotFoundException e) {
-			//Do nothing
-		}
-
-		//If the file doesn't exist in either, throw an exception
-		throw new FileNotFoundException(String.format("Block not found with blockHash='%s'", blockHash));
-	}
-	 */
-
-	/*
-	public byte[] getBlockContents(@NonNull String blockHash) throws FileNotFoundException, ConnectException {
-		//Try to get the block data from local. If it exists, return that.
-		try {
-			return localRepo.getBlockContents(blockHash);
-		} catch (ContentsNotFoundException e) {
-			//Do nothing
-		}
-
-		//If the block doesn't exist locally, try to get it from the server.
-		try {
-			return serverRepo.getBlockContents(blockHash);
-		} catch (ContentsNotFoundException e) {
-			//Do nothing
-		}
-
-		//If the block doesn't exist in either, throw an exception
-		throw new FileNotFoundException(String.format("Block not found with blockHash='%s'", blockHash));
-	}
-	 */
-
-
-
-	/*
-	public boolean isBlockLocal(@NonNull String blockHash) {
-		try {
-			localRepo.getBlockProps(blockHash);
-			return true;
-		} catch (FileNotFoundException e) {
-			return false;
-		}
-	}
-
-	public boolean isBlockServer(@NonNull String blockHash) throws ConnectException {
-		try {
-			serverRepo.getBlockProps(blockHash);
-			return true;
-		} catch (FileNotFoundException e) {
-			return false;
-		} catch (ConnectException e) {
-			throw e;
-		}
-	}
-	 */
-
-
-
-	//---------------------------------------------------------------------------------------------
-	// Import/Export
-	//---------------------------------------------------------------------------------------------
-
-	/*
-
-	private final String IMPORT_GROUP = "import";
-	private final String EXPORT_GROUP = "export";
-
-	//Note: External links are not imported to the system, and should not be handled with this method.
-	// Instead, their link file should be created and edited through the file creation/edit modals.
-
-
-	//Launch a WorkManager to import an external uri to the system.
-	public void importFile(@NonNull Uri source, @NonNull UUID accountuid, @NonNull UUID parent) {
-		//Compile the information we'll need for the import
-		Data.Builder builder = new Data.Builder();
-		builder.putString("OPERATION", "IMPORT");
-		builder.putString("TARGET_URI", source.toString());
-		builder.putString("PARENTUID", parent.toString());
-		builder.putString("ACCOUNTUID", accountuid.toString());
-
-		OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(ImportExportWorker.class)
-				.setInputData(builder.build())
-				.build();
-
-		//Create the work request that will handle the import
-		WorkManager workManager = WorkManager.getInstance(MyApplication.getAppContext());
-
-		//Add the work request to the queue so that the imports run in order
-		WorkContinuation continuation = workManager.beginUniqueWork(IMPORT_GROUP, ExistingWorkPolicy.APPEND, request);
-		continuation.enqueue();
-	}
-
-	public void exportFile(@NonNull UUID fileuid, @NonNull UUID parent, @NonNull Uri destination) {
-		//Compile the information we'll need for the export
-		Data.Builder builder = new Data.Builder();
-		builder.putString("OPERATION", "EXPORT");
-		builder.putString("TARGET_URI", destination.toString());
-		builder.putString("PARENTUID", parent.toString());
-		builder.putString("FILEUID", fileuid.toString());
-
-		OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(ImportExportWorker.class)
-				.setInputData(builder.build())
-				.build();
-
-		//Create the work request that will handle the import
-		WorkManager workManager = WorkManager.getInstance(MyApplication.getAppContext());
-
-		//Add the work request to the queue so that the imports run in order
-		WorkContinuation continuation = workManager.beginUniqueWork(EXPORT_GROUP, ExistingWorkPolicy.APPEND, request);
-		continuation.enqueue();
-	}
-
-	 */
-
+	
 
 	//---------------------------------------------------------------------------------------------
 	// Domain Movements
@@ -439,34 +370,18 @@ public class GalleryRepo {
 
 
 	public void queueCopyFileToLocal(@NonNull UUID fileuid) {
-		try {
-			domainAPI.enqueue(fileuid, DomainAPI.COPY_TO_LOCAL);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+		domainAPI.enqueue(fileuid, DomainAPI.COPY_TO_LOCAL);
 	}
 	public void queueCopyFileToServer(@NonNull UUID fileuid) {
-		try {
-			domainAPI.enqueue(fileuid, DomainAPI.COPY_TO_SERVER);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+		domainAPI.enqueue(fileuid, DomainAPI.COPY_TO_SERVER);
 	}
 
 
 	public void queueRemoveFileFromLocal(@NonNull UUID fileuid) {
-		try {
-			domainAPI.enqueue(fileuid, DomainAPI.REMOVE_FROM_LOCAL);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+		domainAPI.enqueue(fileuid, DomainAPI.REMOVE_FROM_LOCAL);
 	}
 	public void queueRemoveFileFromServer(@NonNull UUID fileuid) {
-		try {
-			domainAPI.enqueue(fileuid, DomainAPI.REMOVE_FROM_SERVER);
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+		domainAPI.enqueue(fileuid, DomainAPI.REMOVE_FROM_SERVER);
 	}
 }
 
