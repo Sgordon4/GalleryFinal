@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,9 +18,16 @@ import aaa.sgordon.galleryfinal.R;
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
 	private List<Pair<UUID, String>> data;
 
-	public DirRVAdapter(List<Pair<UUID, String>> data) {
-		this.data = data;
+	public DirRVAdapter() {
+		data = new ArrayList<>();
 	}
+
+	public void setData(List<Pair<UUID, String>> data) {
+		this.data = data;
+		//Do some DiffUtil stuff here
+		notifyDataSetChanged();
+	}
+
 
 	@NonNull
 	@Override
