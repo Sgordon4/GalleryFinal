@@ -12,9 +12,9 @@
         tools:layout="@layout/fragment_directory">
 
         <argument
-            android:name="inputData"
+            android:name="directoryUID"
             app:argType="string"
-            android:defaultValue="Default Value" />
+            android:defaultValue="Error" />
 
         <action
             android:id="@+id/action_toDirectoryFragment"

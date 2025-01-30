@@ -58,4 +58,14 @@ dependencies {
     implementation "androidx.room:room-guava:2.6.1"
     testImplementation "androidx.room:room-testing:2.6.1"
     implementation "androidx.room:room-paging:2.6.1"
+
+    implementation 'androidx.navigation:navigation-ui:2.8.6'
+
+    //For FAB with Speed Dial
+    implementation 'com.leinardi.android:speed-dial:3.3.0'
+
+    //Primary imageView
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+    //Subsampling imageview
+    implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
 }

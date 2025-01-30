@@ -8,17 +8,37 @@
     android:layout_height="match_parent"
     tools:context=".gallery.DirFragment">
 
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerview"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent">
+
+        <include android:id="@+id/gallery_appbar" layout="@layout/appbar" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+
+        <com.leinardi.android.speeddial.SpeedDialView
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:sdMainFabClosedSrc="@drawable/add_icon" />
+        <!-- Not using because we manually hide/show in an onScroll listener -->
+        <!-- app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" -->
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
 
     <Button
         android:id="@+id/button_drilldown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Drilldown"
+        android:text="Deeper"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

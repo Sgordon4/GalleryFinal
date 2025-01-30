@@ -35,11 +35,10 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 		//Start a background thread to 'fetch data from the repository', notifying things when it finishes
 		Thread backgroundThread = new Thread(() -> {
-			try { Thread.sleep(2500); }
-			catch (InterruptedException e) { throw new RuntimeException(e); }
+			//try { Thread.sleep(2500); }
+			//catch (InterruptedException e) { throw new RuntimeException(e); }
 
 			setCurrDir(UUID.randomUUID());
-			System.out.println("Directory data list has "+data.getValue().size()+" items.");
 		});
 		backgroundThread.start();
 
@@ -67,6 +66,11 @@ public class DirectoryViewModel extends AndroidViewModel {
 		this.currDir = currDir;
 
 		List<Pair<UUID, String>> newData = traverse(currDir, new HashSet<>());
+		System.out.println("Directory data list has "+newData.size()+" items.");
+
+		//Add some extra shit to make the list taller for scroll testing
+		for(int i = 0; i < 20; i++)
+			newData.add(new Pair<>(UUID.randomUUID(), String.valueOf(i)));
 
 		data.postValue(newData);
 	}
@@ -78,8 +82,8 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 	//Only make sure to only do this for links to directories, not directories themselves
 	private List<Pair<UUID, String>> traverse(@NonNull UUID nextUUID, @NonNull Set<UUID> visited) {
-		System.out.println("Visited identity: "+visited.hashCode());
-		System.out.println("Size is "+visited.size());
+		//System.out.println("Visited identity: "+visited.hashCode());
+		//System.out.println("Size is "+visited.size());
 
 		//If we've already touched this directory, skip it so we don't loop forever
 		if(visited.contains(nextUUID))

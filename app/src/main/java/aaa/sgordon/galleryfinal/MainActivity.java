@@ -11,8 +11,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.NavDirections;
 import androidx.navigation.NavGraph;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
+
+import com.google.android.material.appbar.AppBarLayout;
 
 import java.util.UUID;
 
@@ -53,40 +56,25 @@ public class MainActivity extends AppCompatActivity {
 		NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.nav_host_fragment);
 		NavController navController = navHostFragment.getNavController();
-		//appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-		//NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
 		Bundle bundle = new Bundle();
-		bundle.putString("inputData", "Hello from MainActivity");
+		bundle.putString("directoryUID", UUID.randomUUID().toString());
 		navController.setGraph(R.navigation.nav_graph, bundle);
 
 
-		//DirFragmentDirections.ActionToDirectoryFragment action = DirFragmentDirections.actionToDirectoryFragment();
-		//action.setInputData("Hello from MainActivity");
-		//navController.navigate(action);
+		/*
+		navController.setGraph(R.navigation.nav_graph);
+		DirFragmentDirections.ActionToDirectoryFragment action = DirFragmentDirections.actionToDirectoryFragment();
+		action.setDirectoryUID(UUID.randomUUID().toString());
+		NavOptions navOptions = new NavOptions.Builder().setPopUpTo(R.id.DirectoryFragment, true).build();
+		navController.navigate(action, navOptions);
+		 */
 	}
 }
 
 
 
 /*
-viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-		viewModel.testInt += 1;
-
-
-		EdgeToEdge.enable(this);
-
-		binding = ActivityMainBinding.inflate(getLayoutInflater());
-		setContentView(binding.getRoot());
-
-		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-			Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-			//v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-			v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);	//Shows behind bottom navBar
-			return insets;
-		});
-
-
 		//https://developer.android.com/guide/navigation/use-graph/animate-transitions
 		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
 		//appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();

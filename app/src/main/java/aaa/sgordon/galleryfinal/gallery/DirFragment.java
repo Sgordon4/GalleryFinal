@@ -11,11 +11,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.NavDestination;
+import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.navigation.ui.AppBarConfiguration;
+import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.Collections;
 import java.util.List;
@@ -46,19 +55,34 @@ public class DirFragment extends Fragment {
 		MainViewModel mainViewModel = new ViewModelProvider(getActivity()).get(MainViewModel.class);
 		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
 
+		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
+		UUID directoryUID = UUID.fromString( args.getDirectoryUID() );
 		dirViewModel = new ViewModelProvider(this).get(DirectoryViewModel.class);
 
-		// Get arguments safely using Safe Args
-		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
-		String inputData = args.getInputData();
-		System.out.println("Input data: ");
-		System.out.println(inputData);
 
-		binding.buttonDrilldown.setText(inputData);
-		binding.buttonDrilldown.setOnClickListener(view1 ->
-				NavHostFragment.findNavController(DirFragment.this)
-						.navigate(R.id.action_toDirectoryFragment));
+		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
+		NavController navController = Navigation.findNavController(view);
+		AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder().build();
+		NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration);
 
+		//Hide the navigation icon when we're at the top-level
+		navController.addOnDestinationChangedListener((navController1, navDestination, bundle) -> {
+			if(navController1.getPreviousBackStackEntry() == null)
+				toolbar.setNavigationIcon(null);
+		});
+
+		//Must set title after configuration
+		binding.galleryAppbar.toolbar.setTitle(directoryUID.toString());
+
+
+
+
+
+		System.out.println("IDs: ");
+		System.out.println(navController.getGraph().getStartDestinationId());
+		System.out.println(navController.getGraph().getId());
+		System.out.println(getChildFragmentManager().getBackStackEntryCount());
+		System.out.println(getChildFragmentManager().getFragments().size());
 
 
 		// Recyclerview things:
@@ -72,11 +96,8 @@ public class DirFragment extends Fragment {
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		recyclerView.addItemDecoration(dividerItemDecoration);
 
-
-		//Restore the recyclerview state:
 		if(savedInstanceState != null) {
 			Parcelable rvState = savedInstanceState.getParcelable("rvState_"+thisFragmentUUID.toString());
-
 			if(rvState != null) {
 				System.out.println("Parcel found: "+rvState);
 				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
@@ -85,12 +106,10 @@ public class DirFragment extends Fragment {
 
 
 		ItemTouchHelper touchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
-
 			@Override
 			public boolean isLongPressDragEnabled() {
 				return true;
 			}
-
 			@Override
 			public boolean isItemViewSwipeEnabled() {
 				return false;
@@ -121,6 +140,26 @@ public class DirFragment extends Fragment {
 			}
 		});
 		//touchHelper.attachToRecyclerView(recyclerView);
+
+
+
+		//Temporary button for testing
+		binding.buttonDrilldown.setOnClickListener(view1 -> {
+			DirFragmentDirections.ActionToDirectoryFragment action = DirFragmentDirections.actionToDirectoryFragment();
+			action.setDirectoryUID(UUID.randomUUID().toString());
+			NavHostFragment.findNavController(this).navigate(action);
+		});
+
+
+		//Show/Hide the fab when scrolling:
+		recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+			@Override
+			public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+				SpeedDialView fab = binding.fab;
+				if(dy > 0 && fab.isShown()) fab.hide();
+				else if(dy < 0 && !fab.isShown()) fab.show();
+			}
+		});
 	}
 
 	@Override
