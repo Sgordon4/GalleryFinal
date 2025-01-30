@@ -8,11 +8,16 @@
     <fragment
         android:id="@+id/DirectoryFragment"
         android:name="aaa.sgordon.galleryfinal.gallery.DirFragment"
-        android:label="directory_fragment_label"
+        android:label="Directory"
         tools:layout="@layout/fragment_directory">
 
+        <argument
+            android:name="inputData"
+            app:argType="string"
+            android:defaultValue="Default Value" />
+
         <action
-            android:id="@+id/action_DirFragment_to_DirFragment"
+            android:id="@+id/action_toDirectoryFragment"
             app:destination="@id/DirectoryFragment" />
     </fragment>
 </navigation>

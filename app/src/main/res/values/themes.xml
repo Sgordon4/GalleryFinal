@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.GalleryFinal" parent="Base.Theme.GalleryFinal" />
+
+    <style name="Theme.GalleryFinal.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.GeneralTesting.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

@@ -1,8 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -12,7 +10,6 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -37,7 +34,7 @@ public class DirFragment extends Fragment {
 
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		binding = FragmentDirectoryBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
@@ -51,10 +48,16 @@ public class DirFragment extends Fragment {
 
 		dirViewModel = new ViewModelProvider(this).get(DirectoryViewModel.class);
 
+		// Get arguments safely using Safe Args
+		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
+		String inputData = args.getInputData();
+		System.out.println("Input data: ");
+		System.out.println(inputData);
 
+		binding.buttonDrilldown.setText(inputData);
 		binding.buttonDrilldown.setOnClickListener(view1 ->
 				NavHostFragment.findNavController(DirFragment.this)
-						.navigate(R.id.action_DirFragment_to_DirFragment));
+						.navigate(R.id.action_toDirectoryFragment));
 
 
 
@@ -79,7 +82,6 @@ public class DirFragment extends Fragment {
 				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
 			}
 		}
-
 
 
 		ItemTouchHelper touchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
