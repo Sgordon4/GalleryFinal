@@ -11,6 +11,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 
+//LogCat filter:
+//((level:debug & tag:Hyb) | (tag:System | is:stacktrace )) & package:mine & -line:ClassLoaderContext & name:hybridRepo
+
 public class MainActivity extends AppCompatActivity {
 	private ActivityMainBinding binding;
 	private MainViewModel viewModel;
