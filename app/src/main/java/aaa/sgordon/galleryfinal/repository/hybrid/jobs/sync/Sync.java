@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZoningDAO;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HybridHelpDatabase;
@@ -165,11 +166,13 @@ public class Sync {
 				LJournal journal = new LJournal(fileUID, remoteLatestChange.get(0).accountuid, changes);
 				journal.fromSync = true;
 				localRepo.putJournalEntry(journal);
+
+				HybridListeners.getInstance().notifyDataChanged(fileUID);
 			}
 			catch (FileNotFoundException e) {
 				//Do nothing
 			} finally {
-				//Remove zoning information for the file
+				//Remove zoning information for the file (in finally because if FileNotFound we remove zoning)
 				zoningDAO.delete(fileUID);
 
 				localRepo.unlock(fileUID);
@@ -211,6 +214,7 @@ public class Sync {
 
 			Log.w(TAG, "Repos were supposed to be merged, but merge is not implemented yet! FileUID='"+fileUID+"'");
 			remoteHasChanges = false;
+			//TODO Maybe we should default to keeping remote changes instead...
 		}
 
 
@@ -222,7 +226,7 @@ public class Sync {
 			try {
 				//If remote doesn't exist, we don't want to add it. Remote is added through zoning.
 				RFile remoteProps = remoteRepo.getFileProps(fileUID);
-				//If local doesn't exist, it's highly likely it was *just* deleted. Wait for next sync.
+				//If local doesn't exist, it's highly likely it was *just* deleted. Do nothing and wait for next sync.
 				LFile localProps = localRepo.getFileProps(fileUID);
 
 
@@ -235,7 +239,6 @@ public class Sync {
 				//If the user attributes don't match, copy them over
 				if(!localProps.attrhash.equals(remoteProps.attrhash))
 					remoteRepo.putAttributeProps(HFile.toRemoteFile(localProps), remoteProps.attrhash);
-
 
 				//DO NOT update zoning info. A local update could be content stored for upload to remote,
 				// or it could even just be an attribute change. Only zoning should update isLocal.
@@ -293,6 +296,8 @@ public class Sync {
 				//Create/update the zoning info
 				zoningInfo.isRemote = true;
 				zoningDAO.put(zoningInfo);
+
+				HybridListeners.getInstance().notifyDataChanged(fileUID);
 
 			} catch (ContentsNotFoundException e) {
 				//Not really sure what to do here... This really shouldn't happen...

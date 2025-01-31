@@ -57,7 +57,10 @@ public class DirFragment extends Fragment {
 
 		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = UUID.fromString( args.getDirectoryUID() );
-		dirViewModel = new ViewModelProvider(this).get(DirectoryViewModel.class);
+		//dirViewModel = new ViewModelProvider(this).get(DirectoryViewModel.class);
+		dirViewModel = new ViewModelProvider(this,
+				new DirectoryViewModel.DirectoryViewModelFactory(getActivity().getApplication(), directoryUID))
+				.get(DirectoryViewModel.class);
 
 
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
@@ -76,21 +79,13 @@ public class DirFragment extends Fragment {
 
 
 
-
-
-		System.out.println("IDs: ");
-		System.out.println(navController.getGraph().getStartDestinationId());
-		System.out.println(navController.getGraph().getId());
-		System.out.println(getChildFragmentManager().getBackStackEntryCount());
-		System.out.println(getChildFragmentManager().getFragments().size());
-
-
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
+		//TODO When we update the list, if we're dragging an item we need to move that item
 		dirViewModel.data.observe(getViewLifecycleOwner(), adapter::setData);
 
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
@@ -149,6 +144,8 @@ public class DirFragment extends Fragment {
 			action.setDirectoryUID(UUID.randomUUID().toString());
 			NavHostFragment.findNavController(this).navigate(action);
 		});
+		//Button doesn't work now that we've hooked things up to the database, but I'm keeping this code for ref
+		binding.buttonDrilldown.setVisibility(View.GONE);
 
 
 		//Show/Hide the fab when scrolling:

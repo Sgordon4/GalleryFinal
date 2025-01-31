@@ -21,6 +21,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
@@ -243,6 +244,8 @@ public class ZoningWorker extends Worker {
 					localRepo.writeContents(localProps.checksum, remoteContent);
 					localRepo.putFileProps(HFile.fromRemoteFile(remoteProps).toLocalFile(), localProps.checksum, localProps.attrhash);
 					Log.v(TAG, "Updated contents downloaded from remote.");
+
+					HybridListeners.getInstance().notifyDataChanged(fileUID);
 				}
 				return Result.success();
 			}

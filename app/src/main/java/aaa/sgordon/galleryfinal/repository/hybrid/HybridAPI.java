@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.repository.hybrid;
 
 import android.net.Uri;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -38,6 +39,7 @@ public class HybridAPI {
 
 	private final LocalRepo localRepo;
 	private final RemoteRepo remoteRepo;
+	private final HybridListeners listeners;
 
 	private final Sync sync;
 
@@ -51,6 +53,8 @@ public class HybridAPI {
 		private static final HybridAPI INSTANCE = new HybridAPI();
 	}
 	private HybridAPI() {
+		listeners = HybridListeners.getInstance();
+
 		LocalRepo.initialize(MyApplication.getAppContext());
 		localRepo = LocalRepo.getInstance();
 		remoteRepo = RemoteRepo.getInstance();
@@ -64,21 +68,37 @@ public class HybridAPI {
 	}
 
 
-	public void startListeningForChanges(@NonNull UUID accountUID) {
-		SyncWorkers.SyncWatcher.enqueue(accountUID);
-	}
-
-	public void stopListeningForChanges(@NonNull UUID accountUID) {
-		SyncWorkers.SyncWatcher.dequeue(accountUID);
-	}
-
-
-
 	public void lockLocal(@NonNull UUID fileUID) {
 		localRepo.lock(fileUID);
 	}
 	public void unlockLocal(@NonNull UUID fileUID) {
 		localRepo.unlock(fileUID);
+	}
+
+
+	public void addListener(HybridListeners.FileChangeListener listener, UUID... uuids) {
+		listeners.addListener(listener, uuids);
+	}
+	public void removeListener(HybridListeners.FileChangeListener listener) {
+		listeners.removeListener(listener);
+	}
+
+
+	public UUID getCurrentAccount() {
+		return currentAccount;
+	}
+	public void setAccount(@NonNull UUID accountUID) {
+		this.currentAccount = accountUID;
+		localRepo.setAccount(currentAccount);
+		remoteRepo.setAccount(currentAccount);
+	}
+
+
+	public void startSyncService(@NonNull UUID accountUID) {
+		SyncWorkers.SyncWatcher.enqueue(accountUID);
+	}
+	public void stopSyncService(@NonNull UUID accountUID) {
+		SyncWorkers.SyncWatcher.dequeue(accountUID);
 	}
 
 
@@ -92,17 +112,17 @@ public class HybridAPI {
 		return HFile.fromLocalFile(local);
 	}
 
-
-	public Uri getFileContent(@NonNull UUID fileUID) throws FileNotFoundException, ContentsNotFoundException, ConnectException {
+	//Returns a Uri with the file checksum
+	public Pair<Uri, String> getFileContent(@NonNull UUID fileUID) throws FileNotFoundException, ContentsNotFoundException, ConnectException {
 		//Grab the file properties, which also makes sure the file exists
 		LFile props = localRepo.getFileProps(fileUID);
 
 		//Try to get the file contents from local. If they exist, return that.
-		try { return localRepo.getContentUri(props.checksum); }
+		try { return new Pair<>(localRepo.getContentUri(props.checksum), props.checksum); }
 		catch (ContentsNotFoundException ignored) { }
 
 		//If the contents don't exist locally, try to get it from the server.
-		try { return remoteRepo.getContentDownloadUri(props.checksum); }
+		try { return new Pair<>(remoteRepo.getContentDownloadUri(props.checksum), props.checksum); }
 		catch (ContentsNotFoundException ignored) { }
 
 		//If the contents don't exist in either, throw an exception
@@ -163,6 +183,9 @@ public class HybridAPI {
 		//All we need to do is delete the file properties and zoning information here in local.
 		//Cleanup will remove this file's contents if they're not being used by another file.
 		//If a remote file exists, Sync will now handle the delete from Remote using the new journal entry.
+
+
+		listeners.notifyDataChanged(fileUID);
 	}
 
 
@@ -201,6 +224,8 @@ public class HybridAPI {
 		changes.addProperty("changetime", props.changetime);
 		LJournal journal = new LJournal(fileUID, currentAccount, changes);
 		localRepo.putJournalEntry(journal);
+
+		listeners.notifyDataChanged(fileUID);
 
 		return props.attrhash;
 	}
@@ -244,6 +269,8 @@ public class HybridAPI {
 		LJournal journal = new LJournal(fileUID, currentAccount, changes);
 		localRepo.putJournalEntry(journal);
 
+		listeners.notifyDataChanged(fileUID);
+
 		return props.checksum;
 	}
 
@@ -277,13 +304,16 @@ public class HybridAPI {
 		LJournal journal = new LJournal(fileUID, currentAccount, changes);
 		localRepo.putJournalEntry(journal);
 
+		listeners.notifyDataChanged(fileUID);
+
 		return props.checksum;
 	}
 
 
 
+	//TODO Make an import that grabs the files timestamps
 	//Returns new FileUID for imported file
-	public UUID importFile(@NonNull Uri content, @NonNull String prevChecksum) throws IOException {
+	public UUID importFile(@NonNull Uri content) throws IOException {
 		//Write the source to a temp file so we can get the checksum
 		File appCacheDir = MyApplication.getAppContext().getCacheDir();
 		File tempFile = Files.createTempFile(appCacheDir.toPath(), UUID.randomUUID().toString(), null).toFile();
@@ -316,7 +346,7 @@ public class HybridAPI {
 		fileProps.filesize = contentProps.size;
 		fileProps.changetime = Instant.now().getEpochSecond();
 		fileProps.modifytime = Instant.now().getEpochSecond();
-		LFile newFile = localRepo.putFileProps(fileProps, prevChecksum, fileProps.attrhash);
+		LFile newFile = localRepo.putFileProps(fileProps, fileProps.checksum, fileProps.attrhash);
 
 		//Add another journal entry after the create entry
 		JsonObject changes = new JsonObject();

@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal;
 
 import android.os.Bundle;
+import android.os.Handler;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,16 +15,23 @@ import androidx.navigation.NavGraph;
 import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.room.Room;
 
 import com.google.android.material.appbar.AppBarLayout;
 
+import java.io.File;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
+import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 
 //LogCat filter:
 //((level:debug & tag:Hyb) | (tag:System | is:stacktrace )) & package:mine & -line:ClassLoaderContext & name:hybridRepo
+
+//https://developer.android.com/guide/navigation/use-graph/animate-transitions
 
 public class MainActivity extends AppCompatActivity {
 	private ActivityMainBinding binding;
@@ -32,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 
 		viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 		viewModel.testInt += 1;
@@ -52,14 +59,25 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+		//Go off main thread to setup the database and root dir
+		// Later this will be done in a login activity before this one, so this won't be necessary
+		Thread thread = new Thread(() -> {
+			UUID rootDirectoryUID = setupDatabase();
 
-		NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
-				.findFragmentById(R.id.nav_host_fragment);
-		NavController navController = navHostFragment.getNavController();
+			//Use the directoryUID returned to start the first fragment
+			Runnable myRunnable = () -> {
+				NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+						.findFragmentById(R.id.nav_host_fragment);
+				NavController navController = navHostFragment.getNavController();
 
-		Bundle bundle = new Bundle();
-		bundle.putString("directoryUID", UUID.randomUUID().toString());
-		navController.setGraph(R.navigation.nav_graph, bundle);
+				Bundle bundle = new Bundle();
+				bundle.putString("directoryUID", rootDirectoryUID.toString());
+				navController.setGraph(R.navigation.nav_graph, bundle);
+			};
+			Handler mainHandler = new Handler(getMainLooper());
+			mainHandler.post(myRunnable);
+		});
+		thread.start();
 
 
 		/*
@@ -70,13 +88,18 @@ public class MainActivity extends AppCompatActivity {
 		navController.navigate(action, navOptions);
 		 */
 	}
+
+
+	private UUID setupDatabase() {
+		LocalDatabase db = Room.inMemoryDatabaseBuilder(getApplicationContext(), LocalDatabase.class).build();
+		LocalRepo.initialize(db, getApplicationContext().getCacheDir().toString());
+		HybridAPI hapi = HybridAPI.getInstance();
+
+		//Fake creating the account
+		UUID currentAccount = UUID.randomUUID();
+		hapi.setAccount(currentAccount);
+
+		//Create the root directory for the new account
+		return hapi.createFile(currentAccount, true, false);
+	}
 }
-
-
-
-/*
-		//https://developer.android.com/guide/navigation/use-graph/animate-transitions
-		NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-		//appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-		//NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
- */
