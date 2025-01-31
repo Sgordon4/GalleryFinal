@@ -16,6 +16,11 @@
             app:argType="string"
             android:defaultValue="Error" />
 
+        <argument
+            android:name="directoryName"
+            app:argType="string"
+            android:defaultValue="Error" />
+
         <action
             android:id="@+id/action_toDirectoryFragment"
             app:destination="@id/DirectoryFragment" />

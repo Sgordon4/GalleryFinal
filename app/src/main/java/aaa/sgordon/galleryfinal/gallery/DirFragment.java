@@ -75,7 +75,8 @@ public class DirFragment extends Fragment {
 		});
 
 		//Must set title after configuration
-		binding.galleryAppbar.toolbar.setTitle(directoryUID.toString());
+		String directoryName = args.getDirectoryName();
+		binding.galleryAppbar.toolbar.setTitle(directoryName);
 
 
 
@@ -142,6 +143,7 @@ public class DirFragment extends Fragment {
 		binding.buttonDrilldown.setOnClickListener(view1 -> {
 			DirFragmentDirections.ActionToDirectoryFragment action = DirFragmentDirections.actionToDirectoryFragment();
 			action.setDirectoryUID(UUID.randomUUID().toString());
+			action.setDirectoryName("AAAAAA");
 			NavHostFragment.findNavController(this).navigate(action);
 		});
 		//Button doesn't work now that we've hooked things up to the database, but I'm keeping this code for ref

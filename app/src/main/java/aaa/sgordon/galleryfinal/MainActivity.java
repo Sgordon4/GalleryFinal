@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
 				Bundle bundle = new Bundle();
 				bundle.putString("directoryUID", rootDirectoryUID.toString());
+				bundle.putString("directoryName", rootDirectoryUID.toString());
 				navController.setGraph(R.navigation.nav_graph, bundle);
 			};
 			Handler mainHandler = new Handler(getMainLooper());
