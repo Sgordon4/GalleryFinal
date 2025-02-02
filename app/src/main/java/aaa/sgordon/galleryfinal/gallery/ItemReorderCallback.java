@@ -100,6 +100,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		super.clearView(recyclerView, viewHolder);
 		draggedItemPos = -1;
 	}
+	
 
 
 

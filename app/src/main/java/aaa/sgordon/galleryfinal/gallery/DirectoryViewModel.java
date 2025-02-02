@@ -111,7 +111,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 				int randomIndex = random.nextInt(directoryCache.size());
 				UUID randomDirUID = (UUID) directoryCache.keySet().toArray()[randomIndex];
 
-				randomDirUID = currDirUID;
+				//randomDirUID = currDirUID;
 
 				//Import to that directory
 				fakeImportFiles(randomDirUID, 2);

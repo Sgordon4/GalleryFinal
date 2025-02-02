@@ -76,14 +76,14 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		//recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-		recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
 
-		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
-		recyclerView.addItemDecoration(dividerItemDecoration);
+		//DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
+		//recyclerView.addItemDecoration(dividerItemDecoration);
 
 
 
