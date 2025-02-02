@@ -13,17 +13,24 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	private final RecyclerView recyclerView;
 	private final DirRVAdapter adapter;
 
+	private final ReorderCallback callback;
+
 	private MotionEvent lastMoveEvent;
 
 	@SuppressLint("ClickableViewAccessibility")
-	public ItemReorderCallback(RecyclerView recyclerView) {
+	public ItemReorderCallback(RecyclerView recyclerView, ReorderCallback callback) {
 		this.recyclerView = recyclerView;
 		this.adapter = (DirRVAdapter) recyclerView.getAdapter();
+
+		this.callback = callback;
 
 
 		recyclerView.setOnTouchListener((v, event) -> {
@@ -54,6 +61,11 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 	@Override
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+		//Disallow link ends to be dragged
+		int adapterPos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
+		if(adapterPos == -1 || adapter.list.get(adapterPos).first.getFileName().toString().equals("END"))
+			return makeMovementFlags(0, 0);
+
 		int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
 		return makeMovementFlags(dragFlags, 0);
 	}
@@ -98,11 +110,9 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	@Override
 	public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
 		super.clearView(recyclerView, viewHolder);
+		onDragComplete();
 		draggedItemPos = -1;
 	}
-	
-
-
 
 
 
@@ -118,13 +128,10 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		//Apply the reorder the easy way by leveraging the currently ongoing drag.
 		//This actually turned out to be the most effective method for reordering.
 		//Lost my mind on the way here though...
-		recyclerView.post(() -> {
-			if(lastMoveEvent != null) {
-				long downTime = SystemClock.uptimeMillis();
-				long eventTime = downTime;
-
+		if(lastMoveEvent != null) {
+			recyclerView.post(() -> {
 				MotionEvent simulatedEvent = MotionEvent.obtain(
-						downTime, eventTime,
+						lastMoveEvent.getDownTime(), SystemClock.uptimeMillis(),
 						MotionEvent.ACTION_MOVE,
 						lastMoveEvent.getX(), lastMoveEvent.getY(),
 						lastMoveEvent.getMetaState()
@@ -132,19 +139,32 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 				recyclerView.onTouchEvent(simulatedEvent);
 				simulatedEvent.recycle(); // Prevent memory leaks
-			}
-		});
+			});
+		}
 	}
 
 
 
 
-	public interface ReorderCallback {
-		void cancelDrag();
+	public void onDragComplete() {
+		Path nextItem = draggedItemPos != adapter.list.size() - 1 ? adapter.list.get(draggedItemPos + 1).first : null;
+		Path destination = (nextItem != null) ? nextItem.getParent() : null;
 
-		void onRowMoved(int fromPosition, int toPosition);
-		void onRowSelected(RecyclerView.ViewHolder myViewHolder);
-		void onRowClear(RecyclerView.ViewHolder myViewHolder);
+		//This is set up to allow multiple files to be moved for when we add selection
+		//When we set that up we might also want to check if filenames are the same before sending them off
+		callback.onReorderComplete(destination, nextItem, Collections.singletonList(adapter.list.get(draggedItemPos)));
+	}
+
+
+
+	public interface ReorderCallback {
+		void onReorderComplete(Path destination, Path nextItem, List<Pair<Path, String>> toMove);
+
+		//void cancelDrag();
+
+		//void onRowMoved(int fromPosition, int toPosition);
+		//void onRowSelected(RecyclerView.ViewHolder myViewHolder);
+		//void onRowClear(RecyclerView.ViewHolder myViewHolder);
 
 	}
 }

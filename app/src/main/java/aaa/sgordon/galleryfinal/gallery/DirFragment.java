@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,10 +25,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class DirFragment extends Fragment {
 	private FragmentDirectoryBinding binding;
@@ -87,7 +94,16 @@ public class DirFragment extends Fragment {
 
 
 
-		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView);
+		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem, toMove) -> {
+			Thread reorderThread = new Thread(() -> {
+				try {
+					dirViewModel.moveFiles(destination, nextItem, toMove);
+				} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
+					throw new RuntimeException(e);
+				}
+			});
+			reorderThread.start();
+		});
 		ItemTouchHelper reorderHelper = new ItemTouchHelper(reorderCallback);
 		reorderHelper.attachToRecyclerView(recyclerView);
 
@@ -95,6 +111,7 @@ public class DirFragment extends Fragment {
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
+
 
 		if(savedInstanceState != null) {
 			Parcelable rvState = savedInstanceState.getParcelable("rvState");

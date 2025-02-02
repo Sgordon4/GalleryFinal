@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -20,9 +21,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URL;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,23 +61,6 @@ public class DirectoryViewModel extends AndroidViewModel {
 		hAPI = HybridAPI.getInstance();
 
 
-
-		//Add some items to start to fill in the screen for testing with scrolling
-		Thread importStart = new Thread(() -> fakeImportFiles(currDirUID, 50));
-		//importStart.start();
-
-
-		Thread updateViaTraverse = new Thread(() -> {
-			try {
-				List<Pair<Path, String>> newList = traverse(currDirUID, new HashSet<>(), Paths.get(""));
-				flatList.postValue(newList);
-			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-				//TODO Actually handle the error. Dir should be on local, but jic
-				throw new RuntimeException(e);
-			}
-		});
-
-
 		//Whenever a directory in our listing is updated, update our data
 		fileChangeListener = uuid -> {
 			//If the cache doesn't contain this file's UUID, we don't need to update anything
@@ -95,8 +81,21 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 
 		//Fetch the directory list and update our livedata
+		Thread updateViaTraverse = new Thread(() -> {
+			try {
+				List<Pair<Path, String>> newList = traverse(currDirUID, new HashSet<>(), Paths.get(""));
+				flatList.postValue(newList);
+			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+				//TODO Actually handle the error. Dir should be on local, but jic
+				throw new RuntimeException(e);
+			}
+		});
 		updateViaTraverse.start();
 
+
+		//Add some items to start to fill in the screen for testing with scrolling
+		Thread importStart = new Thread(() -> DirSampleData.fakeImportFiles(currDirUID, 50));
+		//importStart.start();
 
 
 		//Loop importing items for testing adapter notifications
@@ -114,13 +113,13 @@ public class DirectoryViewModel extends AndroidViewModel {
 				//randomDirUID = currDirUID;
 
 				//Import to that directory
-				fakeImportFiles(randomDirUID, 2);
+				DirSampleData.fakeImportFiles(randomDirUID, 2);
 
 				//Do it again in a few seconds
 				handler.postDelayed(this, 3000);
 			}
 		};
-		handler.postDelayed(runnable, 3000);
+		//handler.postDelayed(runnable, 3000);
 	}
 	@Override
 	protected void onCleared() {
@@ -135,8 +134,14 @@ public class DirectoryViewModel extends AndroidViewModel {
 			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		List<Pair<Path, String>> files = new ArrayList<>();
 
+		List<Pair<UUID, String>> contents;
+		//If we have the directory list cached, just use that
+		if(directoryCache.containsKey(dirUID))
+			contents = directoryCache.get(dirUID);
+		else
+			contents = readDir(dirUID);
+
 		//For each file in the directory...
-		List<Pair<UUID, String>> contents = readDir(dirUID);
 		for (Pair<UUID, String> entry : contents) {
 			UUID fileUID = entry.first;
 
@@ -190,10 +195,6 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 
 	private List<Pair<UUID, String>> readDir(@NonNull UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		//If we have the directory list cached, just return that
-		if(directoryCache.containsKey(dirUID))
-			return directoryCache.get(dirUID);
-
 		//Otherwise we gotta get it from the file itself
 		Uri uri = hAPI.getFileContent(dirUID).first;
 
@@ -237,54 +238,125 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 
 
+	public void moveFiles(@Nullable Path destination, @Nullable Path nextItem, List<Pair<Path, String>> toMove) throws FileNotFoundException, NotDirectoryException, ContentsNotFoundException, ConnectException {
+		System.out.println("Moving files!");
+		UUID destinationUID = (destination != null) ? getDirFromPath(destination) : currDirUID;
 
-	public void fakeImportFiles(@NonNull UUID destinationDirUID, int numImported) {
-		HybridAPI hAPI = HybridAPI.getInstance();
+		//Group each file by its parent directory so we know where to remove them from
+		//TODO Remove any links that are being moved into themselves or into an equivalent link chain
+		Map<UUID, List<UUID>> fileOrigins = new HashMap<>();
+		for(Pair<Path, String> pair : toMove) {
+			Path path = pair.first;
+			UUID parentUID = getDirFromPath(path.getParent());
+			UUID fileUID = UUID.fromString(path.getFileName().toString());
+
+			if(!fileOrigins.containsKey(parentUID))
+				fileOrigins.put(parentUID, new ArrayList<>());
+			fileOrigins.get(parentUID).add(fileUID);
+		}
+		fileOrigins.remove(destinationUID);
+
+
 
 		try {
-			hAPI.lockLocal(destinationDirUID);
+			hAPI.lockLocal(destinationUID);
 
-			Pair<Uri, String> dirContent = hAPI.getFileContent(destinationDirUID);
-			Uri dirUri = dirContent.first;
-			String dirChecksum = dirContent.second;
+			HFile destinationProps = hAPI.getFileProps(destinationUID);
+			List<Pair<UUID, String>> dirList = readDir(destinationUID);
 
-
-			//Read the directory into a list of UUID::FileName pairs
-			ArrayList<Pair<UUID, String>> dirList = new ArrayList<>();
-			try (InputStream inputStream = new URL(dirUri.toString()).openStream();
-				 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-
-				String line;
-				while ((line = reader.readLine()) != null) {
-					//Split each line into UUID::FileName and add it to our list
-					String[] parts = line.trim().split(" ", 2);
-					Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
-					dirList.add(entry);
+			int insertPos = 0;
+			if(nextItem == null || nextItem.getFileName().toString().equals("END"))
+				insertPos = dirList.size();
+			else {
+				//We need to find the nextItem in the list. We will insert the moved file(s) before it
+				for(int i = 0; i < dirList.size(); i++) {
+					if(dirList.get(i).first.toString().equals(nextItem.getFileName().toString())) {
+						insertPos = i;
+						break;
+					}
 				}
 			}
-			catch (IOException e) { throw new RuntimeException(e); }
 
+			System.out.println("Changing "+ Arrays.toString(dirList.toArray()));
 
-			//Add our new 'imported' files to the beginning
-			for(int i = 0; i < numImported; i++) {
-				UUID fileUID = UUID.randomUUID();
-				String fileName = "File number "+dirList.size();
-				dirList.add(0, new Pair<>(fileUID, fileName));
+			//Convert the list types to match
+			List<Pair<UUID, String>> moveList = toMove.stream().map(pair ->
+					new Pair<>(UUID.fromString(pair.first.getFileName().toString()), pair.second))
+					.collect(Collectors.toList());
+
+			//Insert the moved files at the correct position, making sure to reposition files already in the directory
+			List<Pair<UUID, String>> newList = new ArrayList<>(dirList);
+			newList.add(insertPos, null);
+			newList.removeAll(moveList);
+			int markedIndex = newList.indexOf(null);
+			newList.remove(markedIndex);
+			newList.addAll(markedIndex, moveList);
+
+			System.out.println("To       "+ Arrays.toString(newList.toArray()));
+
+			//If the lists are the same, this means nothing was actually moved, and we should skip the write
+			//We should also skip the deletes after this because nothing was moved
+			if(dirList.size() == newList.size() && dirList.equals(newList)) {
+				System.out.println("No items were moved, nothing is being written");
+				return;
 			}
 
 
 			//Write the list back to the directory
-			List<String> newLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+			List<String> newLines = newList.stream().map(pair -> pair.first+" "+pair.second)
 					.collect(Collectors.toList());
 			byte[] newContent = String.join("\n", newLines).getBytes();
-			hAPI.writeFile(destinationDirUID, newContent, dirChecksum);
+			hAPI.writeFile(destinationUID, newContent, destinationProps.checksum);
 
-		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-			throw new RuntimeException(e);
-		} finally {
-			hAPI.unlockLocal(destinationDirUID);
+		}
+		finally {
+			hAPI.unlockLocal(destinationUID);
+		}
+
+
+
+		for(UUID parentUID : fileOrigins.keySet()) {
+			List<UUID> filesToRemove = fileOrigins.get(parentUID);
+			try {
+				hAPI.lockLocal(parentUID);
+
+				HFile parentProps = hAPI.getFileProps(parentUID);
+				List<Pair<UUID, String>> dirList = readDir(parentUID);
+
+				//Remove all files in toMove that are from this dir
+				Set<UUID> filesToRemoveSet = new HashSet<>(filesToRemove);
+				dirList.removeIf(item -> filesToRemoveSet.contains(item.first));
+
+				//Write the list back to the directory
+				List<String> newLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+						.collect(Collectors.toList());
+				byte[] newContent = String.join("\n", newLines).getBytes();
+				hAPI.writeFile(parentUID, newContent, parentProps.checksum);
+			} finally {
+				hAPI.unlockLocal(parentUID);
+			}
 		}
 	}
+
+	private UUID getDirFromPath(Path path) throws FileNotFoundException, NotDirectoryException {
+		if(path == null)
+			return currDirUID;
+
+		//Thanks Sophia for the naming suggestion
+		UUID bartholomew = UUID.fromString(path.getFileName().toString());
+
+		//If this is a link UUID, get the directory it points to
+		while(linkCache.containsKey(bartholomew))
+			bartholomew = linkCache.get(bartholomew);
+		assert bartholomew != null;
+
+		HFile dirProps = hAPI.getFileProps(bartholomew);
+		if(!dirProps.isdir) throw new NotDirectoryException(bartholomew.toString());
+
+		return bartholomew;
+	}
+
+
 
 
 //=================================================================================================
@@ -308,38 +380,4 @@ public class DirectoryViewModel extends AndroidViewModel {
 			throw new IllegalArgumentException("Unknown ViewModel class");
 		}
 	}
-
-
-
-	/*
-	//Only make sure to only traverse links to directories, not directories themselves
-	private List<Pair<UUID, String>> traverse(@NonNull UUID nextUUID, @NonNull Set<UUID> visited) {
-		//System.out.println("Visited identity: "+visited.hashCode());
-		//System.out.println("Size is "+visited.size());
-
-		//If we've already touched this directory, skip it so we don't loop forever
-		if(visited.contains(nextUUID))
-			return new ArrayList<>();
-		visited.add(nextUUID);
-
-		//Get the list of files in this directory
-		List<Pair<UUID, String>> thisList = readDir(nextUUID);
-		//And make an empty list for results
-		List<Pair<UUID, String>> retList = new ArrayList<>();
-
-
-		//For each file in the directory
-		for (Pair<UUID, String> pair : thisList) {
-			retList.add(pair);
-
-			//If this item is a link to a directory, traverse it
-			if(sampleData.isLinkToDir(pair.first)) {
-				Set<UUID> shallowCopy = new HashSet<>(visited);
-				retList.addAll(traverse(pair.first, shallowCopy));
-			}
-		}
-
-		return retList;
-	}
-	 */
 }
