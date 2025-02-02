@@ -7,25 +7,52 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
-	private List<Pair<UUID, String>> data;
+	public List<Pair<Path, String>> list;
 
 	public DirRVAdapter() {
-		data = new ArrayList<>();
+		list = new ArrayList<>();
 	}
 
-	public void setData(List<Pair<UUID, String>> data) {
-		this.data = data;
-		//Do some DiffUtil stuff here
-		notifyDataSetChanged();
+	public void setList(List<Pair<Path, String>> newList) {
+		//Calculate the differences between the current list and the new one
+		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
+			@Override
+			public int getOldListSize() {
+				return list.size();
+			}
+			@Override
+			public int getNewListSize() {
+				return newList.size();
+			}
+
+			@Override
+			public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+				return list.get(oldItemPosition).first.equals(newList.get(newItemPosition).first);
+			}
+			@Override
+			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+				return list.get(oldItemPosition).second.equals(newList.get(newItemPosition).second);
+			}
+
+			//TODO Override getChangePayload if we end up using ItemAnimator
+		};
+		DiffUtil.DiffResult diffs = DiffUtil.calculateDiff(diffCallback);
+
+		list.clear();
+		list.addAll(newList);
+
+		diffs.dispatchUpdatesTo(this);
+
 	}
 
 
@@ -40,12 +67,12 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	@Override
 	public void onBindViewHolder(@NonNull DirRVAdapter.ViewHolder holder, int position) {
-		holder.getTextView().setText(data.get(position).second);
+		holder.getTextView().setText(list.get(position).second);
 	}
 
 	@Override
 	public int getItemCount() {
-		return data.size();
+		return list.size();
 	}
 
 

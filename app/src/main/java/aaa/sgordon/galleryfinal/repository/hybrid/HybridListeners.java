@@ -1,14 +1,11 @@
 package aaa.sgordon.galleryfinal.repository.hybrid;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class HybridListeners {
-	private final Map<FileChangeListener, List<UUID>> listenerMap = new HashMap<>();
+	private final Set<FileChangeListener> listeners = new HashSet<>();
 	public interface FileChangeListener {
 		void onDataChanged(UUID uuid);
 	}
@@ -25,21 +22,15 @@ public class HybridListeners {
 	}
 
 
-	public void addListener(FileChangeListener listener, UUID... uuids) {
-		listenerMap.put(listener, new ArrayList<>( Arrays.asList(uuids) ));
+	public void addListener(FileChangeListener listener) {
+		listeners.add(listener);
 	}
 	public void removeListener(FileChangeListener listener) {
-		listenerMap.remove(listener);
+		listeners.remove(listener);
 	}
 
 	public void notifyDataChanged(UUID uuid) {
-		for (Map.Entry<FileChangeListener, List<UUID>> entry : listenerMap.entrySet()) {
-			FileChangeListener listener = entry.getKey();
-			List<UUID> associatedUuids = entry.getValue();
-
-			if (associatedUuids.contains(uuid)) {
-				listener.onDataChanged(uuid);
-			}
-		}
+		for(FileChangeListener listener : listeners)
+			listener.onDataChanged(uuid);
 	}
 }

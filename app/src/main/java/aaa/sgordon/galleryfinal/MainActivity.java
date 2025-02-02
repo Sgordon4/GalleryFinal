@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Pair;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,11 +21,18 @@ import androidx.room.Room;
 import com.google.android.material.appbar.AppBarLayout;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
+import aaa.sgordon.galleryfinal.gallery.DirSampleData;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 
@@ -62,21 +70,25 @@ public class MainActivity extends AppCompatActivity {
 		//Go off main thread to setup the database and root dir
 		// Later this will be done in a login activity before this one, so this won't be necessary
 		Thread thread = new Thread(() -> {
-			UUID rootDirectoryUID = setupDatabase();
 
-			//Use the directoryUID returned to start the first fragment
-			Runnable myRunnable = () -> {
-				NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
-						.findFragmentById(R.id.nav_host_fragment);
-				NavController navController = navHostFragment.getNavController();
+			try {
+				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
 
-				Bundle bundle = new Bundle();
-				bundle.putString("directoryUID", rootDirectoryUID.toString());
-				bundle.putString("directoryName", rootDirectoryUID.toString());
-				navController.setGraph(R.navigation.nav_graph, bundle);
-			};
-			Handler mainHandler = new Handler(getMainLooper());
-			mainHandler.post(myRunnable);
+				//Use the directoryUID returned to start the first fragment
+				Runnable myRunnable = () -> {
+					NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+							.findFragmentById(R.id.nav_host_fragment);
+					NavController navController = navHostFragment.getNavController();
+
+					Bundle bundle = new Bundle();
+					bundle.putString("directoryUID", rootDirectoryUID.toString());
+					bundle.putString("directoryName", rootDirectoryUID.toString());
+					navController.setGraph(R.navigation.nav_graph, bundle);
+				};
+				Handler mainHandler = new Handler(getMainLooper());
+				mainHandler.post(myRunnable);
+			}
+			catch (FileNotFoundException e) { throw new RuntimeException(e); }
 		});
 		thread.start();
 
@@ -91,16 +103,5 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
-	private UUID setupDatabase() {
-		LocalDatabase db = Room.inMemoryDatabaseBuilder(getApplicationContext(), LocalDatabase.class).build();
-		LocalRepo.initialize(db, getApplicationContext().getCacheDir().toString());
-		HybridAPI hapi = HybridAPI.getInstance();
 
-		//Fake creating the account
-		UUID currentAccount = UUID.randomUUID();
-		hapi.setAccount(currentAccount);
-
-		//Create the root directory for the new account
-		return hapi.createFile(currentAccount, true, false);
-	}
 }

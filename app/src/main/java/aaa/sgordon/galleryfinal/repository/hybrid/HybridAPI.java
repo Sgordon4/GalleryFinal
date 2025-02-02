@@ -76,8 +76,8 @@ public class HybridAPI {
 	}
 
 
-	public void addListener(HybridListeners.FileChangeListener listener, UUID... uuids) {
-		listeners.addListener(listener, uuids);
+	public void addListener(HybridListeners.FileChangeListener listener) {
+		listeners.addListener(listener);
 	}
 	public void removeListener(HybridListeners.FileChangeListener listener) {
 		listeners.removeListener(listener);

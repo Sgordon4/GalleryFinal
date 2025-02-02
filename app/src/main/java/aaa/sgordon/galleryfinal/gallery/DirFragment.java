@@ -2,7 +2,6 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,32 +11,26 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
-import androidx.navigation.NavDestination;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.leinardi.android.speeddial.SpeedDialView;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
-import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 
 public class DirFragment extends Fragment {
 	private FragmentDirectoryBinding binding;
-
-	UUID thisFragmentUUID = UUID.randomUUID();
 
 	DirectoryViewModel dirViewModel;
 
@@ -80,20 +73,43 @@ public class DirFragment extends Fragment {
 
 
 
+
+
+
+
+		//In the livedata observe, check if reordering and if so apply reorder, then send off to adapter
+		//That way reorder can just send onMove straight to adapter
+		//When reorder finished, lock local, read, apply reorder if needed, and write
+
+
+
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
+		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
-		//TODO When we update the list, if we're dragging an item we need to move that item
-		dirViewModel.data.observe(getViewLifecycleOwner(), adapter::setData);
 
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		recyclerView.addItemDecoration(dividerItemDecoration);
 
+
+
+		//recyclerView.setItemAnimator(null);
+
+
+		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView);
+		ItemTouchHelper reorderHelper = new ItemTouchHelper(reorderCallback);
+		reorderHelper.attachToRecyclerView(recyclerView);
+
+		dirViewModel.flatList.observe(getViewLifecycleOwner(), list -> {
+			list = reorderCallback.applyReorder(list);
+			//adapter.setList(list);
+		});
+
 		if(savedInstanceState != null) {
-			Parcelable rvState = savedInstanceState.getParcelable("rvState_"+thisFragmentUUID.toString());
+			Parcelable rvState = savedInstanceState.getParcelable("rvState");
 			if(rvState != null) {
 				System.out.println("Parcel found: "+rvState);
 				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
@@ -101,52 +117,35 @@ public class DirFragment extends Fragment {
 		}
 
 
-		ItemTouchHelper touchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
-			@Override
-			public boolean isLongPressDragEnabled() {
-				return true;
-			}
-			@Override
-			public boolean isItemViewSwipeEnabled() {
-				return false;
-			}
+		/*
 
-			@Override
-			public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-				int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-				return makeMovementFlags(dragFlags, 0);
-			}
+		Get first visible position
+		Use that to get the view from the layoutmanager, then get top offset
 
-			//TODO When we update the list, if we're dragging an item we need to move that item
-			// to its dragPos in the new list and THEN use DiffUtil, or it will move back
-			@Override
-			public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-				List<Pair<UUID, String>> list = dirViewModel.data.getValue();
-				int fromPosition = viewHolder.getAdapterPosition();
-				int toPosition = target.getAdapterPosition();
-				Collections.swap(list, fromPosition, toPosition);
-				dirViewModel.data.postValue(list);
-				recyclerView.getAdapter().notifyItemMoved(fromPosition, toPosition);
-				return false;
-			}
+		Nah
 
-			@Override
-			public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
 
-			}
-		});
-		//touchHelper.attachToRecyclerView(recyclerView);
+		Find row of dragged item using int division
+		Find topOffset of dragged item after getting view from layoutManager
+
+		 */
+
+
+
 
 
 
 		//Temporary button for testing
 		binding.buttonDrilldown.setOnClickListener(view1 -> {
 			DirFragmentDirections.ActionToDirectoryFragment action = DirFragmentDirections.actionToDirectoryFragment();
-			action.setDirectoryUID(UUID.randomUUID().toString());
+			action.setDirectoryUID(directoryUID.toString());
 			action.setDirectoryName("AAAAAA");
 			NavHostFragment.findNavController(this).navigate(action);
 		});
-		//Button doesn't work now that we've hooked things up to the database, but I'm keeping this code for ref
+		//Button is kinda not useful now that we've hooked things up to the database, but I'm keeping this code for ref
+		//Note: Using this button will make another fragment using the same directoryID, meaning that if we import things
+		// in any of the child frags those things will show up in the previous frags too.
+		//This is NOT a bug, and is actually the intended use case lmao. Pretty neat that it works though.
 		binding.buttonDrilldown.setVisibility(View.GONE);
 
 
@@ -164,18 +163,18 @@ public class DirFragment extends Fragment {
 	@Override
 	public void onDestroyView() {
 		super.onDestroyView();
-		System.out.println("Directory destroying "+thisFragmentUUID.toString());
+		System.out.println("Directory destroying ");
 		binding = null;
 	}
 
 	@Override
 	public void onSaveInstanceState(@NonNull Bundle outState) {
-		System.out.println("Directory Saving: "+thisFragmentUUID.toString());
+		System.out.println("Directory Saving: ");
 
 		//If binding is null, extremely likely this frag is in the backstack and was destroyed (and saved) earlier
 		if(binding != null) {
 			Parcelable listState = binding.recyclerview.getLayoutManager().onSaveInstanceState();
-			outState.putParcelable("rvState_"+thisFragmentUUID.toString(), listState);
+			outState.putParcelable("rvState", listState);
 		}
 
 		super.onSaveInstanceState(outState);
