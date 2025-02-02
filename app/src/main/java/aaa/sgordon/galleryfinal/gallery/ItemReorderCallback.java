@@ -1,35 +1,40 @@
 package aaa.sgordon.galleryfinal.gallery;
 
+import android.annotation.SuppressLint;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.lang.reflect.Array;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	private final RecyclerView recyclerView;
 	private final DirRVAdapter adapter;
 
+	private MotionEvent lastMoveEvent;
 
+	@SuppressLint("ClickableViewAccessibility")
 	public ItemReorderCallback(RecyclerView recyclerView) {
 		this.recyclerView = recyclerView;
 		this.adapter = (DirRVAdapter) recyclerView.getAdapter();
+
+
+		recyclerView.setOnTouchListener((v, event) -> {
+			if (event.getAction() == MotionEvent.ACTION_UP) {
+				v.performClick(); // Ensure accessibility compliance
+			}
+			if (event.getAction() == MotionEvent.ACTION_MOVE) {
+				lastMoveEvent = MotionEvent.obtain(event);
+			}
+			return false; 	//Do not consume the event. We only want to spy.
+		});
 	}
 
 
@@ -41,6 +46,11 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	public boolean isItemViewSwipeEnabled() {
 		return false;
 	}
+	@Override
+	public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+
+	}
+
 
 	@Override
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
@@ -50,8 +60,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 	@Override
 	public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-		//For our case, always true. (e.g. Is this a valid target to move our dragged item over?)
-		return true;
+		return true;	//Is this a valid target to move our dragged item over? For our case, always true.
 	}
 
 	@Override
@@ -64,8 +73,6 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		adapter.notifyItemMoved(fromPos, toPos);
 	}
 	private void shift(List<?> list, int fromPos, int toPos) {
-		System.out.println("Moving item "+list.get(fromPos)+" from "+fromPos+" to "+toPos);
-
 		if(fromPos < toPos)
 			for(int i = fromPos; i < toPos; i++)
 				Collections.swap(list, i, i+1);
@@ -99,135 +106,36 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 
 
-
-	public List<Pair<Path, String>> applyReorder(List<Pair<Path, String>> newList) {
+	//If we have an active drag but new data has come in, we want to put our dragged item in the
+	// best-fit location for continuing the drag
+	public void applyReorder() {
 		//If we're not dragging, do nothing
-		if(!isDragging()) {
-			System.out.println("New data, but we're not dragging. No reorder applied!");
-			adapter.setList(newList);
-			return newList;
-		}
-
-		System.out.println("Applying reorder");
+		if(!isDragging())
+			return;
 
 
+		//Apply the reorder the easy way by leveraging the currently ongoing drag.
+		//This actually turned out to be the most effective method for reordering.
+		//Lost my mind on the way here though...
+		recyclerView.post(() -> {
+			if(lastMoveEvent != null) {
+				long downTime = SystemClock.uptimeMillis();
+				long eventTime = downTime;
 
+				MotionEvent simulatedEvent = MotionEvent.obtain(
+						downTime, eventTime,
+						MotionEvent.ACTION_MOVE,
+						lastMoveEvent.getX(), lastMoveEvent.getY(),
+						lastMoveEvent.getMetaState()
+				);
 
-		int oldVisible = ((LinearLayoutManager) recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
-		System.out.println("OldVisible: "+oldVisible);
-
-		int oldDiff = draggedItemPos - oldVisible;
-		System.out.println("OldDrag at: "+draggedItemPos);
-
-
-
-		Path draggedItem = adapter.list.get(draggedItemPos).first;
-		for(int i = 0; i < newList.size(); i++) {
-			//System.out.println(i+": "+newList.get(i).second);
-			if(newList.get(i).first.equals(draggedItem))
-				draggedItemPos = i;
-		}
-
-
-		List<Pair<Path, String>> oldList = new ArrayList<>(adapter.list);
-
-
-
-		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-			@Override
-			public boolean onPreDraw() {
-				// Remove the listener after capturing the position (avoid unnecessary calls)
-				recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
-
-
-				// Get the LayoutManager (e.g., LinearLayoutManager)
-				LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
-
-				// Get the current first visible item position before animation
-				int newVisible = layoutManager.findFirstVisibleItemPosition();
-				System.out.println("NewVisible: "+newVisible);
-
-				int newDragPos = newVisible + oldDiff;
-				System.out.println("NewDrag at: "+newDragPos);
-
-
-
-
-				shift(adapter.list, draggedItemPos, newDragPos);
-
-				for(int i = Math.min(draggedItemPos, newDragPos); i < Math.max(draggedItemPos, newDragPos); i++) {
-					adapter.notifyItemChanged(i);
-				}
-				//adapter.notifyItemMoved(draggedItemPos, newDragPos);
-
-				//shift(newList, draggedItemPos, newDragPos);
-				//adapter.setList(newList);
-
-				recyclerView.post(() -> {
-					recyclerView.setItemAnimator(new DefaultItemAnimator());
-				});
-
-
-
-
-				draggedItemPos = newDragPos;
-
-
-				// Return true to continue the drawing process
-				return true;
+				recyclerView.onTouchEvent(simulatedEvent);
+				simulatedEvent.recycle(); // Prevent memory leaks
 			}
 		});
-
-
-
-		recyclerView.setItemAnimator(null);
-		adapter.setList(newList);
-
-
-
-
-
-
-		/*
-
-		recyclerView.post(() -> {
-			int newVisible = ((LinearLayoutManager) recyclerView.getLayoutManager()).findFirstVisibleItemPosition();
-			System.out.println("NewVisible: "+newVisible);
-
-			int newDragPos = newVisible + oldDiff;
-			System.out.println("Move to "+newDragPos);
-
-			shift(newList, draggedItemPos, newDragPos);
-			adapter.notifyItemMoved(draggedItemPos, newDragPos);
-			draggedItemPos = newDragPos;
-			//adapter.setList(newList);
-			System.out.println(".");
-			System.out.println(".");
-			System.out.println(".");
-
-		});
-
-
-		 */
-
-
-
-		return newList;
-
-		//If we have an active drag but new data has come in, we want to reorder our dragged item
-		// before it's sent to the adapter for display
-		//throw new RuntimeException("Stub!");
 	}
 
 
-
-
-
-
-	@Override
-	public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-
-	}
 
 
 	public interface ReorderCallback {

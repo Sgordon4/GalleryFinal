@@ -74,19 +74,10 @@ public class DirFragment extends Fragment {
 
 
 
-
-
-
-		//In the livedata observe, check if reordering and if so apply reorder, then send off to adapter
-		//That way reorder can just send onMove straight to adapter
-		//When reorder finished, lock local, read, apply reorder if needed, and write
-
-
-
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
-		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+		//recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+		recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
@@ -96,16 +87,13 @@ public class DirFragment extends Fragment {
 
 
 
-		//recyclerView.setItemAnimator(null);
-
-
 		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView);
 		ItemTouchHelper reorderHelper = new ItemTouchHelper(reorderCallback);
 		reorderHelper.attachToRecyclerView(recyclerView);
 
 		dirViewModel.flatList.observe(getViewLifecycleOwner(), list -> {
-			list = reorderCallback.applyReorder(list);
-			//adapter.setList(list);
+			adapter.setList(list);
+			reorderCallback.applyReorder();
 		});
 
 		if(savedInstanceState != null) {
@@ -115,22 +103,6 @@ public class DirFragment extends Fragment {
 				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
 			}
 		}
-
-
-		/*
-
-		Get first visible position
-		Use that to get the view from the layoutmanager, then get top offset
-
-		Nah
-
-
-		Find row of dragged item using int division
-		Find topOffset of dragged item after getting view from layoutManager
-
-		 */
-
-
 
 
 
