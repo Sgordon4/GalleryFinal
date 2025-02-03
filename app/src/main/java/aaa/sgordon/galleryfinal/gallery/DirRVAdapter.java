@@ -8,7 +8,10 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,9 +22,16 @@ import aaa.sgordon.galleryfinal.R;
 
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
 	public List<Pair<Path, String>> list;
+	public RecyclerView.LayoutManager layoutManager;
 
 	public DirRVAdapter() {
 		list = new ArrayList<>();
+	}
+
+	@Override
+	public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+		super.onAttachedToRecyclerView(recyclerView);
+		this.layoutManager = recyclerView.getLayoutManager();
 	}
 
 	public void setList(List<Pair<Path, String>> newList) {
@@ -70,14 +80,17 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 	public void onBindViewHolder(@NonNull DirRVAdapter.ViewHolder holder, int position) {
 		Pair<Path, String> item = list.get(position);
 
-		//Put in some fancy printing to show the directory structure
-		int depth = item.first.getNameCount()-1;
-		String level = "│   ".repeat(Math.max(0, depth-1));
-		if(depth > 0) {
-			if(Objects.equals(item.first.getFileName().toString(), "END"))
-				level += "└─ ";
-			else
-				level += "├─ ";
+		String level = "";
+		if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
+			//Put in some fancy printing to show the directory structure
+			int depth = item.first.getNameCount()-1;
+			level = "│   ".repeat(Math.max(0, depth-1));
+			if(depth > 0) {
+				if(Objects.equals(item.first.getFileName().toString(), "END"))
+					level += "└─ ";
+				else
+					level += "├─ ";
+			}
 		}
 
 

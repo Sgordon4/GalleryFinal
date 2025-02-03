@@ -178,7 +178,8 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 					//Ad a bookend for the link
 					Path linkEnd = thisFilePath.resolve("END");
-					files.add(new Pair<>(linkEnd, entry.second+" END"));
+					//files.add(new Pair<>(linkEnd, entry.second+" END"));
+					files.add(new Pair<>(linkEnd, "END"));
 				}
 			}
 			catch (FileNotFoundException | ConnectException e) {
