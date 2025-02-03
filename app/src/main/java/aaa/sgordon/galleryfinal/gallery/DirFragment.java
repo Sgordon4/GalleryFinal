@@ -1,6 +1,9 @@
 package aaa.sgordon.galleryfinal.gallery;
 
+import static android.os.Looper.getMainLooper;
+
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -97,7 +100,13 @@ public class DirFragment extends Fragment {
 		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem, toMove) -> {
 			Thread reorderThread = new Thread(() -> {
 				try {
-					dirViewModel.moveFiles(destination, nextItem, toMove);
+					boolean successful = dirViewModel.moveFiles(destination, nextItem, toMove);
+					if(successful) return;
+
+					//If the move was not successful, we want to return the list to how it was before we dragged
+					Runnable myRunnable = () -> adapter.setList(dirViewModel.flatList.getValue());
+					new Handler(getMainLooper()).post(myRunnable);
+
 				} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
 					throw new RuntimeException(e);
 				}

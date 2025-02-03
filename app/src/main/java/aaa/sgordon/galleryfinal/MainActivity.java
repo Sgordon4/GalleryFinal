@@ -70,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
 		//Go off main thread to setup the database and root dir
 		// Later this will be done in a login activity before this one, so this won't be necessary
 		Thread thread = new Thread(() -> {
-
 			try {
 				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
 
@@ -101,7 +100,4 @@ public class MainActivity extends AppCompatActivity {
 		navController.navigate(action, navOptions);
 		 */
 	}
-
-
-
 }

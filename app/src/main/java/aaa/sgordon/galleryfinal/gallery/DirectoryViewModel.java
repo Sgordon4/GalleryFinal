@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -41,6 +43,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class DirectoryViewModel extends AndroidViewModel {
+	private final static String TAG = "Gal.DirVM";
 	private final HybridAPI hAPI;
 	private final UUID currDirUID;
 
@@ -238,23 +241,42 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 
 
-	public void moveFiles(@Nullable Path destination, @Nullable Path nextItem, List<Pair<Path, String>> toMove) throws FileNotFoundException, NotDirectoryException, ContentsNotFoundException, ConnectException {
+	//TODO Cut this up into pieces (this is my last resort)
+	public boolean moveFiles(@Nullable Path destination, @Nullable Path nextItem, @NonNull List<Pair<Path, String>> toMove) throws FileNotFoundException, NotDirectoryException, ContentsNotFoundException, ConnectException {
 		System.out.println("Moving files!");
+		if(toMove.isEmpty()) {
+			Log.w(TAG, "moveFiles was called with an empty toMove list!");
+			return false;
+		}
+
+		toMove = new ArrayList<>(toMove);	//Make sure we can modify the list. If this was created with Arrays.asList it's immutable
 		UUID destinationUID = (destination != null) ? getDirFromPath(destination) : currDirUID;
 
 		//Group each file by its parent directory so we know where to remove them from
-		//TODO Remove any links that are being moved into themselves or into an equivalent link chain
 		Map<UUID, List<UUID>> fileOrigins = new HashMap<>();
-		for(Pair<Path, String> pair : toMove) {
-			Path path = pair.first;
-			UUID parentUID = getDirFromPath(path.getParent());
-			UUID fileUID = UUID.fromString(path.getFileName().toString());
+		Iterator<Pair<Path, String>> iterator = toMove.iterator();
+		while (iterator.hasNext()) {
+			Pair<Path, String> itemToMove = iterator.next();
+			UUID parentUID = getDirFromPath(itemToMove.first.getParent());
+			UUID fileUID = UUID.fromString(itemToMove.first.getFileName().toString());
+
+			if(destination != null && destination.toString().contains(fileUID.toString())) {
+				System.out.println("Not allowed to move links inside themselves");
+				iterator.remove();
+				continue;
+			}
 
 			if(!fileOrigins.containsKey(parentUID))
 				fileOrigins.put(parentUID, new ArrayList<>());
 			fileOrigins.get(parentUID).add(fileUID);
 		}
 		fileOrigins.remove(destinationUID);
+
+
+		if(toMove.isEmpty()) {
+			System.out.println("All files being moved were links being moved inside themselves. Skipping move.");
+			return false;
+		}
 
 
 
@@ -265,10 +287,11 @@ public class DirectoryViewModel extends AndroidViewModel {
 			List<Pair<UUID, String>> dirList = readDir(destinationUID);
 
 			int insertPos = 0;
+			//NextItem is only ever null if we dragged to the end of the Root dir
 			if(nextItem == null || nextItem.getFileName().toString().equals("END"))
 				insertPos = dirList.size();
 			else {
-				//We need to find the nextItem in the list. We will insert the moved file(s) before it
+				//We need to find the nextItem in the list (if it still exists). We will insert the moved file(s) before it
 				for(int i = 0; i < dirList.size(); i++) {
 					if(dirList.get(i).first.toString().equals(nextItem.getFileName().toString())) {
 						insertPos = i;
@@ -298,7 +321,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 			//We should also skip the deletes after this because nothing was moved
 			if(dirList.size() == newList.size() && dirList.equals(newList)) {
 				System.out.println("No items were moved, nothing is being written");
-				return;
+				return true;
 			}
 
 
@@ -315,6 +338,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 
 
+		//Remove all the toMove files from their original directories. We've already excluded any that started in destination.
 		for(UUID parentUID : fileOrigins.keySet()) {
 			List<UUID> filesToRemove = fileOrigins.get(parentUID);
 			try {
@@ -336,6 +360,8 @@ public class DirectoryViewModel extends AndroidViewModel {
 				hAPI.unlockLocal(parentUID);
 			}
 		}
+
+		return true;
 	}
 
 	private UUID getDirFromPath(Path path) throws FileNotFoundException, NotDirectoryException {

@@ -120,16 +120,12 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	//If we have an active drag but new data has come in, we want to put our dragged item in the
 	// best-fit location for continuing the drag
 	public void applyReorder() {
-		//If we're not dragging, do nothing
-		if(!isDragging())
-			return;
-
-
 		//Apply the reorder the easy way by leveraging the currently ongoing drag.
 		//This actually turned out to be the most effective method for reordering.
 		//Lost my mind on the way here though...
-		if(lastMoveEvent != null) {
-			recyclerView.post(() -> {
+		recyclerView.post(() -> {
+			//If we're not dragging, do nothing
+			if(isDragging() && lastMoveEvent != null) {
 				MotionEvent simulatedEvent = MotionEvent.obtain(
 						lastMoveEvent.getDownTime(), SystemClock.uptimeMillis(),
 						MotionEvent.ACTION_MOVE,
@@ -139,8 +135,8 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 				recyclerView.onTouchEvent(simulatedEvent);
 				simulatedEvent.recycle(); // Prevent memory leaks
-			});
-		}
+			}
+		});
 	}
 
 
@@ -159,6 +155,8 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 	public interface ReorderCallback {
 		void onReorderComplete(Path destination, Path nextItem, List<Pair<Path, String>> toMove);
+
+		//List<Pair<Path, String>> getItemsToMove()
 
 		//void cancelDrag();
 
