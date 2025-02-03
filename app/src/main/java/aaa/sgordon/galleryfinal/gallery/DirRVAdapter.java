@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import aaa.sgordon.galleryfinal.R;
 
@@ -67,7 +68,20 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	@Override
 	public void onBindViewHolder(@NonNull DirRVAdapter.ViewHolder holder, int position) {
-		holder.getTextView().setText(list.get(position).second);
+		Pair<Path, String> item = list.get(position);
+
+		//Put in some fancy printing to show the directory structure
+		int depth = item.first.getNameCount()-1;
+		String level = "│   ".repeat(Math.max(0, depth-1));
+		if(depth > 0) {
+			if(Objects.equals(item.first.getFileName().toString(), "END"))
+				level += "└─ ";
+			else
+				level += "├─ ";
+		}
+
+
+		holder.getTextView().setText(level + " " + list.get(position).second);
 	}
 
 	@Override

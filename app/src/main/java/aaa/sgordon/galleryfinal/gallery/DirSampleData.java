@@ -94,10 +94,10 @@ public class DirSampleData {
 
 		//------------------------------------------------------
 
-		//Setup files in Root - Dir 1
-		Pair<UUID, String> r_d1_f1 = new Pair<>(hapi.createFile(currentAccount, false, false), "- D1 file 1");
-		Pair<UUID, String> r_d1_f2 = new Pair<>(hapi.createFile(currentAccount, false, false), "- D1 file 2");
-		Pair<UUID, String> r_d1_f3 = new Pair<>(hapi.createFile(currentAccount, false, false), "- D1 file 3");
+		//Setup files in Root Dir 1
+		Pair<UUID, String> r_d1_f1 = new Pair<>(hapi.createFile(currentAccount, false, false), "D1 file 1");
+		Pair<UUID, String> r_d1_f2 = new Pair<>(hapi.createFile(currentAccount, false, false), "D1 file 2");
+		Pair<UUID, String> r_d1_f3 = new Pair<>(hapi.createFile(currentAccount, false, false), "D1 file 3");
 		List<Pair<UUID, String>> r_d1_List = new ArrayList<>(Arrays.asList(r_d1_f1, r_d1_f2, r_d1_f3));
 
 		//Write the list to dir 1
@@ -112,14 +112,14 @@ public class DirSampleData {
 		//------------------------------------------------------
 
 		//Setup files in sideDir
-		Pair<UUID, String> r_d2_f1 = new Pair<>(hapi.createFile(currentAccount, false, false), "- SideDir file 1");
-		Pair<UUID, String> r_d2_f2 = new Pair<>(hapi.createFile(currentAccount, false, false), "- SideDir file 2");
-		Pair<UUID, String> r_d2_f3 = new Pair<>(hapi.createFile(currentAccount, false, false), "- SideDir file 3");
-		Pair<UUID, String> r_d2_f4 = new Pair<>(hapi.createFile(currentAccount, false, false), "- SideDir file 4");
-		Pair<UUID, String> r_d2_f5 = new Pair<>(hapi.createFile(currentAccount, false, false), "- SideDir file 5");
+		Pair<UUID, String> r_d2_f1 = new Pair<>(hapi.createFile(currentAccount, false, false), "SideDir file 1");
+		Pair<UUID, String> r_d2_f2 = new Pair<>(hapi.createFile(currentAccount, false, false), "SideDir file 2");
+		Pair<UUID, String> r_d2_f3 = new Pair<>(hapi.createFile(currentAccount, false, false), "SideDir file 3");
+		Pair<UUID, String> r_d2_f4 = new Pair<>(hapi.createFile(currentAccount, false, false), "SideDir file 4");
+		Pair<UUID, String> r_d2_f5 = new Pair<>(hapi.createFile(currentAccount, false, false), "SideDir file 5");
 		List<Pair<UUID, String>> sideDir_List = new ArrayList<>(Arrays.asList(r_d2_f1, r_d2_f2, r_d2_f3, r_d2_f4, r_d2_f5));
 
-		Pair<UUID, String> r_l3_again = new Pair<>(r_l3.first, "- SideDir "+r_l3.second+" again");
+		Pair<UUID, String> r_l3_again = new Pair<>(r_l3.first, "SideDir "+r_l3.second+" again");
 		sideDir_List.add(r_l3_again);		//Add a link that links to this dir to test traversal cancel
 
 		//Write the list to sideDir

@@ -321,7 +321,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 			//We should also skip the deletes after this because nothing was moved
 			if(dirList.size() == newList.size() && dirList.equals(newList)) {
 				System.out.println("No items were moved, nothing is being written");
-				return true;
+				return false;
 			}
 
 
