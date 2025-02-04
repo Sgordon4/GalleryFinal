@@ -5,7 +5,6 @@ import static android.os.Looper.getMainLooper;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,8 +18,6 @@ import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,8 +28,6 @@ import com.leinardi.android.speeddial.SpeedDialView;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
@@ -89,11 +84,36 @@ public class DirFragment extends Fragment {
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
 
-		DirRVAdapter adapter = new DirRVAdapter();
+		SelectionController selectionController = new SelectionController(new SelectionController.SelectionCallbacks() {
+			@Override
+			public void selectionStarted(int numSelected) {
+
+			}
+
+			@Override
+			public void selectionStopped() {
+
+			}
+
+			@Override
+			public void numberSelectedChanged(int numSelected) {
+
+			}
+		});
+		DirRVAdapter adapter = new DirRVAdapter(selectionController);
+		selectionController.setAdapter(adapter);
 		recyclerView.setAdapter(adapter);
 
 		//DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		//recyclerView.addItemDecoration(dividerItemDecoration);
+
+		if(savedInstanceState != null) {
+			Parcelable rvState = savedInstanceState.getParcelable("rvState");
+			if(rvState != null) {
+				System.out.println("Parcel found: "+rvState);
+				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
+			}
+		}
 
 
 
@@ -122,13 +142,8 @@ public class DirFragment extends Fragment {
 		});
 
 
-		if(savedInstanceState != null) {
-			Parcelable rvState = savedInstanceState.getParcelable("rvState");
-			if(rvState != null) {
-				System.out.println("Parcel found: "+rvState);
-				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
-			}
-		}
+
+
 
 
 

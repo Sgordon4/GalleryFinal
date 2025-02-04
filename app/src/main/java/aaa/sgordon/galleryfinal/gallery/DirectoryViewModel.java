@@ -243,8 +243,9 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 
 	//TODO Cut this up into pieces (this is my last resort)
-	public boolean moveFiles(@Nullable Path destination, @Nullable Path nextItem, @NonNull List<Pair<Path, String>> toMove) throws FileNotFoundException, NotDirectoryException, ContentsNotFoundException, ConnectException {
-		System.out.println("Moving files!");
+	public boolean moveFiles(@Nullable Path destination, @Nullable Path nextItem, @NonNull List<Pair<Path, String>> toMove)
+			throws FileNotFoundException, NotDirectoryException, ContentsNotFoundException, ConnectException {
+		//System.out.println("Moving files!");
 		if(toMove.isEmpty()) {
 			Log.w(TAG, "moveFiles was called with an empty toMove list!");
 			return false;
@@ -301,7 +302,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 				}
 			}
 
-			System.out.println("Changing "+ Arrays.toString(dirList.toArray()));
+			//System.out.println("Changing "+ Arrays.toString(dirList.toArray()));
 
 			//Convert the list types to match
 			List<Pair<UUID, String>> moveList = toMove.stream().map(pair ->
@@ -316,7 +317,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 			newList.remove(markedIndex);
 			newList.addAll(markedIndex, moveList);
 
-			System.out.println("To       "+ Arrays.toString(newList.toArray()));
+			//System.out.println("To       "+ Arrays.toString(newList.toArray()));
 
 			//If the lists are the same, this means nothing was actually moved, and we should skip the write
 			//We should also skip the deletes after this because nothing was moved
