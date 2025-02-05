@@ -74,11 +74,11 @@ public class DirectoryViewModel extends AndroidViewModel {
 			//If it is in the cache, remove it and update the list
 			directoryCache.remove(uuid);
 
-			//This setup only queues a list update if there is not already one queued.
-			//It will queue one if there is an in-progress update.
+			//This setup only queues a list update if there is not already one queued
+			//It will queue one if there is an in-progress update
 			if(queuedUpdateThread == null) {
-				//During a move operation, the list will update after every directory is changed.
-				//This causes animation flickers, so we want to delay the visual list update just a touch.
+				//During a move operation (usually from reorder), the list will update after every directory change
+				//This causes animation flickers, so we want to delay the visual list update just a touch
 				Thread thread = new Thread(() -> {
 					try { Thread.sleep(30); }
 					catch (InterruptedException e) { throw new RuntimeException(e); }

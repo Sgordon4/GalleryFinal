@@ -155,13 +155,13 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 		//This is set up to allow multiple files to be moved for when we add selection
 		//When we set that up we might also want to check if filenames are the same before sending them off
-		callback.onReorderComplete(destination, nextItem, Collections.singletonList(draggedItem));
+		callback.onReorderComplete(destination, nextItem);
 	}
 
 
 
 	public interface ReorderCallback {
-		void onReorderComplete(Path destination, Path nextItem, List<Pair<Path, String>> toMove);
+		void onReorderComplete(Path destination, Path nextItem);
 
 		//List<Pair<Path, String>> getItemsToMove()
 

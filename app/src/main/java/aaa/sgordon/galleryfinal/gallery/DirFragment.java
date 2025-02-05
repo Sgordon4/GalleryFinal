@@ -106,7 +106,6 @@ public class DirFragment extends Fragment {
 			@Override
 			public void onSelectionChanged(UUID fileUID, boolean isSelected) {
 				//Notify the adapter that the item selection status has been changed so it can change its appearance
-				/**/
 				for(int i = 0; i < adapter.list.size(); i++) {
 					//Get the UUID of this item
 					String UUIDString = adapter.list.get(i).first.getFileName().toString();
@@ -118,10 +117,8 @@ public class DirFragment extends Fragment {
 						RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(i);
 						if(holder != null)
 							holder.itemView.setSelected(isSelected);
-						//adapter.notifyItemChanged(i);
 					}
 				}
-				/**/
 			}
 
 			@Override
@@ -142,8 +139,10 @@ public class DirFragment extends Fragment {
 
 
 
-		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem, toMove) -> {
+		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem) -> {
 			Thread reorderThread = new Thread(() -> {
+				selectionController.
+
 				try {
 					boolean successful = dirViewModel.moveFiles(destination, nextItem, toMove);
 					if(successful) return;
