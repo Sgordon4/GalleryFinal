@@ -5,6 +5,7 @@ import static android.os.Looper.getMainLooper;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,11 @@ import com.leinardi.android.speeddial.SpeedDialView;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
@@ -141,7 +147,25 @@ public class DirFragment extends Fragment {
 
 		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem) -> {
 			Thread reorderThread = new Thread(() -> {
-				selectionController.
+				//Get the selected items from the viewModel's list and pass them along
+				Set<UUID> selectedItems = new HashSet<>(registry.getSelectedList());
+				List<Pair<Path, String>> toMove = new ArrayList<>();
+
+				//Grab the first instance of each selected item in the list
+				List<Pair<Path, String>> currList = dirViewModel.flatList.getValue();
+				for(int i = 0; i < currList.size(); i++) {
+					//Get the UUID of this item
+					String UUIDString = currList.get(i).first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = currList.get(i).first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					if(selectedItems.contains(itemUID)) {
+						toMove.add(currList.get(i));
+						selectedItems.remove(itemUID);
+					}
+				}
+
 
 				try {
 					boolean successful = dirViewModel.moveFiles(destination, nextItem, toMove);

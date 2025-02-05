@@ -26,7 +26,6 @@ public class SelectionController {
 
 	public void startSelecting() {
 		if(isSelecting()) return;
-		System.out.println("Starting selection!");
 
 		registry.clearSelection();
 		selecting = true;
@@ -51,7 +50,6 @@ public class SelectionController {
 	public void selectItem(UUID fileUID) {
 		if(!isSelecting() || registry.isSelected(fileUID)) return;
 
-		System.out.println("Selecting item!");
 		registry.selectItem(fileUID);
 
 		callbacks.onSelectionChanged(fileUID, true);
@@ -59,7 +57,6 @@ public class SelectionController {
 	public void deselectItem(UUID fileUID) {
 		if(!isSelecting() || !registry.isSelected(fileUID)) return;
 
-		System.out.println("Deselecting item!");
 		registry.deselectItem(fileUID);
 
 		callbacks.onSelectionChanged(fileUID, false);
@@ -74,10 +71,22 @@ public class SelectionController {
 	}
 
 
+	public void selectAll(Set<UUID> toSelect) {
+		if (!isSelecting()) return;
+
+		//Remove any that are already selected
+		Set<UUID> selected = registry.getSelectedList();
+		toSelect.removeAll(selected);
+
+		for(UUID item : toSelect)
+			selectItem(item);
+	}
 	public void deselectAll() {
 		if(!isSelecting()) return;
-		registry.clearSelection();
-		//TODO Notify adapter
+
+		Set<UUID> selected = registry.getSelectedList();
+		for(UUID item : selected)
+			deselectItem(item);
 	}
 
 
