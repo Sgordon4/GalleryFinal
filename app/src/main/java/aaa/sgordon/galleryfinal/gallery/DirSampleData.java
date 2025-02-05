@@ -16,6 +16,7 @@ import java.net.ConnectException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +28,58 @@ import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 
 public class DirSampleData {
+
+	public static UUID setupDatabase_Small(Context context) throws FileNotFoundException {
+		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
+		LocalRepo.initialize(db, context.getCacheDir().toString());
+		HybridAPI hapi = HybridAPI.getInstance();
+
+		//Fake creating the account
+		UUID currentAccount = UUID.randomUUID();
+		hapi.setAccount(currentAccount);
+
+		//Create the root directory for the new account
+		UUID root = hapi.createFile(currentAccount, true, false);
+
+		//Setup files in the root directory
+		Pair<UUID, String> r_l1 = new Pair<>(hapi.createFile(currentAccount, true, true), "Root link to dir 1");
+		Pair<UUID, String> r_f1 = new Pair<>(hapi.createFile(currentAccount, false, false), "Root file 1");
+		Pair<UUID, String> r_f2 = new Pair<>(hapi.createFile(currentAccount, false, false), "Root file 2");
+		Pair<UUID, String> r_f3 = new Pair<>(hapi.createFile(currentAccount, false, false), "Root file 3");
+		List<Pair<UUID, String>> rootList = new ArrayList<>(Arrays.asList(r_l1, r_f1, r_f2, r_f3));
+
+		//Write the list to the root directory
+		List<String> rootLines = rootList.stream().map(pair -> pair.first+" "+pair.second)
+				.collect(Collectors.toList());
+		byte[] newContent = String.join("\n", rootLines).getBytes();
+		try {
+			hapi.lockLocal(root);
+			hapi.writeFile(root, newContent, HFile.defaultChecksum);
+		} finally { hapi.unlockLocal(root); }
+
+
+		//Setup files in Root Dir 1
+		Pair<UUID, String> r_d1 = new Pair<>(hapi.createFile(currentAccount, true, false), "Root dir 1");
+		List<Pair<UUID, String>> r_d1_List = new ArrayList<>(Collections.emptyList());
+
+		//Write the list to dir 1
+		List<String> dir1Lines = r_d1_List.stream().map(pair -> pair.first+" "+pair.second)
+				.collect(Collectors.toList());
+		newContent = String.join("\n", dir1Lines).getBytes();
+		try {
+			hapi.lockLocal(r_d1.first);
+			hapi.writeFile(r_d1.first, newContent, HFile.defaultChecksum);
+		} finally { hapi.unlockLocal(r_d1.first); }
+
+
+		//Link r_l1 to r_d1
+		try {
+			hapi.lockLocal(r_l1.first);
+			hapi.writeFile(r_l1.first, r_d1.first.toString().getBytes(), HFile.defaultChecksum);
+		} finally { hapi.unlockLocal(r_l1.first); }
+
+		return root;
+	}
 
 
 	public static UUID setupDatabase(Context context) throws FileNotFoundException {

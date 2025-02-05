@@ -109,12 +109,13 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 		UUID thisFileUID = UUID.fromString(UUIDString);
 		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), thisFileUID);
 
+		/*
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
 			if(motionEvent.getAction() == MotionEvent.ACTION_UP)
 				view.performClick();
 			return gestureDetector.onTouchEvent(motionEvent);
 		});
-
+		 */
 
 		holder.itemView.setSelected( selectionController.isSelected(thisFileUID) );
 
