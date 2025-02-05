@@ -12,7 +12,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
@@ -27,16 +26,18 @@ import aaa.sgordon.galleryfinal.R;
 public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
 	public List<Pair<Path, String>> list;
 	public RecyclerView.LayoutManager layoutManager;
-	private final SelectionController selectionController;
+	private AdapterCallbacks touchCallback;
 
-	public DirRVAdapter(SelectionController controller) {
+	public DirRVAdapter() {
 		list = new ArrayList<>();
-		this.selectionController = controller;
 	}
 	@Override
 	public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
 		super.onAttachedToRecyclerView(recyclerView);
 		this.layoutManager = recyclerView.getLayoutManager();
+	}
+	public void setCallbacks(AdapterCallbacks touchCallback) {
+		this.touchCallback = touchCallback;
 	}
 
 
@@ -107,37 +108,34 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 			UUIDString = list.get(position).first.getParent().getFileName().toString();
 
 		UUID thisFileUID = UUID.fromString(UUIDString);
-		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), thisFileUID);
+		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), holder, thisFileUID);
 
-		/*
+		/**/
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
 			if(motionEvent.getAction() == MotionEvent.ACTION_UP)
 				view.performClick();
 			return gestureDetector.onTouchEvent(motionEvent);
 		});
-		 */
+		/**/
 
-		holder.itemView.setSelected( selectionController.isSelected(thisFileUID) );
+		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
 
 	}
 
-	private GestureDetector makeGestureDetector(@NonNull Context context, @NonNull UUID fileUID) {
+	private GestureDetector makeGestureDetector(@NonNull Context context, @NonNull DirRVAdapter.ViewHolder holder,
+												@NonNull UUID fileUID) {
 		return new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public void onLongPress(@NonNull MotionEvent e) {
-				super.onLongPress(e);
 				System.out.println("Longggggg");
-				selectionController.startSelecting();
-				selectionController.selectItem(fileUID);
-
+				super.onLongPress(e);
+				touchCallback.onLongPress(holder, fileUID);
 			}
 
 			@Override
 			public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
 				System.out.println("Singletapping");
-				if(selectionController.isSelecting())
-					selectionController.toggleSelectItem(fileUID);
-
+				touchCallback.onSingleTap(holder, fileUID);
 				return super.onSingleTapConfirmed(e);
 			}
 		});
@@ -149,6 +147,15 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 	@Override
 	public int getItemCount() {
 		return list.size();
+	}
+
+
+
+	public interface AdapterCallbacks {
+		void onLongPress(DirRVAdapter.ViewHolder holder, UUID fileUID);
+		void onSingleTap(DirRVAdapter.ViewHolder holder, UUID fileUID);
+
+		boolean isItemSelected(UUID fileUID);
 	}
 
 

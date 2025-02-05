@@ -143,21 +143,19 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 
 	public void onDragComplete() {
+		Pair<Path, String> draggedItem = adapter.list.get(draggedItemPos);
 		Path nextItem = draggedItemPos != adapter.list.size() - 1 ? adapter.list.get(draggedItemPos + 1).first : null;
 		Path destination = (nextItem != null) ? nextItem.getParent() : null;
 
-		//This is set up to allow multiple files to be moved for when we add selection
-		//When we set that up we might also want to check if filenames are the same before sending them off
-		callback.onReorderComplete(destination, nextItem, Collections.singletonList(adapter.list.get(draggedItemPos)));
-
-
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
-		Pair<Path, String> draggedItem = adapter.list.get(draggedItemPos);
 		Path newPath = (destination == null) ? draggedItem.first.getFileName() : destination.resolve(draggedItem.first.getFileName());
-		Pair<Path, String> updatedItem = new Pair<>(newPath, draggedItem.second+" ");	//Add a space to force DiffUtil update
-
+		Pair<Path, String> updatedItem = new Pair<>(newPath, draggedItem.second+" ");	//Add a space to force a DiffUtil update
 		if(!newPath.equals(draggedItem.first))
 			adapter.list.set(draggedItemPos, updatedItem);
+
+		//This is set up to allow multiple files to be moved for when we add selection
+		//When we set that up we might also want to check if filenames are the same before sending them off
+		callback.onReorderComplete(destination, nextItem, Collections.singletonList(draggedItem));
 	}
 
 

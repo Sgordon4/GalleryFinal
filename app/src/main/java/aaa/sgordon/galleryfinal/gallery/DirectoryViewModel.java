@@ -53,6 +53,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 	MutableLiveData< List<Pair<Path, String>> > flatList;
 
+	Thread queuedUpdateThread;
 
 
 	public DirectoryViewModel(@NonNull Application application, @NonNull UUID currDirUID) {
@@ -72,27 +73,28 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 			//If it is in the cache, remove it and update the list
 			directoryCache.remove(uuid);
-			try {
-				List<Pair<Path, String>> newList = traverse(currDirUID, new HashSet<>(), Paths.get(""));
-				flatList.postValue(newList);
-			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-				//TODO Actually handle the error. Dir should be on local, but jic
-				throw new RuntimeException(e);
+
+			//This setup only queues a list update if there is not already one queued.
+			//It will queue one if there is an in-progress update.
+			if(queuedUpdateThread == null) {
+				//During a move operation, the list will update after every directory is changed.
+				//This causes animation flickers, so we want to delay the visual list update just a touch.
+				Thread thread = new Thread(() -> {
+					try { Thread.sleep(30); }
+					catch (InterruptedException e) { throw new RuntimeException(e); }
+					this.queuedUpdateThread = null;
+
+					update();
+				});
+				thread.start();
+				queuedUpdateThread = thread;
 			}
 		};
 		hAPI.addListener(fileChangeListener);
 
 
 		//Fetch the directory list and update our livedata
-		Thread updateViaTraverse = new Thread(() -> {
-			try {
-				List<Pair<Path, String>> newList = traverse(currDirUID, new HashSet<>(), Paths.get(""));
-				flatList.postValue(newList);
-			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-				//TODO Actually handle the error. Dir should be on local, but jic
-				throw new RuntimeException(e);
-			}
-		});
+		Thread updateViaTraverse = new Thread(this::update);
 		updateViaTraverse.start();
 
 
@@ -129,6 +131,16 @@ public class DirectoryViewModel extends AndroidViewModel {
 		super.onCleared();
 		if(fileChangeListener != null)
 			hAPI.removeListener(fileChangeListener);
+	}
+
+	private void update() {
+		try {
+			List<Pair<Path, String>> newList = traverse(currDirUID, new HashSet<>(), Paths.get(""));
+			flatList.postValue(newList);
+		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+			//TODO Actually handle the error. Dir should be on local, but jic
+			throw new RuntimeException(e);
+		}
 	}
 
 

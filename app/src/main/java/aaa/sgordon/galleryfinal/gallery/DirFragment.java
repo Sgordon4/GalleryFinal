@@ -77,6 +77,9 @@ public class DirFragment extends Fragment {
 		binding.galleryAppbar.toolbar.setTitle(directoryName);
 
 
+		SelectionController.SelectionRegistry registry = new SelectionController.SelectionRegistry();
+
+
 
 
 		// Recyclerview things:
@@ -84,7 +87,43 @@ public class DirFragment extends Fragment {
 		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
 
-		SelectionController selectionController = new SelectionController(new SelectionController.SelectionCallbacks() {
+		DirRVAdapter adapter = new DirRVAdapter();
+		recyclerView.setAdapter(adapter);
+
+		//DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
+		//recyclerView.addItemDecoration(dividerItemDecoration);
+
+		if(savedInstanceState != null) {
+			Parcelable rvState = savedInstanceState.getParcelable("rvState");
+			if(rvState != null) {
+				System.out.println("Parcel found: "+rvState);
+				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
+			}
+		}
+
+
+		SelectionController selectionController = new SelectionController(registry, new SelectionController.SelectionCallbacks() {
+			@Override
+			public void onSelectionChanged(UUID fileUID, boolean isSelected) {
+				//Notify the adapter that the item selection status has been changed so it can change its appearance
+				/**/
+				for(int i = 0; i < adapter.list.size(); i++) {
+					//Get the UUID of this item
+					String UUIDString = adapter.list.get(i).first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = adapter.list.get(i).first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					if(fileUID.equals(itemUID)) {
+						RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(i);
+						if(holder != null)
+							holder.itemView.setSelected(isSelected);
+						//adapter.notifyItemChanged(i);
+					}
+				}
+				/**/
+			}
+
 			@Override
 			public void selectionStarted(int numSelected) {
 
@@ -100,20 +139,6 @@ public class DirFragment extends Fragment {
 
 			}
 		});
-		DirRVAdapter adapter = new DirRVAdapter(selectionController);
-		selectionController.setAdapter(adapter);
-		recyclerView.setAdapter(adapter);
-
-		//DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
-		//recyclerView.addItemDecoration(dividerItemDecoration);
-
-		if(savedInstanceState != null) {
-			Parcelable rvState = savedInstanceState.getParcelable("rvState");
-			if(rvState != null) {
-				System.out.println("Parcel found: "+rvState);
-				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
-			}
-		}
 
 
 
@@ -141,6 +166,27 @@ public class DirFragment extends Fragment {
 			reorderCallback.applyReorder();
 		});
 
+
+		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
+			@Override
+			public void onLongPress(DirRVAdapter.ViewHolder holder, UUID fileUID) {
+				selectionController.startSelecting();
+				selectionController.selectItem(fileUID);
+
+				reorderHelper.startDrag(holder);
+			}
+
+			@Override
+			public void onSingleTap(DirRVAdapter.ViewHolder holder, UUID fileUID) {
+				if(selectionController.isSelecting())
+					selectionController.toggleSelectItem(fileUID);
+			}
+
+			@Override
+			public boolean isItemSelected(UUID fileUID) {
+				return selectionController.isSelected(fileUID);
+			}
+		});
 
 
 

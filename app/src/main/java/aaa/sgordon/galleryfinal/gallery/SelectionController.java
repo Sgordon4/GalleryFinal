@@ -12,15 +12,11 @@ public class SelectionController {
 	private boolean selecting;
 	private final SelectionRegistry registry;
 	private final SelectionCallbacks callbacks;
-	private DirRVAdapter adapter;
 
-	public SelectionController(@NonNull SelectionCallbacks callbacks) {
+	public SelectionController(@NonNull SelectionRegistry registry, @NonNull SelectionCallbacks callbacks) {
 		this.selecting = false;
-		this.registry = new SelectionRegistry();
+		this.registry = registry;
 		this.callbacks = callbacks;
-	}
-	public void setAdapter(DirRVAdapter adapter) {
-		this.adapter = adapter;
 	}
 
 
@@ -58,16 +54,7 @@ public class SelectionController {
 		System.out.println("Selecting item!");
 		registry.selectItem(fileUID);
 
-		//Notify the adapter that the item selection status has been changed so it can change its appearance
-		for(int i = 0; i < adapter.list.size(); i++) {
-			String UUIDString = adapter.list.get(i).first.getFileName().toString();
-			if(UUIDString.equals("END"))
-				UUIDString = adapter.list.get(i).first.getParent().getFileName().toString();
-			UUID itemUID = UUID.fromString(UUIDString);
-
-			if(fileUID.equals(itemUID))
-				adapter.notifyItemChanged(i);
-		}
+		callbacks.onSelectionChanged(fileUID, true);
 	}
 	public void deselectItem(UUID fileUID) {
 		if(!isSelecting() || !registry.isSelected(fileUID)) return;
@@ -75,16 +62,7 @@ public class SelectionController {
 		System.out.println("Deselecting item!");
 		registry.deselectItem(fileUID);
 
-		//Notify the adapter that the item selection status has been changed so it can change its appearance
-		for(int i = 0; i < adapter.list.size(); i++) {
-			String UUIDString = adapter.list.get(i).first.getFileName().toString();
-			if(UUIDString.equals("END"))
-				UUIDString = adapter.list.get(i).first.getParent().getFileName().toString();
-			UUID itemUID = UUID.fromString(UUIDString);
-
-			if(fileUID.equals(itemUID))
-				adapter.notifyItemChanged(i);
-		}
+		callbacks.onSelectionChanged(fileUID, false);
 	}
 	public void toggleSelectItem(UUID item) {
 		if(!isSelecting()) return;
@@ -106,6 +84,8 @@ public class SelectionController {
 
 
 	public interface SelectionCallbacks {
+		void onSelectionChanged(UUID fileUID, boolean isSelected);
+
 		void selectionStarted(int numSelected);
 		void selectionStopped();
 		void numberSelectedChanged(int numSelected);

@@ -71,8 +71,8 @@ public class MainActivity extends AppCompatActivity {
 		// Later this will be done in a login activity before this one, so this won't be necessary
 		Thread thread = new Thread(() -> {
 			try {
-				//UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
-				UUID rootDirectoryUID = DirSampleData.setupDatabase_Small(getApplicationContext());
+				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
+				//UUID rootDirectoryUID = DirSampleData.setupDatabase_Small(getApplicationContext());
 
 				//Use the directoryUID returned to start the first fragment
 				Runnable myRunnable = () -> {
