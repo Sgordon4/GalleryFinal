@@ -25,7 +25,9 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:layout_collapseMode="pin"
-            app:menu="@menu/gallery_menu_selection"/>
+            app:menu="@menu/gallery_menu_selection"
+            android:visibility="gone"
+            app:navigationIcon="@drawable/icon_arrow_back"/>
 
     </com.google.android.material.appbar.CollapsingToolbarLayout>
 

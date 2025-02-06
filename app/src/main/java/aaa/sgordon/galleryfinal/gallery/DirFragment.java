@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -37,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
+import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
@@ -65,7 +67,9 @@ public class DirFragment extends Fragment {
 		dirViewModel = new ViewModelProvider(this,
 				new DirectoryViewModel.DirectoryViewModelFactory(getActivity().getApplication(), directoryUID))
 				.get(DirectoryViewModel.class);
+		SelectionController.SelectionRegistry registry = dirViewModel.getSelectionRegistry();
 
+		//-----------------------------------------------------------------------------------------
 
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
 		NavController navController = Navigation.findNavController(view);
@@ -82,11 +86,7 @@ public class DirFragment extends Fragment {
 		String directoryName = args.getDirectoryName();
 		binding.galleryAppbar.toolbar.setTitle(directoryName);
 
-
-		SelectionController.SelectionRegistry registry = new SelectionController.SelectionRegistry();
-
-
-
+		//-----------------------------------------------------------------------------------------
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
@@ -107,43 +107,7 @@ public class DirFragment extends Fragment {
 			}
 		}
 
-
-		SelectionController selectionController = new SelectionController(registry, new SelectionController.SelectionCallbacks() {
-			@Override
-			public void onSelectionChanged(UUID fileUID, boolean isSelected) {
-				//Notify the adapter that the item selection status has been changed so it can change its appearance
-				for(int i = 0; i < adapter.list.size(); i++) {
-					//Get the UUID of this item
-					String UUIDString = adapter.list.get(i).first.getFileName().toString();
-					if(UUIDString.equals("END"))
-						UUIDString = adapter.list.get(i).first.getParent().getFileName().toString();
-					UUID itemUID = UUID.fromString(UUIDString);
-
-					if(fileUID.equals(itemUID)) {
-						RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(i);
-						if(holder != null)
-							holder.itemView.setSelected(isSelected);
-					}
-				}
-			}
-
-			@Override
-			public void selectionStarted(int numSelected) {
-
-			}
-
-			@Override
-			public void selectionStopped() {
-
-			}
-
-			@Override
-			public void numberSelectedChanged(int numSelected) {
-
-			}
-		});
-
-
+		//-----------------------------------------------------------------------------------------
 
 		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem) -> {
 			Thread reorderThread = new Thread(() -> {
@@ -185,24 +149,79 @@ public class DirFragment extends Fragment {
 		reorderHelper.attachToRecyclerView(recyclerView);
 
 		dirViewModel.flatList.observe(getViewLifecycleOwner(), list -> {
+			//TODO Unselect any items that are no longer in the list. Prob want to make a registry remove accessibility method
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
 
+		//-----------------------------------------------------------------------------------------
+
+		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
+
+		SelectionController selectionController = new SelectionController(registry, new SelectionController.SelectionCallbacks() {
+			@Override
+			public void onSelectionChanged(UUID fileUID, boolean isSelected) {
+				//For any visible item, update the item selection status to change its appearance
+				//There may be more than one item in the list with the same fileUID due to links
+				//Non-visible items will have their selection status set later when they are bound by the adapter
+				for(int i = 0; i < recyclerView.getChildCount(); i++) {
+					View itemView = recyclerView.getChildAt(i);
+					int adapterPos = recyclerView.getChildAdapterPosition(itemView);
+
+					//Get the UUID of this item
+					String UUIDString = adapter.list.get(adapterPos).first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = adapter.list.get(adapterPos).first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					if(fileUID.equals(itemUID))
+						itemView.setSelected(isSelected);
+				}
+			}
+
+			@Override
+			public void onNumSelectedChanged(int numSelected) {
+				selectionToolbar.setTitle( String.valueOf(numSelected) );
+				if(numSelected == 1)
+					selectionToolbar.getMenu().getItem(1).setEnabled(true);
+				else
+					selectionToolbar.getMenu().getItem(1).setEnabled(false);
+			}
+		});
 
 		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
 			@Override
-			public void onLongPress(DirRVAdapter.ViewHolder holder, UUID fileUID) {
+			public void onLongPress(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
 				selectionController.startSelecting();
 				selectionController.selectItem(fileUID);
 
+				toolbar.setVisibility(View.GONE);
+				selectionToolbar.setVisibility(View.VISIBLE);
+			}
+
+			@Override
+			public void onSingleTapConfirmed(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
+				if(selectionController.isSelecting())
+					selectionController.toggleSelectItem(fileUID);
+			}
+
+			@Override
+			public void onDoubleTap(DirRVAdapter.GalViewHolder holder, UUID fileUID, MotionEvent e) {
 				reorderHelper.startDrag(holder);
 			}
 
 			@Override
-			public void onSingleTap(DirRVAdapter.ViewHolder holder, UUID fileUID) {
-				if(selectionController.isSelecting())
-					selectionController.toggleSelectItem(fileUID);
+			public void onDoubleTapEvent(DirRVAdapter.GalViewHolder holder, UUID fileUID, MotionEvent e) {
+				if(e.getAction() == MotionEvent.ACTION_MOVE) {
+					selectionController.startSelecting();
+					selectionController.selectItem(fileUID);
+
+					toolbar.setVisibility(View.GONE);
+					selectionToolbar.setVisibility(View.VISIBLE);
+
+					reorderHelper.startDrag(holder);
+
+				}
 			}
 
 			@Override
@@ -211,11 +230,44 @@ public class DirFragment extends Fragment {
 			}
 		});
 
+		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
+			//TODO How do we deal with disappearing items that are selected?
+			if(menuItem.getItemId() == R.id.select_all) {
+				System.out.println("Select all!");
+				Set<UUID> toSelect = new HashSet<>();
+				for(Pair<Path, String> item : adapter.list) {
+					String UUIDString = item.first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = item.first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
 
+					toSelect.add(itemUID);
+				}
 
+				//If all items are currently selected, we want to deselect all instead
+				Set<UUID> currSelected = selectionController.getSelectedList();
+				toSelect.removeAll(currSelected);
+				if(!toSelect.isEmpty())
+					selectionController.selectAll(toSelect);
+				else
+					selectionController.deselectAll();
 
+			} else if(menuItem.getItemId() == R.id.edit) {
+				System.out.println("Edit!");
+			} else if(menuItem.getItemId() == R.id.share) {
+				System.out.println("Share!");
+			}
+			return false;
+		});
 
+		selectionToolbar.setNavigationOnClickListener(view2 -> {
+			toolbar.setVisibility(View.VISIBLE);
+			selectionToolbar.setVisibility(View.GONE);
 
+			selectionController.stopSelecting();
+		});
+
+		//-----------------------------------------------------------------------------------------
 
 		//Temporary button for testing
 		binding.buttonDrilldown.setOnClickListener(view1 -> {

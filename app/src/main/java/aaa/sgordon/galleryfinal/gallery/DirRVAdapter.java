@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 
-public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> {
+public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolder> {
 	public List<Pair<Path, String>> list;
 	public RecyclerView.LayoutManager layoutManager;
 	private AdapterCallbacks touchCallback;
@@ -76,15 +76,15 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	@NonNull
 	@Override
-	public DirRVAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+	public GalViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 		View view = LayoutInflater.from(parent.getContext())
 				.inflate(R.layout.directory_row_item, parent, false);
 
-		return new ViewHolder(view);
+		return new GalViewHolder(view);
 	}
 
 	@Override
-	public void onBindViewHolder(@NonNull DirRVAdapter.ViewHolder holder, int position) {
+	public void onBindViewHolder(@NonNull GalViewHolder holder, int position) {
 		Pair<Path, String> item = list.get(position);
 
 		String level = "";
@@ -106,8 +106,10 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 		String UUIDString = list.get(position).first.getFileName().toString();
 		if(UUIDString.equals("END"))
 			UUIDString = list.get(position).first.getParent().getFileName().toString();
-
 		UUID thisFileUID = UUID.fromString(UUIDString);
+
+		holder.fileUID = thisFileUID;
+
 		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), holder, thisFileUID);
 
 		/**/
@@ -122,7 +124,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	}
 
-	private GestureDetector makeGestureDetector(@NonNull Context context, @NonNull DirRVAdapter.ViewHolder holder,
+	private GestureDetector makeGestureDetector(@NonNull Context context, @NonNull GalViewHolder holder,
 												@NonNull UUID fileUID) {
 		return new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 			@Override
@@ -135,8 +137,20 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 			@Override
 			public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
 				System.out.println("Singletapping");
-				touchCallback.onSingleTap(holder, fileUID);
-				return super.onSingleTapConfirmed(e);
+				touchCallback.onSingleTapConfirmed(holder, fileUID);
+				return true;
+			}
+
+			@Override
+			public boolean onDoubleTap(@NonNull MotionEvent e) {
+				System.out.println("Doubling");
+				touchCallback.onDoubleTap(holder, fileUID);
+				return true;
+			}
+
+			@Override
+			public boolean onDown(@NonNull MotionEvent e) {
+				return true;
 			}
 		});
 	}
@@ -152,8 +166,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 
 	public interface AdapterCallbacks {
-		void onLongPress(DirRVAdapter.ViewHolder holder, UUID fileUID);
-		void onSingleTap(DirRVAdapter.ViewHolder holder, UUID fileUID);
+		void onLongPress(GalViewHolder holder, UUID fileUID);
+		void onSingleTapConfirmed(GalViewHolder holder, UUID fileUID);
+		void onDoubleTap(GalViewHolder holder, UUID fileUID);
 
 		boolean isItemSelected(UUID fileUID);
 	}
@@ -161,23 +176,18 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.ViewHolder> 
 
 	//---------------------------------------------------------------------------------------------
 
-	public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+	public static class GalViewHolder extends RecyclerView.ViewHolder {
+		private UUID fileUID;
 		private final TextView textView;
 
-		public ViewHolder(@NonNull View itemView) {
+		public GalViewHolder(@NonNull View itemView) {
 			super(itemView);
 
 			textView = itemView.findViewById(R.id.textView);
-			itemView.setOnClickListener(this);
 		}
 
 		public TextView getTextView() {
 			return textView;
-		}
-
-		@Override
-		public void onClick(View view) {
-			//System.out.println("Clicking "+getAdapterPosition());
 		}
 	}
 }

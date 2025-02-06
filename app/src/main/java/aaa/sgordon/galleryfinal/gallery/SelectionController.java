@@ -33,8 +33,8 @@ public class SelectionController {
 	public void stopSelecting() {
 		if(!isSelecting()) return;
 
+		deselectAll();
 		selecting = false;
-		registry.clearSelection();
 	}
 
 
@@ -45,6 +45,9 @@ public class SelectionController {
 	public boolean isSelected(UUID item) {
 		return isSelecting() && registry.isSelected(item);
 	}
+	public Set<UUID> getSelectedList() {
+		return isSelecting() ? registry.getSelectedList() : new HashSet<>();
+	}
 
 
 	public void selectItem(UUID fileUID) {
@@ -53,6 +56,7 @@ public class SelectionController {
 		registry.selectItem(fileUID);
 
 		callbacks.onSelectionChanged(fileUID, true);
+		callbacks.onNumSelectedChanged(registry.getNumSelected());
 	}
 	public void deselectItem(UUID fileUID) {
 		if(!isSelecting() || !registry.isSelected(fileUID)) return;
@@ -60,6 +64,7 @@ public class SelectionController {
 		registry.deselectItem(fileUID);
 
 		callbacks.onSelectionChanged(fileUID, false);
+		callbacks.onNumSelectedChanged(registry.getNumSelected());
 	}
 	public void toggleSelectItem(UUID item) {
 		if(!isSelecting()) return;
@@ -84,9 +89,10 @@ public class SelectionController {
 	public void deselectAll() {
 		if(!isSelecting()) return;
 
-		Set<UUID> selected = registry.getSelectedList();
+		Set<UUID> selected = new HashSet<>(registry.getSelectedList());
 		for(UUID item : selected)
 			deselectItem(item);
+		registry.clearSelection();
 	}
 
 
@@ -94,10 +100,7 @@ public class SelectionController {
 
 	public interface SelectionCallbacks {
 		void onSelectionChanged(UUID fileUID, boolean isSelected);
-
-		void selectionStarted(int numSelected);
-		void selectionStopped();
-		void numberSelectedChanged(int numSelected);
+		void onNumSelectedChanged(int numSelected);
 	}
 
 	public static class SelectionRegistry {

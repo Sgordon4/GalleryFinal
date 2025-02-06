@@ -47,17 +47,20 @@ public class DirectoryViewModel extends AndroidViewModel {
 	private final HybridAPI hAPI;
 	private final UUID currDirUID;
 
+	private final SelectionController.SelectionRegistry selectionRegistry;
+
 	private final HybridListeners.FileChangeListener fileChangeListener;
 	private final Map<UUID, List<Pair<UUID, String>>> directoryCache = new HashMap<>();
 	private final Map<UUID, UUID> linkCache = new HashMap<>();
 
-	MutableLiveData< List<Pair<Path, String>> > flatList;
-
 	Thread queuedUpdateThread;
+	MutableLiveData< List<Pair<Path, String>> > flatList;
 
 
 	public DirectoryViewModel(@NonNull Application application, @NonNull UUID currDirUID) {
 		super(application);
+		this.selectionRegistry = new SelectionController.SelectionRegistry();
+
 		this.currDirUID = currDirUID;
 		this.flatList = new MutableLiveData<>();
 		flatList.setValue(new ArrayList<>());
@@ -143,6 +146,9 @@ public class DirectoryViewModel extends AndroidViewModel {
 		}
 	}
 
+	public SelectionController.SelectionRegistry getSelectionRegistry() {
+		return selectionRegistry;
+	}
 
 
 	public List<Pair<Path, String>> traverse(UUID dirUID, Set<UUID> visited, Path currPath)

@@ -13,9 +13,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
-
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	private final RecyclerView recyclerView;
@@ -45,9 +42,10 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	}
 
 
+	//Drag will be manually triggered upon a double tap drag by our gestureDetector callbacks in DirFragment
 	@Override
 	public boolean isLongPressDragEnabled() {
-		return true;
+		return false;
 	}
 	@Override
 	public boolean isItemViewSwipeEnabled() {
@@ -153,8 +151,8 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		if(!newPath.equals(draggedItem.first))
 			adapter.list.set(draggedItemPos, updatedItem);
 
-		//This is set up to allow multiple files to be moved for when we add selection
-		//When we set that up we might also want to check if filenames are the same before sending them off
+		System.out.println("OWA OWA");
+
 		callback.onReorderComplete(destination, nextItem);
 	}
 
@@ -162,14 +160,5 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 	public interface ReorderCallback {
 		void onReorderComplete(Path destination, Path nextItem);
-
-		//List<Pair<Path, String>> getItemsToMove()
-
-		//void cancelDrag();
-
-		//void onRowMoved(int fromPosition, int toPosition);
-		//void onRowSelected(RecyclerView.ViewHolder myViewHolder);
-		//void onRowClear(RecyclerView.ViewHolder myViewHolder);
-
 	}
 }
