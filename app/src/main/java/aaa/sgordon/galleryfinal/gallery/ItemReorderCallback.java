@@ -28,18 +28,14 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		this.adapter = (DirRVAdapter) recyclerView.getAdapter();
 
 		this.callback = callback;
-
-
-		recyclerView.setOnTouchListener((v, event) -> {
-			if (event.getAction() == MotionEvent.ACTION_UP) {
-				v.performClick(); // Ensure accessibility compliance
-			}
-			if (event.getAction() == MotionEvent.ACTION_MOVE) {
-				lastMoveEvent = MotionEvent.obtain(event);
-			}
-			return false; 	//Do not consume the event. We only want to spy.
-		});
 	}
+
+	public void onMotionEvent(MotionEvent event) {
+		System.out.println("Motioning in reorder");
+		if (event.getAction() == MotionEvent.ACTION_MOVE)
+			lastMoveEvent = MotionEvent.obtain(event);
+	}
+
 
 
 	//Drag will be manually triggered upon a double tap drag by our gestureDetector callbacks in DirFragment

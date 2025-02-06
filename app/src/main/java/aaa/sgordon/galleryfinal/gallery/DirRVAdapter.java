@@ -128,28 +128,33 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 												@NonNull UUID fileUID) {
 		return new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 			@Override
-			public void onLongPress(@NonNull MotionEvent e) {
-				System.out.println("Longggggg");
-				super.onLongPress(e);
-				touchCallback.onLongPress(holder, fileUID);
-			}
-
-			@Override
 			public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
 				System.out.println("Singletapping");
 				touchCallback.onSingleTapConfirmed(holder, fileUID);
 				return true;
 			}
 
+			private boolean isDoubleTapInProgress = false;
+			@Override
+			public void onLongPress(@NonNull MotionEvent e) {
+				if (!isDoubleTapInProgress) {
+					System.out.println("Longggggg");
+					super.onLongPress(e);
+					touchCallback.onLongPress(holder, fileUID);
+				}
+			}
+
 			@Override
 			public boolean onDoubleTap(@NonNull MotionEvent e) {
 				System.out.println("Doubling");
+				isDoubleTapInProgress = true;
 				touchCallback.onDoubleTap(holder, fileUID);
 				return true;
 			}
 
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
+				isDoubleTapInProgress = false;
 				return true;
 			}
 		});

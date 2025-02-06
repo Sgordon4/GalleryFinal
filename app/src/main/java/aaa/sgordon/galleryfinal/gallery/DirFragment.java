@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import static android.os.Looper.getMainLooper;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -54,6 +55,7 @@ public class DirFragment extends Fragment {
 		return binding.getRoot();
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
@@ -192,6 +194,7 @@ public class DirFragment extends Fragment {
 		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
 			@Override
 			public void onLongPress(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
+				System.out.println("Superlong");
 				selectionController.startSelecting();
 				selectionController.selectItem(fileUID);
 
@@ -206,10 +209,11 @@ public class DirFragment extends Fragment {
 			}
 
 			@Override
-			public void onDoubleTap(DirRVAdapter.GalViewHolder holder, UUID fileUID, MotionEvent e) {
+			public void onDoubleTap(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
 				reorderHelper.startDrag(holder);
 			}
 
+			/*
 			@Override
 			public void onDoubleTapEvent(DirRVAdapter.GalViewHolder holder, UUID fileUID, MotionEvent e) {
 				if(e.getAction() == MotionEvent.ACTION_MOVE) {
@@ -223,6 +227,8 @@ public class DirFragment extends Fragment {
 
 				}
 			}
+
+			 */
 
 			@Override
 			public boolean isItemSelected(UUID fileUID) {
@@ -265,6 +271,23 @@ public class DirFragment extends Fragment {
 			selectionToolbar.setVisibility(View.GONE);
 
 			selectionController.stopSelecting();
+		});
+
+		//-----------------------------------------------------------------------------------------
+
+		recyclerView.setOnTouchListener((v, event) -> {
+			System.out.println("Inside main");
+			if(event.getAction() == MotionEvent.ACTION_UP)
+				v.performClick(); // Ensure accessibility compliance
+
+			if(reorderCallback.isDragging())
+				reorderCallback.onMotionEvent(event);
+
+			View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+			int pos = recyclerView.getChildAdapterPosition(child);
+			System.out.println("Listitem: "+adapter.list.get(pos).second);
+
+			return false; 	//Do not consume the event. We only want to spy.
 		});
 
 		//-----------------------------------------------------------------------------------------
