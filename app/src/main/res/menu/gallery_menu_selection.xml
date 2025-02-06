@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+
+    <item
+        android:id="@+id/select_all"
+        android:orderInCategory="1"
+        android:title="Select All"
+        android:icon="@drawable/icon_select_all"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/edit"
+        android:orderInCategory="2"
+        android:title="Edit Item"
+        android:icon="@drawable/icon_pencil_outline"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/share"
+        android:orderInCategory="3"
+        android:title="Share"
+        android:icon="@drawable/icon_share"
+        app:showAsAction="ifRoom" />
+</menu>

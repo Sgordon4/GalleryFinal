@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <include android:id="@+id/gallery_appbar" layout="@layout/appbar" />
+        <include android:id="@+id/gallery_appbar" layout="@layout/appbar_gallery" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview"
@@ -27,7 +27,7 @@
             android:layout_gravity="bottom|end"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
-            app:sdMainFabClosedSrc="@drawable/add_icon" />
+            app:sdMainFabClosedSrc="@drawable/icon_add" />
         <!-- Not using because we manually hide/show in an onScroll listener -->
         <!-- app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" -->
 
