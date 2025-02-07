@@ -147,7 +147,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 			}
 		});
 	}
-	
+
 
 	@Override
 	public int getItemCount() {

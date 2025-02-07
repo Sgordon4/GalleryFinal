@@ -206,8 +206,6 @@ public class DirFragment extends Fragment {
 
 					toolbar.setVisibility(View.GONE);
 					selectionToolbar.setVisibility(View.VISIBLE);
-
-					reorderHelper.startDrag(holder);
 				}
 			}
 
@@ -228,24 +226,9 @@ public class DirFragment extends Fragment {
 
 				toolbar.setVisibility(View.GONE);
 				selectionToolbar.setVisibility(View.VISIBLE);
+
+				reorderHelper.startDrag(holder);
 			}
-
-			/*
-			@Override
-			public void onDoubleTapEvent(DirRVAdapter.GalViewHolder holder, UUID fileUID, MotionEvent e) {
-				if(e.getAction() == MotionEvent.ACTION_MOVE) {
-					selectionController.startSelecting();
-					selectionController.selectItem(fileUID);
-
-					toolbar.setVisibility(View.GONE);
-					selectionToolbar.setVisibility(View.VISIBLE);
-
-					reorderHelper.startDrag(holder);
-
-				}
-			}
-
-			 */
 
 			@Override
 			public boolean isItemSelected(UUID fileUID) {
@@ -299,9 +282,14 @@ public class DirFragment extends Fragment {
 			if(reorderCallback.isDragging())
 				reorderCallback.onMotionEvent(event);
 
-			//View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
-			//int pos = recyclerView.getChildAdapterPosition(child);
-			//Pair<Path, String> item = adapter.list.get(pos);
+			View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+			if(child != null) {
+				int pos = recyclerView.getChildAdapterPosition(child);
+				Pair<Path, String> item = adapter.list.get(pos);
+
+				
+			}
+
 
 			return false; 	//Do not consume the event. We only want to spy.
 		});
