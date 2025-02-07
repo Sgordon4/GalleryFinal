@@ -95,6 +95,10 @@ public class SelectionController {
 
 
 
+
+
+
+
 	public interface SelectionCallbacks {
 		void onSelectionChanged(UUID fileUID, boolean isSelected);
 		void onNumSelectedChanged(int numSelected);

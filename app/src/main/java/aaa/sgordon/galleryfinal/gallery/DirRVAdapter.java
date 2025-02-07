@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,6 +44,10 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 	}
 
 
+	@Override
+	public int getItemCount() {
+		return list.size();
+	}
 	public void setList(List<Pair<Path, String>> newList) {
 		//Calculate the differences between the current list and the new one
 		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
@@ -114,56 +119,19 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 
 		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
 
-
-		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), holder, thisFileUID);
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
+			System.out.println("At the bottom...");
 			if(motionEvent.getAction() == MotionEvent.ACTION_UP)
 				view.performClick();
-			return gestureDetector.onTouchEvent(motionEvent);
+
+			return touchCallback.onHolderMotionEvent(thisFileUID, holder, motionEvent);
 		});
 	}
-
-	private GestureDetector makeGestureDetector(@NonNull Context context, @NonNull GalViewHolder holder,
-												@NonNull UUID fileUID) {
-		return new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
-			@Override
-			public void onLongPress(@NonNull MotionEvent e) {
-				touchCallback.onLongPress(holder, fileUID);
-				super.onLongPress(e);
-			}
-			@Override
-			public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-				touchCallback.onSingleTapConfirmed(holder, fileUID);
-				return true;
-			}
-			@Override
-			public boolean onDoubleTap(@NonNull MotionEvent e) {
-				System.out.println("Doubling with "+e.getAction());
-				touchCallback.onDoubleTap(holder, fileUID);
-				return true;
-			}
-			@Override
-			public boolean onDown(@NonNull MotionEvent e) {
-				System.out.println("Downs");
-				return true;
-			}
-		});
-	}
-
-
-	@Override
-	public int getItemCount() {
-		return list.size();
-	}
-
 
 
 	public interface AdapterCallbacks {
-		void onLongPress(GalViewHolder holder, UUID fileUID);
-		void onSingleTapConfirmed(GalViewHolder holder, UUID fileUID);
-		void onDoubleTap(GalViewHolder holder, UUID fileUID);
-
 		boolean isItemSelected(UUID fileUID);
+		boolean onHolderMotionEvent(UUID fileUID, GalViewHolder holder, MotionEvent event);
 	}
 
 

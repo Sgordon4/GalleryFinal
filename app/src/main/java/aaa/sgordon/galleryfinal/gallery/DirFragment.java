@@ -5,9 +5,9 @@ import static android.os.Looper.getMainLooper;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Parcelable;
 import android.util.Pair;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -192,49 +192,134 @@ public class DirFragment extends Fragment {
 			}
 		});
 
-		Handler handler = new Handler(Looper.getMainLooper());
+
+
+
+
+		recyclerView.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
+			@Override
+			public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+				//System.out.println("Intercepting");
+				return false;
+				//return isDragSelecting || reorderCallback.isDragging();
+			}
+			@Override
+			public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
+				System.out.println(e.getX()+"::"+e.getY());
+				if(reorderCallback.isDragging())
+					reorderCallback.onMotionEvent(e);
+
+				if(e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL)
+					isDragSelecting = false;
+			}
+
+			@Override
+			public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+				System.out.println("REQUESTING!!!!");
+				super.onRequestDisallowInterceptTouchEvent(disallowIntercept);
+			}
+		});
+
+		/*
+		recyclerView.setOnTouchListener((v, event) -> {
+			if(event.getAction() == MotionEvent.ACTION_UP)
+				v.performClick(); // Ensure accessibility compliance
+
+
+
+
+
+
+			View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+			if(child != null) {
+				int pos = recyclerView.getChildAdapterPosition(child);
+				Pair<Path, String> item = adapter.list.get(pos);
+
+
+			}
+
+
+			return false; 	//Do not consume the event. We only want to spy.
+		});
+		 */
+
+
+
+
+
+
 
 		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
-			boolean isDoubleTapInProgress = false;
-
-			@Override
-			public void onSingleTapConfirmed(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				if(selectionController.isSelecting())
-					selectionController.toggleSelectItem(fileUID);
-			}
-			@Override
-			public void onDoubleTap(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				isDoubleTapInProgress = true;
-				handler.postDelayed(() -> {
-					isDoubleTapInProgress = false;
-					System.out.println("AAAAAAAAAAAAAAA");
-				}, 300);
-			}
-
-			@Override
-			public void onLongPress(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				selectionController.startSelecting();
-				selectionController.selectItem(fileUID);
-
-				toolbar.setVisibility(View.GONE);
-				selectionToolbar.setVisibility(View.VISIBLE);
-
-				if(isDoubleTapInProgress) {
-					System.out.println("Double longpress");
-					//DoubleTap LongPress triggers a reorder
-					reorderHelper.startDrag(holder);
-				}
-				else {
-					//SingleTap LongPress triggers a dragging selection
-					System.out.println("Single longpress");
-				}
-			}
-
-
 			@Override
 			public boolean isItemSelected(UUID fileUID) {
 				return selectionController.isSelected(fileUID);
 			}
+
+
+			@Override
+			public boolean onHolderMotionEvent(UUID fileUID, DirRVAdapter.GalViewHolder holder, MotionEvent event) {
+				//System.out.println("Inside: "+event.getAction());
+				if(event.getAction() == MotionEvent.ACTION_DOWN) {
+					this.fileUID = fileUID;
+					this.holder = holder;
+				}
+				else if(event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
+					System.out.println("YASSSSS");
+					isDoubleTapInProgress = false;
+				}
+
+
+				detector.onTouchEvent(event);
+				return false;
+			}
+
+			UUID fileUID = null;
+			DirRVAdapter.GalViewHolder holder = null;
+			boolean isDoubleTapInProgress = false;
+
+			GestureDetector detector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+				@Override
+				public void onLongPress(@NonNull MotionEvent e) {
+					selectionController.startSelecting();
+					selectionController.selectItem(fileUID);
+
+					toolbar.setVisibility(View.GONE);
+					selectionToolbar.setVisibility(View.VISIBLE);
+
+					if(isDoubleTapInProgress) {
+						System.out.println("Double longpress");
+						//DoubleTap LongPress triggers a reorder
+						reorderHelper.startDrag(holder);
+					}
+					else {
+						//SingleTap LongPress triggers a dragging selection
+						System.out.println("Single longpress");
+						isDragSelecting = true;
+					}
+				}
+
+				@Override
+				public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+					if(selectionController.isSelecting())
+						selectionController.toggleSelectItem(fileUID);
+					return false;
+				}
+
+				@Override
+				public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
+					System.out.println("Doubling");
+					if(e.getAction() == MotionEvent.ACTION_DOWN)
+						isDoubleTapInProgress = true;
+
+					System.out.println("OOOgha: "+e.getAction());
+					return true;
+				}
+
+				@Override
+				public boolean onDown(@NonNull MotionEvent e) {
+					return true;
+				}
+			});
 		});
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
@@ -276,27 +361,6 @@ public class DirFragment extends Fragment {
 
 		//-----------------------------------------------------------------------------------------
 
-		recyclerView.setOnTouchListener((v, event) -> {
-			if(event.getAction() == MotionEvent.ACTION_UP)
-				v.performClick(); // Ensure accessibility compliance
-
-			if(reorderCallback.isDragging())
-				reorderCallback.onMotionEvent(event);
-
-			View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
-			if(child != null) {
-				int pos = recyclerView.getChildAdapterPosition(child);
-				Pair<Path, String> item = adapter.list.get(pos);
-
-				
-			}
-
-
-			return false; 	//Do not consume the event. We only want to spy.
-		});
-
-		//-----------------------------------------------------------------------------------------
-
 		//Temporary button for testing
 		binding.buttonDrilldown.setOnClickListener(view1 -> {
 			DirFragmentDirections.ActionToDirectoryFragment action = DirFragmentDirections.actionToDirectoryFragment();
@@ -321,6 +385,8 @@ public class DirFragment extends Fragment {
 			}
 		});
 	}
+
+	boolean isDragSelecting = false;
 
 	@Override
 	public void onDestroyView() {
