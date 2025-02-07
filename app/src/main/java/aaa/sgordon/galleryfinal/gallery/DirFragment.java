@@ -5,6 +5,7 @@ import static android.os.Looper.getMainLooper;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -47,6 +48,8 @@ public class DirFragment extends Fragment {
 	private FragmentDirectoryBinding binding;
 
 	DirectoryViewModel dirViewModel;
+
+	boolean isDoubleTapInProgress = false;
 
 
 	@Override
@@ -191,15 +194,21 @@ public class DirFragment extends Fragment {
 			}
 		});
 
+		Handler handler = new Handler(Looper.getMainLooper());
+
 		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
 			@Override
 			public void onLongPress(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				System.out.println("Superlong");
-				selectionController.startSelecting();
-				selectionController.selectItem(fileUID);
+				if (!isDoubleTapInProgress) {
+					System.out.println("Superlong");
+					selectionController.startSelecting();
+					selectionController.selectItem(fileUID);
 
-				toolbar.setVisibility(View.GONE);
-				selectionToolbar.setVisibility(View.VISIBLE);
+					toolbar.setVisibility(View.GONE);
+					selectionToolbar.setVisibility(View.VISIBLE);
+
+					reorderHelper.startDrag(holder);
+				}
 			}
 
 			@Override
@@ -210,7 +219,15 @@ public class DirFragment extends Fragment {
 
 			@Override
 			public void onDoubleTap(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				reorderHelper.startDrag(holder);
+				//Prevents longPress from triggering, since we want to do different things when double tapping
+				isDoubleTapInProgress = true;
+				handler.postDelayed(() -> isDoubleTapInProgress = false, 300);
+
+				selectionController.startSelecting();
+				selectionController.selectItem(fileUID);
+
+				toolbar.setVisibility(View.GONE);
+				selectionToolbar.setVisibility(View.VISIBLE);
 			}
 
 			/*
@@ -276,16 +293,15 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 		recyclerView.setOnTouchListener((v, event) -> {
-			System.out.println("Inside main");
 			if(event.getAction() == MotionEvent.ACTION_UP)
 				v.performClick(); // Ensure accessibility compliance
 
 			if(reorderCallback.isDragging())
 				reorderCallback.onMotionEvent(event);
 
-			View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
-			int pos = recyclerView.getChildAdapterPosition(child);
-			System.out.println("Listitem: "+adapter.list.get(pos).second);
+			//View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+			//int pos = recyclerView.getChildAdapterPosition(child);
+			//Pair<Path, String> item = adapter.list.get(pos);
 
 			return false; 	//Do not consume the event. We only want to spy.
 		});

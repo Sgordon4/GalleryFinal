@@ -31,7 +31,6 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	}
 
 	public void onMotionEvent(MotionEvent event) {
-		System.out.println("Motioning in reorder");
 		if (event.getAction() == MotionEvent.ACTION_MOVE)
 			lastMoveEvent = MotionEvent.obtain(event);
 	}

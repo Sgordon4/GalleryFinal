@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -110,58 +112,42 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 
 		holder.fileUID = thisFileUID;
 
-		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), holder, thisFileUID);
+		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
 
-		/**/
+
+		GestureDetector gestureDetector = makeGestureDetector(holder.itemView.getContext(), holder, thisFileUID);
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
 			if(motionEvent.getAction() == MotionEvent.ACTION_UP)
 				view.performClick();
 			return gestureDetector.onTouchEvent(motionEvent);
 		});
-		/**/
-
-		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
-
 	}
 
 	private GestureDetector makeGestureDetector(@NonNull Context context, @NonNull GalViewHolder holder,
 												@NonNull UUID fileUID) {
 		return new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 			@Override
+			public void onLongPress(@NonNull MotionEvent e) {
+				touchCallback.onLongPress(holder, fileUID);
+				super.onLongPress(e);
+			}
+			@Override
 			public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-				System.out.println("Singletapping");
 				touchCallback.onSingleTapConfirmed(holder, fileUID);
 				return true;
 			}
-
-			private boolean isDoubleTapInProgress = false;
-			@Override
-			public void onLongPress(@NonNull MotionEvent e) {
-				if (!isDoubleTapInProgress) {
-					System.out.println("Longggggg");
-					super.onLongPress(e);
-					touchCallback.onLongPress(holder, fileUID);
-				}
-			}
-
 			@Override
 			public boolean onDoubleTap(@NonNull MotionEvent e) {
-				System.out.println("Doubling");
-				isDoubleTapInProgress = true;
 				touchCallback.onDoubleTap(holder, fileUID);
 				return true;
 			}
-
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
-				isDoubleTapInProgress = false;
 				return true;
 			}
 		});
 	}
-
-
-
+	
 
 	@Override
 	public int getItemCount() {
