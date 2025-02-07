@@ -8,33 +8,30 @@ import java.util.Set;
 import java.util.UUID;
 
 public class SelectionController {
-
-	private boolean selecting;
 	private final SelectionRegistry registry;
 	private final SelectionCallbacks callbacks;
 
 	public SelectionController(@NonNull SelectionRegistry registry, @NonNull SelectionCallbacks callbacks) {
-		this.selecting = false;
 		this.registry = registry;
 		this.callbacks = callbacks;
 	}
 
 
 	public boolean isSelecting() {
-		return selecting;
+		return registry.isSelecting();
 	}
 
 	public void startSelecting() {
 		if(isSelecting()) return;
 
 		registry.clearSelection();
-		selecting = true;
+		registry.setSelecting(true);
 	}
 	public void stopSelecting() {
 		if(!isSelecting()) return;
 
 		deselectAll();
-		selecting = false;
+		registry.setSelecting(false);
 	}
 
 
@@ -104,7 +101,15 @@ public class SelectionController {
 	}
 
 	public static class SelectionRegistry {
+		private boolean selecting;
 		private final Set<UUID> selected = new HashSet<>();
+
+		public boolean isSelecting() {
+			return selecting;
+		}
+		public void setSelecting(boolean selecting) {
+			this.selecting = selecting;
+		}
 
 		public Set<UUID> getSelectedList() {
 			return selected;

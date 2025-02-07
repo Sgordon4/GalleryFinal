@@ -49,8 +49,6 @@ public class DirFragment extends Fragment {
 
 	DirectoryViewModel dirViewModel;
 
-	boolean isDoubleTapInProgress = false;
-
 
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -197,38 +195,41 @@ public class DirFragment extends Fragment {
 		Handler handler = new Handler(Looper.getMainLooper());
 
 		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
-			@Override
-			public void onLongPress(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				if (!isDoubleTapInProgress) {
-					System.out.println("Superlong");
-					selectionController.startSelecting();
-					selectionController.selectItem(fileUID);
-
-					toolbar.setVisibility(View.GONE);
-					selectionToolbar.setVisibility(View.VISIBLE);
-				}
-			}
+			boolean isDoubleTapInProgress = false;
 
 			@Override
 			public void onSingleTapConfirmed(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
 				if(selectionController.isSelecting())
 					selectionController.toggleSelectItem(fileUID);
 			}
-
 			@Override
 			public void onDoubleTap(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
-				//Prevents longPress from triggering, since we want to do different things when double tapping
 				isDoubleTapInProgress = true;
-				handler.postDelayed(() -> isDoubleTapInProgress = false, 300);
+				handler.postDelayed(() -> {
+					isDoubleTapInProgress = false;
+					System.out.println("AAAAAAAAAAAAAAA");
+				}, 300);
+			}
 
+			@Override
+			public void onLongPress(DirRVAdapter.GalViewHolder holder, UUID fileUID) {
 				selectionController.startSelecting();
 				selectionController.selectItem(fileUID);
 
 				toolbar.setVisibility(View.GONE);
 				selectionToolbar.setVisibility(View.VISIBLE);
 
-				reorderHelper.startDrag(holder);
+				if(isDoubleTapInProgress) {
+					System.out.println("Double longpress");
+					//DoubleTap LongPress triggers a reorder
+					reorderHelper.startDrag(holder);
+				}
+				else {
+					//SingleTap LongPress triggers a dragging selection
+					System.out.println("Single longpress");
+				}
 			}
+
 
 			@Override
 			public boolean isItemSelected(UUID fileUID) {
@@ -237,7 +238,7 @@ public class DirFragment extends Fragment {
 		});
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
-			//TODO How do we deal with disappearing items that are selected?
+			//TODO How do we deal with disappearing items that are selected? Do we just watch for that in the livedata listener?
 			if(menuItem.getItemId() == R.id.select_all) {
 				System.out.println("Select all!");
 				Set<UUID> toSelect = new HashSet<>();

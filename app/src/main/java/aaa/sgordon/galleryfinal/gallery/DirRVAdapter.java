@@ -138,11 +138,13 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 			}
 			@Override
 			public boolean onDoubleTap(@NonNull MotionEvent e) {
+				System.out.println("Doubling with "+e.getAction());
 				touchCallback.onDoubleTap(holder, fileUID);
 				return true;
 			}
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
+				System.out.println("Downs");
 				return true;
 			}
 		});
