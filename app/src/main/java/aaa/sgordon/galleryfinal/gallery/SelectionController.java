@@ -1,6 +1,10 @@
 package aaa.sgordon.galleryfinal.gallery;
 
+import android.view.MotionEvent;
+import android.view.View;
+
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.HashSet;
 import java.util.List;
@@ -104,8 +108,20 @@ public class SelectionController {
 		isDragSelecting = true;
 		selectItem( callbacks.getUUIDAtPos(startPos) );
 	}
-	public void dragSelect(int nextPos) {
-		selectItem( callbacks.getUUIDAtPos(nextPos) );
+	public void dragSelect(RecyclerView recyclerView, MotionEvent event) {
+		//Find the view under the pointer and select it
+		int[] recyclerViewLocation = new int[2];
+		recyclerView.getLocationOnScreen(recyclerViewLocation);
+
+		float adjustedX = event.getRawX() - recyclerViewLocation[0];
+		float adjustedY = event.getRawY() - recyclerViewLocation[1];
+
+		View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
+		if(child != null) {
+			int pos = recyclerView.getChildAdapterPosition(child);
+			if(pos != -1)
+				selectItem( callbacks.getUUIDAtPos(pos) );
+		}
 	}
 	public void stopDragSelecting() {
 		if(!isDragSelecting) return;

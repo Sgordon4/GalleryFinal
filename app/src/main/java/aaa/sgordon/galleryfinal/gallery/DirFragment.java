@@ -13,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -97,8 +98,7 @@ public class DirFragment extends Fragment {
 		RecyclerView recyclerView = binding.recyclerview;
 		//recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
-		CustomGridLayoutManager lm = new CustomGridLayoutManager(getContext(), 1);
-		recyclerView.setLayoutManager(lm);
+		recyclerView.setLayoutManager(new CustomGridLayoutManager(getContext(), 1));
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
@@ -116,42 +116,9 @@ public class DirFragment extends Fragment {
 
 		//-----------------------------------------------------------------------------------------
 
-		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem) -> {
-			Thread reorderThread = new Thread(() -> {
-				//Get the selected items from the viewModel's list and pass them along
-				Set<UUID> selectedItems = new HashSet<>(registry.getSelectedList());
-				List<Pair<Path, String>> toMove = new ArrayList<>();
+		GalTouchSetup touchSetup = new GalTouchSetup(recyclerView, adapter);
 
-				//Grab the first instance of each selected item in the list
-				List<Pair<Path, String>> currList = dirViewModel.flatList.getValue();
-				for(int i = 0; i < currList.size(); i++) {
-					//Get the UUID of this item
-					String UUIDString = currList.get(i).first.getFileName().toString();
-					if(UUIDString.equals("END"))
-						UUIDString = currList.get(i).first.getParent().getFileName().toString();
-					UUID itemUID = UUID.fromString(UUIDString);
-
-					if(selectedItems.contains(itemUID)) {
-						toMove.add(currList.get(i));
-						selectedItems.remove(itemUID);
-					}
-				}
-
-
-				try {
-					boolean successful = dirViewModel.moveFiles(destination, nextItem, toMove);
-					if(successful) return;
-
-					//If the move was not successful, we want to return the list to how it was before we dragged
-					Runnable myRunnable = () -> adapter.setList(dirViewModel.flatList.getValue());
-					new Handler(getMainLooper()).post(myRunnable);
-
-				} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
-					throw new RuntimeException(e);
-				}
-			});
-			reorderThread.start();
-		});
+		ItemReorderCallback reorderCallback = touchSetup.makeReorderCallback(dirViewModel, registry);
 		ItemTouchHelper reorderHelper = new ItemTouchHelper(reorderCallback);
 		reorderHelper.attachToRecyclerView(recyclerView);
 
@@ -168,6 +135,15 @@ public class DirFragment extends Fragment {
 		SelectionController selectionController = new SelectionController(registry, new SelectionController.SelectionCallbacks() {
 			@Override
 			public void onSelectionChanged(UUID fileUID, boolean isSelected) {
+
+				/* No worky
+				for(int i = 0; i < adapter.list.size(); i++) {
+					if(fileUID.equals( getUUIDAtPos(i)) )
+						adapter.notifyItemChanged(i);
+				}
+				 */
+
+
 				//For any visible item, update the item selection status to change its appearance
 				//There may be more than one item in the list with the same fileUID due to links
 				//Non-visible items will have their selection status set later when they are bound by the adapter
@@ -202,172 +178,39 @@ public class DirFragment extends Fragment {
 		});
 
 
+		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+			@Override
+			public void handleOnBackPressed() {
+				//If we're selecting, stop selection mode rather than leaving
+				if(selectionController.isSelecting()) {
+					toolbar.setVisibility(View.VISIBLE);
+					selectionToolbar.setVisibility(View.GONE);
 
-
-
-
-
-
-
-		recyclerView.setOnTouchListener((v, event) -> {
-			System.out.println("Intercepting");
-			System.out.println(event.getX()+"::"+event.getY());
-
-			CoordinatorLayout parent = ((CoordinatorLayout) recyclerView.getParent());
-			int top = 0;
-			int bottom = parent.getBottom() - recyclerView.getTop();
-			System.out.println(recyclerView.getBottom()+" vs "+((CoordinatorLayout) recyclerView.getParent()).getBottom());
-			System.out.println(top+"::"+recyclerView.getBottom());
-
-			if(event.getY() < top + 100) {
-				lm.setScrollEnabled(true);
-				recyclerView.scrollBy(0, -5);
-				lm.setScrollEnabled(false);
-			}
-			else if(event.getY() > bottom - 100) {
-				lm.setScrollEnabled(true);
-				recyclerView.scrollBy(0, 5);
-				lm.setScrollEnabled(false);
-			}
-
-
-
-
-			if(event.getAction() == MotionEvent.ACTION_UP)
-				lm.setScrollEnabled(true);
-
-
-			if(selectionController.isDragSelecting()) {
-				//Find the view under the pointer and select it
-				int[] recyclerViewLocation = new int[2];
-				recyclerView.getLocationOnScreen(recyclerViewLocation);
-
-				float adjustedX = event.getRawX() - recyclerViewLocation[0];
-				float adjustedY = event.getRawY() - recyclerViewLocation[1];
-
-				View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
-				if(child != null) {
-					int pos = recyclerView.getChildAdapterPosition(child);
-					if(pos != -1)
-						selectionController.dragSelect(pos);
+					selectionController.stopSelecting();
+				}
+				else if (navController.getPreviousBackStackEntry() != null) {
+					navController.popBackStack();
+				} else {
+					requireActivity().finish(); // Close the app if no back stack
 				}
 			}
-
-			if(selectionController.isDragSelecting() || reorderCallback.isDragging()) {
-
-			}
-
-
-			return false;
 		});
 
 
-		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
-			@Override
-			public boolean isItemSelected(UUID fileUID) {
-				return selectionController.isSelected(fileUID);
-			}
 
 
-			UUID fileUID = null;
-			DirRVAdapter.GalViewHolder holder = null;
-			boolean isDoubleTapInProgress = false;
+		touchSetup.setupRVListener(selectionController, reorderCallback);
 
-			@Override
-			public boolean onHolderMotionEvent(UUID fileUID, DirRVAdapter.GalViewHolder holder, MotionEvent event) {
-				//System.out.println("Inside: "+event.getAction());
-				if(event.getAction() == MotionEvent.ACTION_DOWN) {
-					this.fileUID = fileUID;
-					this.holder = holder;
-				}
-
-				if(event.getAction() == MotionEvent.ACTION_UP) {
-					System.out.println("UP");
-					selectionController.stopDragSelecting();
-					lm.setScrollEnabled(true);
-				}
-				else if(event.getAction() == MotionEvent.ACTION_DOWN) {
-					System.out.println("DOWN");
-				}
-				else if(event.getAction() == MotionEvent.ACTION_CANCEL) {
-					System.out.println("CANCEL");
-				}
-				else {
-					System.out.println("Motion");
-				}
+		adapter.setCallbacks(touchSetup.makeAdapterCallback(selectionController, reorderHelper, toolbar, selectionToolbar));
 
 
 
-				if(selectionController.isDragSelecting()) {
-					//Find the view under the pointer and select it
-					int[] recyclerViewLocation = new int[2];
-					recyclerView.getLocationOnScreen(recyclerViewLocation);
 
-					float adjustedX = event.getRawX() - recyclerViewLocation[0];
-					float adjustedY = event.getRawY() - recyclerViewLocation[1];
-
-					View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
-					if(child != null) {
-						int pos = recyclerView.getChildAdapterPosition(child);
-						if(pos != -1)
-							selectionController.dragSelect(pos);
-					}
-
-					lm.setScrollEnabled(true);
-					recyclerView.scrollBy(0, 5);
-					lm.setScrollEnabled(false);
-				}
-
-				return detector.onTouchEvent(event);
-			}
-
-			GestureDetector detector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
-				@Override
-				public void onLongPress(@NonNull MotionEvent e) {
-					selectionController.startSelecting();
-					selectionController.selectItem(fileUID);
-
-					toolbar.setVisibility(View.GONE);
-					selectionToolbar.setVisibility(View.VISIBLE);
-
-					lm.setScrollEnabled(false);
-
-					if(isDoubleTapInProgress) {
-						System.out.println("Double longpress");
-						//DoubleTap LongPress triggers a reorder
-						isDoubleTapInProgress = false;
-						reorderHelper.startDrag(holder);
-					}
-					else {
-						System.out.println("Single longpress");
-						//SingleTap LongPress triggers a dragging selection
-						selectionController.startDragSelecting(holder.getAdapterPosition());
-					}
-				}
-
-				@Override
-				public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-					if(selectionController.isSelecting())
-						selectionController.toggleSelectItem(fileUID);
-					return true;
-				}
-
-				@Override
-				public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
-					System.out.println("Doubling");
-					if(e.getAction() == MotionEvent.ACTION_DOWN)
-						isDoubleTapInProgress = true;
-
-					System.out.println("OOOgha: "+e.getAction());
-					return false;
-				}
-
-				@Override
-				public boolean onDown(@NonNull MotionEvent e) {
-					return true;
-				}
-			});
-		});
+		if(selectionController.isSelecting()) {
+			selectionToolbar.setTitle( String.valueOf(selectionController.getNumSelected()) );
+			toolbar.setVisibility(View.GONE);
+			selectionToolbar.setVisibility(View.VISIBLE);
+		}
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
 			//TODO How do we deal with disappearing items that are selected? Do we just watch for that in the livedata listener?
@@ -432,8 +275,6 @@ public class DirFragment extends Fragment {
 			}
 		});
 	}
-
-	boolean isDragSelecting = false;
 
 	@Override
 	public void onDestroyView() {

@@ -15,6 +15,9 @@ public class CustomGridLayoutManager extends GridLayoutManager {
 	public void setScrollEnabled(boolean flag) {
 		this.isScrollEnabled = flag;
 	}
+	public boolean isScrollEnabled() {
+		return isScrollEnabled;
+	}
 
 	@Override
 	public boolean canScrollVertically() {
