@@ -99,6 +99,24 @@ public class SelectionController {
 	public boolean isDragSelecting() {
 		return isDragSelecting;
 	}
+	public void startDragSelecting(int startPos) {
+		if(isDragSelecting) return;
+		isDragSelecting = true;
+		selectItem( callbacks.getUUIDAtPos(startPos) );
+	}
+	public void dragSelect(int nextPos) {
+		selectItem( callbacks.getUUIDAtPos(nextPos) );
+	}
+	public void stopDragSelecting() {
+		if(!isDragSelecting) return;
+		isDragSelecting = false;
+	}
+
+	/*
+	private boolean isDragSelecting = false;
+	public boolean isDragSelecting() {
+		return isDragSelecting;
+	}
 	private int startPos = -1;
 	private int lastPos = -1;
 	public void startDragSelecting(int startPos) {
@@ -130,6 +148,7 @@ public class SelectionController {
 		isDragSelecting = false;
 		startPos = lastPos = -1;
 	}
+	 */
 
 
 

@@ -219,7 +219,6 @@ public class DirFragment extends Fragment {
 
 				float adjustedX = event.getRawX() - recyclerViewLocation[0];
 				float adjustedY = event.getRawY() - recyclerViewLocation[1];
-				System.out.println(adjustedX+"::"+adjustedY);
 
 				View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
 				if(child != null) {
@@ -276,7 +275,6 @@ public class DirFragment extends Fragment {
 
 
 
-				//TODO We need to change this to pain selection, aint no way this can work with updates
 				if(selectionController.isDragSelecting()) {
 					//Find the view under the pointer and select it
 					int[] recyclerViewLocation = new int[2];
@@ -288,7 +286,8 @@ public class DirFragment extends Fragment {
 					View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
 					if(child != null) {
 						int pos = recyclerView.getChildAdapterPosition(child);
-						selectionController.dragSelect(pos);
+						if(pos != -1)
+							selectionController.dragSelect(pos);
 					}
 
 					lm.setScrollEnabled(true);
