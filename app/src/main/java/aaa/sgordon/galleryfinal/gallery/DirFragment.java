@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -172,10 +173,12 @@ public class DirFragment extends Fragment {
 				//Non-visible items will have their selection status set later when they are bound by the adapter
 				for(int i = 0; i < recyclerView.getChildCount(); i++) {
 					View itemView = recyclerView.getChildAt(i);
-					int adapterPos = recyclerView.getChildAdapterPosition(itemView);
+					if(itemView != null) {
+						int adapterPos = recyclerView.getChildAdapterPosition(itemView);
 
-					if(fileUID.equals( getUUIDAtPos(adapterPos)) )
-						itemView.setSelected(isSelected);
+						if(fileUID.equals( getUUIDAtPos(adapterPos)) )
+							itemView.setSelected(isSelected);
+					}
 				}
 			}
 
@@ -208,6 +211,28 @@ public class DirFragment extends Fragment {
 
 		recyclerView.setOnTouchListener((v, event) -> {
 			System.out.println("Intercepting");
+			System.out.println(event.getX()+"::"+event.getY());
+
+			CoordinatorLayout parent = ((CoordinatorLayout) recyclerView.getParent());
+			int top = 0;
+			int bottom = parent.getBottom() - recyclerView.getTop();
+			System.out.println(recyclerView.getBottom()+" vs "+((CoordinatorLayout) recyclerView.getParent()).getBottom());
+			System.out.println(top+"::"+recyclerView.getBottom());
+
+			if(event.getY() < top + 100) {
+				lm.setScrollEnabled(true);
+				recyclerView.scrollBy(0, -5);
+				lm.setScrollEnabled(false);
+			}
+			else if(event.getY() > bottom - 100) {
+				lm.setScrollEnabled(true);
+				recyclerView.scrollBy(0, 5);
+				lm.setScrollEnabled(false);
+			}
+
+
+
+
 			if(event.getAction() == MotionEvent.ACTION_UP)
 				lm.setScrollEnabled(true);
 
@@ -229,9 +254,7 @@ public class DirFragment extends Fragment {
 			}
 
 			if(selectionController.isDragSelecting() || reorderCallback.isDragging()) {
-				lm.setScrollEnabled(true);
-				recyclerView.scrollBy(0, 5);
-				lm.setScrollEnabled(false);
+
 			}
 
 
