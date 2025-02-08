@@ -95,13 +95,47 @@ public class SelectionController {
 
 
 
+	private boolean isDragSelecting = false;
+	public boolean isDragSelecting() {
+		return isDragSelecting;
+	}
+	private int startPos = -1;
+	private int lastPos = -1;
+	public void startDragSelecting(int startPos) {
+		isDragSelecting = true;
+		this.startPos = lastPos = startPos;
+		selectItem( callbacks.getUUIDAtPos(startPos) );
+	}
+	public void dragSelect(int nextPos) {
+		int from = Math.min(startPos, nextPos);
+		int to = Math.max(startPos, nextPos);
 
+		//Select range between 'from' and 'to'
+		for (int i = from; i <= to; i++)
+			selectItem(callbacks.getUUIDAtPos(i));
+
+		// Deselect items outside the new range but within the last selected range
+		int lastFrom = Math.min(startPos, lastPos);
+		int lastTo = Math.max(startPos, lastPos);
+		for (int i = lastFrom; i <= lastTo; i++) {
+			if (i < from || i > to)
+				deselectItem(callbacks.getUUIDAtPos(i));
+		}
+
+		lastPos = nextPos;
+	}
+	public void stopDragSelecting() {
+		isDragSelecting = false;
+		startPos = lastPos = -1;
+	}
 
 
 
 	public interface SelectionCallbacks {
 		void onSelectionChanged(UUID fileUID, boolean isSelected);
 		void onNumSelectedChanged(int numSelected);
+
+		UUID getUUIDAtPos(int pos);
 	}
 
 	public static class SelectionRegistry {

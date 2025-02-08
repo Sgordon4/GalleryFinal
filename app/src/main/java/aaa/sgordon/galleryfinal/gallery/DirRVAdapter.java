@@ -95,7 +95,8 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 		Pair<Path, String> item = list.get(position);
 
 		String level = "";
-		if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
+		if(true) {
+		//if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
 			//Put in some fancy printing to show the directory structure
 			int depth = item.first.getNameCount()-1;
 			level = "│   ".repeat(Math.max(0, depth-1));
@@ -120,7 +121,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
 
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
-			System.out.println("At the bottom...");
 			if(motionEvent.getAction() == MotionEvent.ACTION_UP)
 				view.performClick();
 

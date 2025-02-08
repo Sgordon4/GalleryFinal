@@ -56,7 +56,6 @@ public class DirectoryViewModel extends AndroidViewModel {
 	Thread queuedUpdateThread;
 	MutableLiveData< List<Pair<Path, String>> > flatList;
 
-
 	public DirectoryViewModel(@NonNull Application application, @NonNull UUID currDirUID) {
 		super(application);
 		this.selectionRegistry = new SelectionController.SelectionRegistry();

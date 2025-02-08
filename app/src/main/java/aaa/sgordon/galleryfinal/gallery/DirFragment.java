@@ -22,6 +22,7 @@ import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -93,8 +94,9 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+		//recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+		recyclerView.setLayoutManager(new CustomGridLayoutManager(getContext(), 1));
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
@@ -171,13 +173,7 @@ public class DirFragment extends Fragment {
 					View itemView = recyclerView.getChildAt(i);
 					int adapterPos = recyclerView.getChildAdapterPosition(itemView);
 
-					//Get the UUID of this item
-					String UUIDString = adapter.list.get(adapterPos).first.getFileName().toString();
-					if(UUIDString.equals("END"))
-						UUIDString = adapter.list.get(adapterPos).first.getParent().getFileName().toString();
-					UUID itemUID = UUID.fromString(UUIDString);
-
-					if(fileUID.equals(itemUID))
+					if(fileUID.equals( getUUIDAtPos(adapterPos)) )
 						itemView.setSelected(isSelected);
 				}
 			}
@@ -190,35 +186,18 @@ public class DirFragment extends Fragment {
 				else
 					selectionToolbar.getMenu().getItem(1).setEnabled(false);
 			}
-		});
-
-
-
-
-
-		recyclerView.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
-			@Override
-			public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
-				//System.out.println("Intercepting");
-				return false;
-				//return isDragSelecting || reorderCallback.isDragging();
-			}
-			@Override
-			public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e) {
-				System.out.println(e.getX()+"::"+e.getY());
-				if(reorderCallback.isDragging())
-					reorderCallback.onMotionEvent(e);
-
-				if(e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL)
-					isDragSelecting = false;
-			}
 
 			@Override
-			public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-				System.out.println("REQUESTING!!!!");
-				super.onRequestDisallowInterceptTouchEvent(disallowIntercept);
+			public UUID getUUIDAtPos(int pos) {
+				String UUIDString = adapter.list.get(pos).first.getFileName().toString();
+				if(UUIDString.equals("END"))
+					UUIDString = adapter.list.get(pos).first.getParent().getFileName().toString();
+
+				return UUID.fromString(UUIDString);
 			}
 		});
+
+
 
 		/*
 		recyclerView.setOnTouchListener((v, event) -> {
@@ -243,8 +222,42 @@ public class DirFragment extends Fragment {
 		});
 		 */
 
+		//Spy on all touch events
+		recyclerView.setOnTouchListener((v, event) -> {
+			//System.out.println("Intercepting "+event.getX()+"::"+event.getY());
+			//System.out.println(selectionController.isDragSelecting()+"::"+reorderCallback.isDragging());
+
+			//System.out.println("Intercepting");
+
+			if(reorderCallback.isDragging())
+				reorderCallback.onMotionEvent(event);
+
+			System.out.println("Action: "+event.getAction());
 
 
+			if(selectionController.isDragSelecting()) {
+				System.out.println("DragSelecting");
+				//Find the view under the pointer and select it
+				View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+				if(child != null) {
+					int pos = recyclerView.getChildAdapterPosition(child);
+					selectionController.dragSelect(pos);
+				}
+
+				if(event.getAction() == MotionEvent.ACTION_UP) {
+					selectionController.stopDragSelecting();
+					RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+					if(layoutManager instanceof CustomGridLayoutManager)
+						((CustomGridLayoutManager) layoutManager).setScrollEnabled(false);
+					return false;
+				}
+				return true;	//Don't allow swiping the rv while drag selecting
+			}
+
+
+
+			return false;	//Do not consume the event. We only want to spy.
+		});
 
 
 
@@ -256,6 +269,10 @@ public class DirFragment extends Fragment {
 			}
 
 
+			UUID fileUID = null;
+			DirRVAdapter.GalViewHolder holder = null;
+			boolean isDoubleTapInProgress = false;
+
 			@Override
 			public boolean onHolderMotionEvent(UUID fileUID, DirRVAdapter.GalViewHolder holder, MotionEvent event) {
 				//System.out.println("Inside: "+event.getAction());
@@ -263,19 +280,11 @@ public class DirFragment extends Fragment {
 					this.fileUID = fileUID;
 					this.holder = holder;
 				}
-				else if(event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-					System.out.println("YASSSSS");
-					isDoubleTapInProgress = false;
-				}
 
+				System.out.println("Motion");
 
-				detector.onTouchEvent(event);
-				return false;
+				return detector.onTouchEvent(event);
 			}
-
-			UUID fileUID = null;
-			DirRVAdapter.GalViewHolder holder = null;
-			boolean isDoubleTapInProgress = false;
 
 			GestureDetector detector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
 				@Override
@@ -289,12 +298,17 @@ public class DirFragment extends Fragment {
 					if(isDoubleTapInProgress) {
 						System.out.println("Double longpress");
 						//DoubleTap LongPress triggers a reorder
+						isDoubleTapInProgress = false;
 						reorderHelper.startDrag(holder);
 					}
 					else {
-						//SingleTap LongPress triggers a dragging selection
 						System.out.println("Single longpress");
-						isDragSelecting = true;
+						//SingleTap LongPress triggers a dragging selection
+						selectionController.startDragSelecting(holder.getAdapterPosition());
+
+						RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
+						if(layoutManager instanceof CustomGridLayoutManager)
+							((CustomGridLayoutManager) layoutManager).setScrollEnabled(false);
 					}
 				}
 
@@ -302,7 +316,7 @@ public class DirFragment extends Fragment {
 				public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
 					if(selectionController.isSelecting())
 						selectionController.toggleSelectItem(fileUID);
-					return false;
+					return true;
 				}
 
 				@Override
