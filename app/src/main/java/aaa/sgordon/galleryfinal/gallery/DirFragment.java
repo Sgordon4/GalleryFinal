@@ -201,6 +201,11 @@ public class DirFragment extends Fragment {
 
 
 
+
+
+
+
+
 		recyclerView.setOnTouchListener((v, event) -> {
 			System.out.println("Intercepting");
 			if(event.getAction() == MotionEvent.ACTION_UP)
@@ -214,11 +219,13 @@ public class DirFragment extends Fragment {
 
 				float adjustedX = event.getRawX() - recyclerViewLocation[0];
 				float adjustedY = event.getRawY() - recyclerViewLocation[1];
+				System.out.println(adjustedX+"::"+adjustedY);
 
 				View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
 				if(child != null) {
 					int pos = recyclerView.getChildAdapterPosition(child);
-					selectionController.dragSelect(pos);
+					if(pos != -1)
+						selectionController.dragSelect(pos);
 				}
 			}
 
@@ -256,7 +263,6 @@ public class DirFragment extends Fragment {
 					System.out.println("UP");
 					selectionController.stopDragSelecting();
 					lm.setScrollEnabled(true);
-					return false;
 				}
 				else if(event.getAction() == MotionEvent.ACTION_DOWN) {
 					System.out.println("DOWN");
@@ -270,6 +276,7 @@ public class DirFragment extends Fragment {
 
 
 
+				//TODO We need to change this to pain selection, aint no way this can work with updates
 				if(selectionController.isDragSelecting()) {
 					//Find the view under the pointer and select it
 					int[] recyclerViewLocation = new int[2];
@@ -330,7 +337,7 @@ public class DirFragment extends Fragment {
 						isDoubleTapInProgress = true;
 
 					System.out.println("OOOgha: "+e.getAction());
-					return true;
+					return false;
 				}
 
 				@Override
