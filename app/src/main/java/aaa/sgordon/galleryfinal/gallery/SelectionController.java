@@ -102,6 +102,7 @@ public class SelectionController {
 	private int startPos = -1;
 	private int lastPos = -1;
 	public void startDragSelecting(int startPos) {
+		if(isDragSelecting) return;
 		isDragSelecting = true;
 		this.startPos = lastPos = startPos;
 		selectItem( callbacks.getUUIDAtPos(startPos) );
@@ -125,6 +126,7 @@ public class SelectionController {
 		lastPos = nextPos;
 	}
 	public void stopDragSelecting() {
+		if(!isDragSelecting) return;
 		isDragSelecting = false;
 		startPos = lastPos = -1;
 	}

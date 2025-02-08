@@ -96,7 +96,8 @@ public class DirFragment extends Fragment {
 		RecyclerView recyclerView = binding.recyclerview;
 		//recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
-		recyclerView.setLayoutManager(new CustomGridLayoutManager(getContext(), 1));
+		CustomGridLayoutManager lm = new CustomGridLayoutManager(getContext(), 1);
+		recyclerView.setLayoutManager(lm);
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
@@ -199,67 +200,37 @@ public class DirFragment extends Fragment {
 
 
 
-		/*
+
 		recyclerView.setOnTouchListener((v, event) -> {
+			System.out.println("Intercepting");
 			if(event.getAction() == MotionEvent.ACTION_UP)
-				v.performClick(); // Ensure accessibility compliance
-
-
-
-
-
-
-			View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
-			if(child != null) {
-				int pos = recyclerView.getChildAdapterPosition(child);
-				Pair<Path, String> item = adapter.list.get(pos);
-
-
-			}
-
-
-			return false; 	//Do not consume the event. We only want to spy.
-		});
-		 */
-
-		//Spy on all touch events
-		recyclerView.setOnTouchListener((v, event) -> {
-			//System.out.println("Intercepting "+event.getX()+"::"+event.getY());
-			//System.out.println(selectionController.isDragSelecting()+"::"+reorderCallback.isDragging());
-
-			//System.out.println("Intercepting");
-
-			if(reorderCallback.isDragging())
-				reorderCallback.onMotionEvent(event);
-
-			System.out.println("Action: "+event.getAction());
+				lm.setScrollEnabled(true);
 
 
 			if(selectionController.isDragSelecting()) {
-				System.out.println("DragSelecting");
 				//Find the view under the pointer and select it
-				View child = recyclerView.findChildViewUnder(event.getX(), event.getY());
+				int[] recyclerViewLocation = new int[2];
+				recyclerView.getLocationOnScreen(recyclerViewLocation);
+
+				float adjustedX = event.getRawX() - recyclerViewLocation[0];
+				float adjustedY = event.getRawY() - recyclerViewLocation[1];
+
+				View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
 				if(child != null) {
 					int pos = recyclerView.getChildAdapterPosition(child);
 					selectionController.dragSelect(pos);
 				}
+			}
 
-				if(event.getAction() == MotionEvent.ACTION_UP) {
-					selectionController.stopDragSelecting();
-					RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-					if(layoutManager instanceof CustomGridLayoutManager)
-						((CustomGridLayoutManager) layoutManager).setScrollEnabled(false);
-					return false;
-				}
-				return true;	//Don't allow swiping the rv while drag selecting
+			if(selectionController.isDragSelecting() || reorderCallback.isDragging()) {
+				lm.setScrollEnabled(true);
+				recyclerView.scrollBy(0, 5);
+				lm.setScrollEnabled(false);
 			}
 
 
-
-			return false;	//Do not consume the event. We only want to spy.
+			return false;
 		});
-
-
 
 
 		adapter.setCallbacks(new DirRVAdapter.AdapterCallbacks() {
@@ -281,7 +252,42 @@ public class DirFragment extends Fragment {
 					this.holder = holder;
 				}
 
-				System.out.println("Motion");
+				if(event.getAction() == MotionEvent.ACTION_UP) {
+					System.out.println("UP");
+					selectionController.stopDragSelecting();
+					lm.setScrollEnabled(true);
+					return false;
+				}
+				else if(event.getAction() == MotionEvent.ACTION_DOWN) {
+					System.out.println("DOWN");
+				}
+				else if(event.getAction() == MotionEvent.ACTION_CANCEL) {
+					System.out.println("CANCEL");
+				}
+				else {
+					System.out.println("Motion");
+				}
+
+
+
+				if(selectionController.isDragSelecting()) {
+					//Find the view under the pointer and select it
+					int[] recyclerViewLocation = new int[2];
+					recyclerView.getLocationOnScreen(recyclerViewLocation);
+
+					float adjustedX = event.getRawX() - recyclerViewLocation[0];
+					float adjustedY = event.getRawY() - recyclerViewLocation[1];
+
+					View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
+					if(child != null) {
+						int pos = recyclerView.getChildAdapterPosition(child);
+						selectionController.dragSelect(pos);
+					}
+
+					lm.setScrollEnabled(true);
+					recyclerView.scrollBy(0, 5);
+					lm.setScrollEnabled(false);
+				}
 
 				return detector.onTouchEvent(event);
 			}
@@ -295,6 +301,8 @@ public class DirFragment extends Fragment {
 					toolbar.setVisibility(View.GONE);
 					selectionToolbar.setVisibility(View.VISIBLE);
 
+					lm.setScrollEnabled(false);
+
 					if(isDoubleTapInProgress) {
 						System.out.println("Double longpress");
 						//DoubleTap LongPress triggers a reorder
@@ -305,10 +313,6 @@ public class DirFragment extends Fragment {
 						System.out.println("Single longpress");
 						//SingleTap LongPress triggers a dragging selection
 						selectionController.startDragSelecting(holder.getAdapterPosition());
-
-						RecyclerView.LayoutManager layoutManager = recyclerView.getLayoutManager();
-						if(layoutManager instanceof CustomGridLayoutManager)
-							((CustomGridLayoutManager) layoutManager).setScrollEnabled(false);
 					}
 				}
 
