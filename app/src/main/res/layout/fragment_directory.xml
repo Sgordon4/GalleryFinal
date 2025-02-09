@@ -14,21 +14,6 @@
 
         <include android:id="@+id/gallery_appbar" layout="@layout/appbar_gallery" />
 
-        <View
-            android:id="@+id/scroll_zone_top"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="@color/black"
-            android:clickable="false"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
-
-        <View
-            android:id="@+id/scroll_zone_bottom"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_gravity="bottom"
-            android:background="@color/black"
-            android:clickable="false" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview"

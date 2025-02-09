@@ -36,7 +36,6 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	}
 
 
-
 	//Drag will be manually triggered upon a double tap drag by our gestureDetector callbacks in DirFragment
 	@Override
 	public boolean isLongPressDragEnabled() {

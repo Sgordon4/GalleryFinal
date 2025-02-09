@@ -30,10 +30,12 @@ public class SelectionController {
 
 		registry.clearSelection();
 		registry.setSelecting(true);
+		callbacks.onSelectionStarted();
 	}
 	public void stopSelecting() {
 		if(!isSelecting()) return;
 
+		callbacks.onSelectionStopped();
 		deselectAll();
 		registry.setSelecting(false);
 	}
@@ -98,82 +100,17 @@ public class SelectionController {
 
 
 
-
-	private boolean isDragSelecting = false;
-	public boolean isDragSelecting() {
-		return isDragSelecting;
-	}
-	public void startDragSelecting(int startPos) {
-		if(isDragSelecting) return;
-		isDragSelecting = true;
-		selectItem( callbacks.getUUIDAtPos(startPos) );
-	}
-	public void dragSelect(RecyclerView recyclerView, MotionEvent event) {
-		//Find the view under the pointer and select it
-		int[] recyclerViewLocation = new int[2];
-		recyclerView.getLocationOnScreen(recyclerViewLocation);
-
-		float adjustedX = event.getRawX() - recyclerViewLocation[0];
-		float adjustedY = event.getRawY() - recyclerViewLocation[1];
-
-		View child = recyclerView.findChildViewUnder(adjustedX, adjustedY);
-		if(child != null) {
-			int pos = recyclerView.getChildAdapterPosition(child);
-			if(pos != -1)
-				selectItem( callbacks.getUUIDAtPos(pos) );
-		}
-	}
-	public void stopDragSelecting() {
-		if(!isDragSelecting) return;
-		isDragSelecting = false;
-	}
-
-	/*
-	private boolean isDragSelecting = false;
-	public boolean isDragSelecting() {
-		return isDragSelecting;
-	}
-	private int startPos = -1;
-	private int lastPos = -1;
-	public void startDragSelecting(int startPos) {
-		if(isDragSelecting) return;
-		isDragSelecting = true;
-		this.startPos = lastPos = startPos;
-		selectItem( callbacks.getUUIDAtPos(startPos) );
-	}
-	public void dragSelect(int nextPos) {
-		int from = Math.min(startPos, nextPos);
-		int to = Math.max(startPos, nextPos);
-
-		//Select range between 'from' and 'to'
-		for (int i = from; i <= to; i++)
-			selectItem(callbacks.getUUIDAtPos(i));
-
-		// Deselect items outside the new range but within the last selected range
-		int lastFrom = Math.min(startPos, lastPos);
-		int lastTo = Math.max(startPos, lastPos);
-		for (int i = lastFrom; i <= lastTo; i++) {
-			if (i < from || i > to)
-				deselectItem(callbacks.getUUIDAtPos(i));
-		}
-
-		lastPos = nextPos;
-	}
-	public void stopDragSelecting() {
-		if(!isDragSelecting) return;
-		isDragSelecting = false;
-		startPos = lastPos = -1;
-	}
-	 */
-
-
-
 	public interface SelectionCallbacks {
+		void onSelectionStarted();
+		void onSelectionStopped();
 		void onSelectionChanged(UUID fileUID, boolean isSelected);
 		void onNumSelectedChanged(int numSelected);
 
 		UUID getUUIDAtPos(int pos);
 	}
+
+
+	//---------------------------------------------------------------------------------------------
 
 	public static class SelectionRegistry {
 		private boolean selecting;
