@@ -50,7 +50,6 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 	}
 
-
 	@Override
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
 		//Disallow link ends to be dragged
@@ -83,6 +82,13 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		else
 			for(int i = fromPos; i > toPos; i--)
 				Collections.swap(list, i, i-1);
+	}
+
+	//Scroll faster
+	@Override
+	public int interpolateOutOfBoundsScroll(@NonNull RecyclerView recyclerView, int viewSize, int viewSizeOutOfBounds, int totalSize, long msSinceStartScroll) {
+		msSinceStartScroll *= 2;
+		return 2 * super.interpolateOutOfBoundsScroll(recyclerView, viewSize, viewSizeOutOfBounds, totalSize, msSinceStartScroll);
 	}
 
 

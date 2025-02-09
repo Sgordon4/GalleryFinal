@@ -47,6 +47,8 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 	public boolean isItemViewSwipeEnabled() {
 		return false;
 	}
+	@Override
+	public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
 
 	@Override
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
@@ -73,26 +75,15 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 
 	@Override
 	public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-		//int pos = recyclerView.getChildAdapterPosition(target.itemView);
-		//dragSelectTo(pos);
-
-		/*
-
-		String UUIDString = adapter.list.get(pos).first.getFileName().toString();
-		if(UUIDString.equals("END"))
-			UUIDString = adapter.list.get(pos).first.getParent().getFileName().toString();
-		UUID thisFileUID = UUID.fromString(UUIDString);
-
-		selectionController.selectItem(thisFileUID);
-
-		 */
-
 		return false;
 	}
 
+	//Scroll faster
 	@Override
-	public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
-
+	public int interpolateOutOfBoundsScroll(@NonNull RecyclerView recyclerView, int viewSize, int viewSizeOutOfBounds, int totalSize, long msSinceStartScroll) {
+		msSinceStartScroll *= 2;
+		return 2 * super.interpolateOutOfBoundsScroll(recyclerView, viewSize, viewSizeOutOfBounds, totalSize, msSinceStartScroll);
+	}
 
 	@Override
 	public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
@@ -110,7 +101,6 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		dragActual.setTranslationX(-dX);
 		dragActual.setTranslationY(-dY);
 
-		System.out.println("OnChildDraw");
 
 		/**/
 		if (isCurrentlyActive && lastMoveEvent != null) { // Check if dragging
@@ -118,7 +108,6 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 			View target = findTopmostChildUnder(recyclerView, lastMoveEvent.getX(), lastMoveEvent.getY(), viewHolder);
 			if(target != null) {
 				int pos = recyclerView.getChildAdapterPosition(target);
-				System.out.println("Pos = "+pos);
 				dragSelectTo(pos);
 			}
 			else {

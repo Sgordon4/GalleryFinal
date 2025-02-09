@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Pair;
@@ -84,9 +85,22 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		//recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
-		recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1));
+		recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1) {
+			@Override
+			public void calculateItemDecorationsForChild(@NonNull View child, @NonNull Rect outRect) {
+				super.calculateItemDecorationsForChild(child, outRect);
+
+				//Since the RV is in a coordinatorlayout, sometimes the end of the RV is offscreen
+				//We want to scroll once we reach the end of the screen, so return that difference
+				int rvBottom = recyclerView.getBottom();
+				int parentBottom = ((View)recyclerView.getParent()).getBottom();
+				outRect.bottom = rvBottom - parentBottom;
+
+				//Also add some leeway for ease of use
+				outRect.top += 50;
+				outRect.bottom += 50;
+			}
+		});
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);

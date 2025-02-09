@@ -126,7 +126,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 				handler.postDelayed(this, 3000);
 			}
 		};
-		handler.postDelayed(runnable, 3000);
+		//handler.postDelayed(runnable, 3000);
 	}
 	@Override
 	protected void onCleared() {
