@@ -30,8 +30,8 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 public class GalTouchSetup {
 
 
-	public static SelectionController.SelectionCallbacks makeSelectionController(RecyclerView recyclerView, DirRVAdapter adapter, MaterialToolbar toolbar,
-															  MaterialToolbar selectionToolbar) {
+	public static SelectionController.SelectionCallbacks makeSelectionCallbacks(RecyclerView recyclerView, DirRVAdapter adapter, MaterialToolbar toolbar,
+																				MaterialToolbar selectionToolbar) {
 		return new SelectionController.SelectionCallbacks() {
 			@Override
 			public void onSelectionStarted() {

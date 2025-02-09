@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -120,8 +119,8 @@ public class DirFragment extends Fragment {
 
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
 
-		SelectionController selectionController = new SelectionController(registry,
-				GalTouchSetup.makeSelectionController(recyclerView, adapter, toolbar, selectionToolbar));
+		SelectionController.SelectionCallbacks selectionCallbacks = GalTouchSetup.makeSelectionCallbacks(recyclerView, adapter, toolbar, selectionToolbar);
+		SelectionController selectionController = new SelectionController(registry, selectionCallbacks);
 
 		if(selectionController.isSelecting()) {
 			selectionToolbar.setTitle( String.valueOf(selectionController.getNumSelected()) );
@@ -169,8 +168,6 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 
-		//TODO Figure out how to get the RV to scroll down during a drag when the toolbar is out
-
 
 		DragSelectCallback dragSelectCallback = new DragSelectCallback(recyclerView, adapter, selectionController);
 		ItemTouchHelper dragSelectHelper = new ItemTouchHelper(dragSelectCallback);
@@ -182,8 +179,40 @@ public class DirFragment extends Fragment {
 		ItemTouchHelper reorderHelper = new ItemTouchHelper(reorderCallback);
 		reorderHelper.attachToRecyclerView(recyclerView);
 
+
+
 		dirViewModel.flatList.observe(getViewLifecycleOwner(), list -> {
-			//TODO Unselect any items that are no longer in the list. Prob want to make a registry remove accessibility method
+			if(selectionController.isSelecting()) {
+				//Unselect any items that are no longer in the list
+				//Note: This is completely untested
+				Set<UUID> inAdapter = new HashSet<>();
+				for(Pair<Path, String> item : adapter.list) {
+					String UUIDString = item.first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = item.first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					inAdapter.add(itemUID);
+				}
+				Set<UUID> inNewList = new HashSet<>();
+				for(Pair<Path, String> item : list) {
+					String UUIDString = item.first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = item.first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					inNewList.add(itemUID);
+				}
+
+				//Since the items are gone and won't be in the list anymore, we can just directly deselect them
+				inAdapter.removeAll(inNewList);
+				for(UUID itemUID : inAdapter) {
+					registry.deselectItem(itemUID);
+				}
+				selectionCallbacks.onNumSelectedChanged(registry.getNumSelected());
+			}
+
+
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
