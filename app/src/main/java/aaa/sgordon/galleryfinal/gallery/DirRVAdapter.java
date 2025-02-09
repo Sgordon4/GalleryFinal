@@ -118,6 +118,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 
 		holder.fileUID = thisFileUID;
 
+
 		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
 
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {

@@ -1,10 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import static android.os.Looper.getMainLooper;
-
 import android.annotation.SuppressLint;
+import android.graphics.Canvas;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.GestureDetector;
@@ -16,7 +14,6 @@ import android.view.ViewGroup;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -24,28 +21,20 @@ import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class DirFragment extends Fragment {
 	private FragmentDirectoryBinding binding;
@@ -199,9 +188,122 @@ public class DirFragment extends Fragment {
 
 
 
-		touchSetup.setupRVListener(selectionController, reorderCallback);
+		//touchSetup.setupRVListener(selectionController, reorderCallback);
 
-		adapter.setCallbacks(touchSetup.makeAdapterCallback(selectionController, reorderHelper, toolbar, selectionToolbar));
+		//adapter.setCallbacks(touchSetup.makeAdapterCallback(selectionController, reorderHelper, toolbar, selectionToolbar));
+
+
+		recyclerView.setOnTouchListener((v, event) -> {
+			//System.out.println(event.getAction());
+			return false;
+		});
+
+
+		ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
+			@Override
+			public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+				return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT| ItemTouchHelper.RIGHT, 0);
+			}
+			@Override
+			public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+				return false;
+			}
+			@Override
+			public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
+
+
+			@Override
+			public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
+									@NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
+									int actionState, boolean isCurrentlyActive) {
+
+				//Get the current view being dragged
+				View itemView = viewHolder.itemView;
+				View child = itemView.findViewById(R.id.child);
+
+				//Call the superclass method to ensure the normal drawing behavior is preserved
+				super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+
+				//Move the child of the dragged view to its original position to pretend nothing is being dragged
+				child.setTranslationX(-dX);
+				child.setTranslationY(-dY);
+
+
+				//Select the targeted item
+				View foundView = recyclerView.findChildViewUnder(itemView.getX(), itemView.getY());
+				if(foundView != null) {
+					int pos = recyclerView.getChildAdapterPosition(foundView);
+
+					String UUIDString = adapter.list.get(pos).first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = adapter.list.get(pos).first.getParent().getFileName().toString();
+					UUID thisFileUID = UUID.fromString(UUIDString);
+
+					//selectionController.selectItem(thisFileUID);
+				}
+			}
+
+			//CanDropOver appears to oscillate between the nearest holders, not just the one underneath, so we can't use that
+		});
+		itemTouchHelper.attachToRecyclerView(recyclerView);
+
+
+
+
+
+
+		CustomGridLayoutManager lm = (CustomGridLayoutManager) recyclerView.getLayoutManager();
+		assert lm != null;
+
+		DirRVAdapter.AdapterCallbacks callbacks = new DirRVAdapter.AdapterCallbacks() {
+			@Override
+			public boolean isItemSelected(UUID fileUID) {
+				return selectionController.isSelected(fileUID);
+			}
+
+			DirRVAdapter.GalViewHolder holder;
+			@Override
+			public boolean onHolderMotionEvent(UUID fileUID, DirRVAdapter.GalViewHolder holder, MotionEvent event) {
+				this.holder = holder;
+				return detector.onTouchEvent(event);
+			}
+
+			final GestureDetector detector = new GestureDetector(recyclerView.getContext(), new GestureDetector.SimpleOnGestureListener() {
+				@Override
+				public void onLongPress(@NonNull MotionEvent e) {
+				}
+
+				@Override
+				public boolean onDown(@NonNull MotionEvent e) {
+					return true;
+				}
+			});
+		};
+		adapter.setCallbacks(callbacks);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
