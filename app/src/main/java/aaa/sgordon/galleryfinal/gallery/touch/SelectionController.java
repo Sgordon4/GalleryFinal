@@ -1,10 +1,6 @@
-package aaa.sgordon.galleryfinal.gallery;
-
-import android.view.MotionEvent;
-import android.view.View;
+package aaa.sgordon.galleryfinal.gallery.touch;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.HashSet;
 import java.util.List;

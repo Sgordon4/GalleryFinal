@@ -1,8 +1,11 @@
 package aaa.sgordon.galleryfinal.gallery;
 
+import static android.os.Looper.getMainLooper;
+
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -21,19 +24,30 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
+import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
+import aaa.sgordon.galleryfinal.gallery.touch.GalTouchSetup;
+import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class DirFragment extends Fragment {
 	private FragmentDirectoryBinding binding;
@@ -84,7 +98,8 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1) {
+		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()) {
+		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4) {
 			@Override
 			public void calculateItemDecorationsForChild(@NonNull View child, @NonNull Rect outRect) {
 				super.calculateItemDecorationsForChild(child, outRect);
@@ -93,7 +108,10 @@ public class DirFragment extends Fragment {
 				//We want to scroll once we reach the end of the screen, so return that difference
 				int rvBottom = recyclerView.getBottom();
 				int parentBottom = ((View)recyclerView.getParent()).getBottom();
+				System.out.println(rvBottom+"::"+parentBottom);
+
 				outRect.bottom = rvBottom - parentBottom;
+				System.out.println("New: "+outRect.bottom);
 
 				//Also add some leeway for ease of use
 				outRect.top += 50;
@@ -175,7 +193,43 @@ public class DirFragment extends Fragment {
 
 
 
-		ItemReorderCallback reorderCallback = GalTouchSetup.makeReorderCallback(recyclerView, adapter, dirViewModel, registry);
+		ItemReorderCallback reorderCallback = new ItemReorderCallback(recyclerView, (destination, nextItem) -> {
+			Thread reorderThread = new Thread(() -> {
+				//Get the selected items from the viewModel's list and pass them along
+				Set<UUID> selectedItems = new HashSet<>(registry.getSelectedList());
+				List<Pair<Path, String>> toMove = new ArrayList<>();
+
+				//Grab the first instance of each selected item in the list
+				List<Pair<Path, String>> currList = dirViewModel.flatList.getValue();
+				for(int i = 0; i < currList.size(); i++) {
+					//Get the UUID of this item
+					String UUIDString = currList.get(i).first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = currList.get(i).first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					if(selectedItems.contains(itemUID)) {
+						toMove.add(currList.get(i));
+						selectedItems.remove(itemUID);
+					}
+				}
+
+
+				try {
+					boolean successful = dirViewModel.moveFiles(destination, nextItem, toMove);
+					if(successful) return;
+
+					//If the move was not successful, we want to return the list to how it was before we dragged
+					Runnable myRunnable = () -> adapter.setList(dirViewModel.flatList.getValue());
+					new Handler(getMainLooper()).post(myRunnable);
+
+				} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException |
+						 ConnectException e) {
+					throw new RuntimeException(e);
+				}
+			});
+			reorderThread.start();
+		});
 		ItemTouchHelper reorderHelper = new ItemTouchHelper(reorderCallback);
 		reorderHelper.attachToRecyclerView(recyclerView);
 
@@ -219,8 +273,8 @@ public class DirFragment extends Fragment {
 
 
 
-		DirRVAdapter.AdapterCallbacks adapterCallbacks =
-				GalTouchSetup.makeAdapterCallback(getContext(), selectionController, reorderHelper, reorderCallback, dragSelectHelper, dragSelectCallback);
+		DirRVAdapter.AdapterCallbacks adapterCallbacks = GalTouchSetup.makeAdapterCallback(getContext(), dirViewModel,
+				selectionController, reorderHelper, reorderCallback, dragSelectHelper, dragSelectCallback);
 		adapter.setCallbacks(adapterCallbacks);
 
 

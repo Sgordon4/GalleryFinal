@@ -1,23 +1,18 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Pair;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +20,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.viewholders.DirViewHolder;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
-public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolder> {
+public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
 	public List<Pair<Path, String>> list;
 	public RecyclerView.LayoutManager layoutManager;
 	private AdapterCallbacks touchCallback;
@@ -83,20 +80,28 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 
 	@NonNull
 	@Override
-	public GalViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+	public DirViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 		View view = LayoutInflater.from(parent.getContext())
-				.inflate(R.layout.directory_row_item, parent, false);
+				.inflate(R.layout.dir_vh_unknown, parent, false);
 
-		return new GalViewHolder(view);
+		return new DirViewHolder(view);
 	}
 
+
+	//TODO Setup getItemViewType and actually use the new ViewHolders
+
 	@Override
-	public void onBindViewHolder(@NonNull GalViewHolder holder, int position) {
+	public void onBindViewHolder(@NonNull DirViewHolder holder, int position) {
 		Pair<Path, String> item = list.get(position);
 
+		String UUIDString = list.get(position).first.getFileName().toString();
+		if(UUIDString.equals("END"))
+			UUIDString = list.get(position).first.getParent().getFileName().toString();
+		UUID fileUID = UUID.fromString(UUIDString);
+
+
 		String level = "";
-		if(true) {
-		//if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
+		if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
 			//Put in some fancy printing to show the directory structure
 			int depth = item.first.getNameCount()-1;
 			level = "│   ".repeat(Math.max(0, depth-1));
@@ -108,49 +113,62 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirRVAdapter.GalViewHolde
 			}
 		}
 
-		holder.getTextView().setText(level + " " + list.get(position).second);
+
+		holder.bind(fileUID, level + list.get(position).second);
 
 
-		String UUIDString = list.get(position).first.getFileName().toString();
-		if(UUIDString.equals("END"))
-			UUIDString = list.get(position).first.getParent().getFileName().toString();
-		UUID thisFileUID = UUID.fromString(UUIDString);
-
-		holder.fileUID = thisFileUID;
-
-
-
-		holder.itemView.setSelected( touchCallback.isItemSelected(thisFileUID) );
+		holder.itemView.setSelected( touchCallback.isItemSelected(fileUID) );
 
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
 			if(motionEvent.getAction() == MotionEvent.ACTION_UP)
 				view.performClick();
 
-			return touchCallback.onHolderMotionEvent(thisFileUID, holder, motionEvent);
+			return touchCallback.onHolderMotionEvent(fileUID, holder, motionEvent);
 		});
 	}
 
 
-	public interface AdapterCallbacks {
-		boolean isItemSelected(UUID fileUID);
-		boolean onHolderMotionEvent(UUID fileUID, GalViewHolder holder, MotionEvent event);
+	@Override
+	public int getItemViewType(int position) {
+		boolean isEnd = false;
+		String UUIDString = list.get(position).first.getFileName().toString();
+		if(UUIDString.equals("END")) {
+			isEnd = true;
+			UUIDString = list.get(position).first.getParent().getFileName().toString();
+		}
+		UUID fileUID = UUID.fromString(UUIDString);
+
+		try {
+			HFile fileProps = touchCallback.getProps(fileUID);
+
+			if(fileProps.isdir) {
+				if(!fileProps.islink)
+					return 0;			//Directory
+				else {
+					if(!isEnd)
+						return 1;		//Link to directory
+					else
+						return 2;		//End of link to directory
+				}
+			}
+
+
+			//Get the filename extension, maybe we need fileNameUtils for this idk
+
+
+
+		} catch (FileNotFoundException e) {
+			return -1;				//Unknown
+		}
+		return -1;					//Unknown
 	}
 
 
-	//---------------------------------------------------------------------------------------------
 
-	public static class GalViewHolder extends RecyclerView.ViewHolder {
-		private UUID fileUID;
-		private final TextView textView;
 
-		public GalViewHolder(@NonNull View itemView) {
-			super(itemView);
-
-			textView = itemView.findViewById(R.id.textView);
-		}
-
-		public TextView getTextView() {
-			return textView;
-		}
+	public interface AdapterCallbacks {
+		boolean isItemSelected(UUID fileUID);
+		boolean onHolderMotionEvent(UUID fileUID, DirViewHolder holder, MotionEvent event);
+		HFile getProps(UUID fileUID) throws FileNotFoundException;
 	}
 }

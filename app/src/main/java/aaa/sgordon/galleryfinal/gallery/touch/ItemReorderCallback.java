@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery;
+package aaa.sgordon.galleryfinal.gallery.touch;
 
 import android.annotation.SuppressLint;
 import android.os.SystemClock;
@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+
+import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	private final RecyclerView recyclerView;

@@ -9,4 +9,7 @@
     <color name="teal_700">#FF018786</color>
 
     <color name="selected_color">#ff00ffff</color>
+
+    <color name="black_overlay">#66000000</color>
+    <color name="white_overlay">#66FFFFFF</color>
 </resources>

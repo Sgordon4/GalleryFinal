@@ -26,7 +26,6 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,6 +36,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
@@ -55,6 +55,11 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 	Thread queuedUpdateThread;
 	MutableLiveData< List<Pair<Path, String>> > flatList;
+
+
+	public HybridAPI getHAPI() {
+		return hAPI;
+	}
 
 	public DirectoryViewModel(@NonNull Application application, @NonNull UUID currDirUID) {
 		super(application);
@@ -102,7 +107,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 		//Add some items to start to fill in the screen for testing with scrolling
 		Thread importStart = new Thread(() -> DirSampleData.fakeImportFiles(currDirUID, 50));
-		//importStart.start();
+		importStart.start();
 
 
 		//Loop importing items for testing adapter notifications

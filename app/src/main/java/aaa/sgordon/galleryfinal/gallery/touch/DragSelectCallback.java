@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery;
+package aaa.sgordon.galleryfinal.gallery.touch;
 
 import android.graphics.Canvas;
 import android.view.MotionEvent;
@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 
 public class DragSelectCallback extends ItemTouchHelper.Callback {
 	RecyclerView recyclerView;
@@ -95,7 +96,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 
 		//Get the current view being dragged
 		View itemView = viewHolder.itemView;
-		View dragActual = itemView.findViewById(R.id.child);
+		View dragActual = itemView.findViewById(R.id.dragchild);
 
 		//Move the child of the dragged view to its original position to visually pretend nothing is being dragged
 		dragActual.setTranslationX(-dX);
