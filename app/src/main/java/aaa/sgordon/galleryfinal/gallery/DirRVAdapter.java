@@ -101,8 +101,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 
 
-	//TODO Setup getItemViewType and actually use the new ViewHolders
-
 	@Override
 	public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
 		Pair<Path, String> item = list.get(position);
@@ -125,8 +123,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 					level += "├─ ";
 			}
 		}
-
-
 
 
 		holder.bind(fileUID, level + list.get(position).second);
@@ -212,7 +208,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			case -1:
 			default: holder = new UnknownViewHolder(inflater.inflate(R.layout.dir_vh_unknown, parent, false));
 				break;
-
 		}
 
 		return holder;
