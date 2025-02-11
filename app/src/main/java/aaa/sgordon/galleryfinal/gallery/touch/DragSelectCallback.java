@@ -106,41 +106,24 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 
 		/**/
 		if (isCurrentlyActive && lastMoveEvent != null) { // Check if dragging
-
-			System.out.println(".");
-			System.out.println("CurPos:   "+lastMoveEvent.getX()+"::"+lastMoveEvent.getY());
-			Rect itemRect = new Rect();
-			Rect childRect = new Rect();
-			dragActual.getDrawingRect(childRect);
-			System.out.println("ItemView:  "+itemRect);
-			System.out.println("ChildView: "+childRect);
-			System.out.println("CD: "+itemView.getX());
-
 			View target = findTopmostChildUnder(recyclerView, lastMoveEvent.getX(), lastMoveEvent.getY(), viewHolder);
 			if(target != null) {
 				int pos = recyclerView.getChildAdapterPosition(target);
 				dragSelectTo(pos);
 			}
-			/*
-			else {
-				int pos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
-				dragSelectTo(pos);
-			}
-			 */
 		}
 		/**/
 	}
 
 	private View findTopmostChildUnder(RecyclerView recyclerView, float x, float y, RecyclerView.ViewHolder draggedViewHolder) {
 		//Check if we're over our original location
-		View dragChild = draggedViewHolder.itemView.findViewById(R.id.child);
-
-		if (x >= dragChild.getLeft() && x <= dragChild.getRight() &&
-				y >= dragChild.getTop() && y <= dragChild.getBottom()) {
-			System.out.println("Over original location");
+		View itemView = draggedViewHolder.itemView;
+		if (x >= itemView.getLeft() && x <= itemView.getRight() &&
+				y >= itemView.getTop() && y <= itemView.getBottom()) {
 			return draggedViewHolder.itemView;
 		}
 
+		//Look at each child to find which (if any) we're over
 		for (int i = recyclerView.getChildCount() - 1; i >= 0; i--) { // Iterate from topmost to bottommost
 			View child = recyclerView.getChildAt(i);
 
@@ -169,8 +152,6 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		}
 		if(startPos == -1 || lastPos == -1)
 			return;
-
-		System.out.println("DragSelecting: "+startPos+"::"+pos);
 
 
 		int from = Math.min(startPos, pos);
