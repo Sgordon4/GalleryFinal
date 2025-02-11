@@ -11,41 +11,24 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/child"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1"
+        android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:foreground="@drawable/selector_overlay" >
 
-        <View
-            android:id="@+id/color"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <ImageView
-            android:id="@+id/image"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleX=".7"
-            android:scaleY=".7"
-            android:src="@drawable/icon_file_question"
-            android:contentDescription="An unknown item." />
-
         <TextView
             android:id="@+id/name"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
+            android:layout_height="60dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
 
-            android:background="@color/white_overlay"
             android:text="Sample Title"
             android:gravity="center_vertical"
-            android:textSize="16sp"
-            android:ellipsize="middle"
+            android:textSize="18sp"
+            android:ellipsize="end"
             android:maxLines="1" />
 
     </androidx.cardview.widget.CardView>

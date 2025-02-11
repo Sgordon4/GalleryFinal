@@ -56,9 +56,20 @@ public class DirectoryViewModel extends AndroidViewModel {
 	Thread queuedUpdateThread;
 	MutableLiveData< List<Pair<Path, String>> > flatList;
 
+	//In our current implementation, files can't change their nature (directory/link).
+	//Therefore, we don't have to worry about concurrency or conflicting values with these.
+	Set<UUID> isDirCache;
+	Set<UUID> isLinkCache;
+
 
 	public HybridAPI getHAPI() {
 		return hAPI;
+	}
+	public boolean isDir(UUID fileUID) {
+		return isDirCache.contains(fileUID);
+	}
+	public boolean isLink(UUID fileUID) {
+		return isLinkCache.contains(fileUID);
 	}
 
 	public DirectoryViewModel(@NonNull Application application, @NonNull UUID currDirUID) {
@@ -68,6 +79,10 @@ public class DirectoryViewModel extends AndroidViewModel {
 		this.currDirUID = currDirUID;
 		this.flatList = new MutableLiveData<>();
 		flatList.setValue(new ArrayList<>());
+
+		isDirCache = new HashSet<>();
+		isLinkCache = new HashSet<>();
+
 
 		hAPI = HybridAPI.getInstance();
 
@@ -176,6 +191,8 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 			try {
 				HFile fileProps = hAPI.getFileProps(fileUID);
+				if(fileProps.isdir) isDirCache.add(fileUID);
+				if(fileProps.islink) isLinkCache.add(fileUID);
 
 				//If this isn't a link to a directory, we don't care
 				if(!(fileProps.isdir && fileProps.islink))
@@ -189,6 +206,8 @@ public class DirectoryViewModel extends AndroidViewModel {
 
 					fileUID = readLink(fileUID, fileProps.filesize);
 					fileProps = hAPI.getFileProps(fileUID);
+					if(fileProps.isdir) isDirCache.add(fileUID);
+					if(fileProps.islink) isLinkCache.add(fileUID);
 				}
 
 				//If we reached a directory and this isn't a broken link, traverse it

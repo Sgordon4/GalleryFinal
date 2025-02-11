@@ -7,11 +7,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.UUID;
 
-public class DirViewHolder extends RecyclerView.ViewHolder {
+public class BaseViewHolder extends RecyclerView.ViewHolder {
 	private UUID fileUID;
 	private String fileName;
 
-	public DirViewHolder(@NonNull View itemView) {
+	public BaseViewHolder(@NonNull View itemView) {
 		super(itemView);
 	}
 

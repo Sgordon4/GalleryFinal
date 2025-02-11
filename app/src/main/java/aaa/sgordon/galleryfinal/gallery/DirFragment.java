@@ -98,8 +98,7 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		recyclerView.setLayoutManager(new LinearLayoutManager(getContext()) {
-		//recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4) {
+		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 4) {
 			@Override
 			public void calculateItemDecorationsForChild(@NonNull View child, @NonNull Rect outRect) {
 				super.calculateItemDecorationsForChild(child, outRect);
@@ -108,16 +107,14 @@ public class DirFragment extends Fragment {
 				//We want to scroll once we reach the end of the screen, so return that difference
 				int rvBottom = recyclerView.getBottom();
 				int parentBottom = ((View)recyclerView.getParent()).getBottom();
-				System.out.println(rvBottom+"::"+parentBottom);
-
 				outRect.bottom = rvBottom - parentBottom;
-				System.out.println("New: "+outRect.bottom);
 
 				//Also add some leeway for ease of use
 				outRect.top += 50;
 				outRect.bottom += 50;
 			}
-		});
+		};
+		recyclerView.setLayoutManager(layoutManager);
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);

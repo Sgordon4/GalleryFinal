@@ -8,12 +8,12 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 
-public class UnknownViewHolder extends BaseViewHolder {
+public class DirectoryViewHolder extends BaseViewHolder{
 	public View color;
 	public ImageView image;
 	public TextView name;
 
-	public UnknownViewHolder(View itemView) {
+	public DirectoryViewHolder(View itemView) {
 		super(itemView);
 
 		color = itemView.findViewById(R.id.color);

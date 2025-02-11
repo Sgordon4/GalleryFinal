@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.gallery;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -12,7 +11,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
-import java.io.FileNotFoundException;
+import org.apache.commons.io.FilenameUtils;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +20,17 @@ import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.viewholders.DirViewHolder;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.DividerViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 
-public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
+public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public List<Pair<Path, String>> list;
 	public RecyclerView.LayoutManager layoutManager;
 	private AdapterCallbacks touchCallback;
@@ -35,6 +42,21 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
 	public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
 		super.onAttachedToRecyclerView(recyclerView);
 		this.layoutManager = recyclerView.getLayoutManager();
+
+		//Some items (links, linkEnds, dividers) need to span across all columns
+		if(layoutManager instanceof GridLayoutManager) {
+			GridLayoutManager layoutManager = (GridLayoutManager) this.layoutManager;
+			layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+				@Override
+				public int getSpanSize(int position) {
+					int viewType = getItemViewType(position);
+					if(viewType == 1 || viewType == 2)
+						return layoutManager.getSpanCount();
+					return 1;
+				}
+			});
+		}
+
 	}
 	public void setCallbacks(AdapterCallbacks touchCallback) {
 		this.touchCallback = touchCallback;
@@ -78,20 +100,11 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
 	}
 
 
-	@NonNull
-	@Override
-	public DirViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-		View view = LayoutInflater.from(parent.getContext())
-				.inflate(R.layout.dir_vh_unknown, parent, false);
-
-		return new DirViewHolder(view);
-	}
-
 
 	//TODO Setup getItemViewType and actually use the new ViewHolders
 
 	@Override
-	public void onBindViewHolder(@NonNull DirViewHolder holder, int position) {
+	public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
 		Pair<Path, String> item = list.get(position);
 
 		String UUIDString = list.get(position).first.getFileName().toString();
@@ -114,6 +127,8 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
 		}
 
 
+
+
 		holder.bind(fileUID, level + list.get(position).second);
 
 
@@ -130,37 +145,77 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
 
 	@Override
 	public int getItemViewType(int position) {
+		Pair<Path, String> item = list.get(position);
+
 		boolean isEnd = false;
-		String UUIDString = list.get(position).first.getFileName().toString();
+		String UUIDString = item.first.getFileName().toString();
 		if(UUIDString.equals("END")) {
 			isEnd = true;
-			UUIDString = list.get(position).first.getParent().getFileName().toString();
+			UUIDString = item.first.getParent().getFileName().toString();
 		}
 		UUID fileUID = UUID.fromString(UUIDString);
 
-		try {
-			HFile fileProps = touchCallback.getProps(fileUID);
+		boolean isDir = touchCallback.isDir(fileUID);
+		boolean isLink = touchCallback.isLink(fileUID);
 
-			if(fileProps.isdir) {
-				if(!fileProps.islink)
-					return 0;			//Directory
-				else {
-					if(!isEnd)
-						return 1;		//Link to directory
-					else
-						return 2;		//End of link to directory
-				}
+
+		if(isDir) {
+			if(!isLink)
+				return 0;			//Directory
+			else {
+				if(!isEnd)
+					return 1;		//Link to directory
+				else
+					return 2;		//End of link to directory
 			}
-
-
-			//Get the filename extension, maybe we need fileNameUtils for this idk
-
-
-
-		} catch (FileNotFoundException e) {
-			return -1;				//Unknown
 		}
+
+		//Get the filename extension, maybe we need fileNameUtils for this idk
+		String extension = FilenameUtils.getExtension(item.second);
+		switch (extension) {
+			case "div":
+				return 3;	//Divider
+			case "jpg":
+			case "jpeg":
+				return 4;    //Image
+			case "gif":
+				return 5;    //Gif
+			case "mp4":
+				return 6;    //Video
+		}
+
 		return -1;					//Unknown
+	}
+
+
+	@NonNull
+	@Override
+	public BaseViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+		LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+
+		BaseViewHolder holder;
+		switch(viewType) {
+			case 0: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_vh_directory, parent, false));
+				break;
+			case 1: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
+				break;
+			case 2: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
+				break;
+			case 3: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
+				break;
+			case 4: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
+				break;
+			case 5: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
+				break;
+			case 6: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
+				break;
+			case -1:
+			default: holder = new UnknownViewHolder(inflater.inflate(R.layout.dir_vh_unknown, parent, false));
+				break;
+
+		}
+
+		return holder;
 	}
 
 
@@ -168,7 +223,8 @@ public class DirRVAdapter extends RecyclerView.Adapter<DirViewHolder> {
 
 	public interface AdapterCallbacks {
 		boolean isItemSelected(UUID fileUID);
-		boolean onHolderMotionEvent(UUID fileUID, DirViewHolder holder, MotionEvent event);
-		HFile getProps(UUID fileUID) throws FileNotFoundException;
+		boolean onHolderMotionEvent(UUID fileUID, BaseViewHolder holder, MotionEvent event);
+		boolean isDir(UUID fileUID);
+		boolean isLink(UUID fileUID);
 	}
 }

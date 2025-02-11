@@ -1,23 +1,20 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 
-public class UnknownViewHolder extends BaseViewHolder {
-	public View color;
-	public ImageView image;
+public class LinkEndViewHolder extends BaseViewHolder {
 	public TextView name;
 
-	public UnknownViewHolder(View itemView) {
+	public LinkEndViewHolder(@NonNull View itemView) {
 		super(itemView);
 
-		color = itemView.findViewById(R.id.color);
-		image = itemView.findViewById(R.id.image);
 		name = itemView.findViewById(R.id.name);
 	}
 

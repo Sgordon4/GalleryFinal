@@ -28,7 +28,7 @@
             android:layout_height="match_parent"
             android:scaleX=".7"
             android:scaleY=".7"
-            android:src="@drawable/icon_file_question"
+            android:src="@drawable/icon_folder"
             android:contentDescription="An unknown item." />
 
         <TextView
@@ -44,7 +44,7 @@
             android:background="@color/white_overlay"
             android:text="Sample Title"
             android:gravity="center_vertical"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:ellipsize="middle"
             android:maxLines="1" />
 
