@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 					NavController navController = navHostFragment.getNavController();
 
 					Bundle bundle = new Bundle();
-					bundle.putString("directoryUID", rootDirectoryUID.toString());
+					bundle.putSerializable("directoryUID", rootDirectoryUID);
 					bundle.putString("directoryName", rootDirectoryUID.toString());
 					navController.setGraph(R.navigation.nav_graph, bundle);
 				};

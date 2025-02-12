@@ -1,6 +1,5 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.app.Application;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -10,7 +9,6 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
@@ -42,7 +40,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
-public class DirectoryViewModel extends AndroidViewModel {
+public class DirectoryViewModel extends ViewModel {
 	private final static String TAG = "Gal.DirVM";
 	private final HybridAPI hAPI;
 	private final UUID currDirUID;
@@ -61,6 +59,9 @@ public class DirectoryViewModel extends AndroidViewModel {
 	Set<UUID> isDirCache;
 	Set<UUID> isLinkCache;
 
+	public UUID getDirUID() {
+		return currDirUID;
+	}
 
 	public HybridAPI getHAPI() {
 		return hAPI;
@@ -72,19 +73,22 @@ public class DirectoryViewModel extends AndroidViewModel {
 		return isLinkCache.contains(fileUID);
 	}
 
-	public DirectoryViewModel(@NonNull Application application, @NonNull UUID currDirUID) {
-		super(application);
-		this.selectionRegistry = new SelectionController.SelectionRegistry();
-
+	public DirectoryViewModel(UUID currDirUID) {
 		this.currDirUID = currDirUID;
+
 		this.flatList = new MutableLiveData<>();
 		flatList.setValue(new ArrayList<>());
 
 		isDirCache = new HashSet<>();
 		isLinkCache = new HashSet<>();
 
+		this.selectionRegistry = new SelectionController.SelectionRegistry();
+
 
 		hAPI = HybridAPI.getInstance();
+
+
+		System.out.println("Creating viewmodel! FileUID='"+currDirUID+"'");
 
 
 		//Whenever a directory in our listing is updated, update our data
@@ -431,11 +435,9 @@ public class DirectoryViewModel extends AndroidViewModel {
 //=================================================================================================
 //=================================================================================================
 
-	public static class DirectoryViewModelFactory implements ViewModelProvider.Factory {
-		private final Application application;
+	public static class Factory implements ViewModelProvider.Factory {
 		private final UUID dirUID;
-		public DirectoryViewModelFactory(Application application, UUID dirUID) {
-			this.application = application;
+		public Factory(UUID dirUID) {
 			this.dirUID = dirUID;
 		}
 
@@ -443,8 +445,7 @@ public class DirectoryViewModel extends AndroidViewModel {
 		@Override
 		public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
 			if (modelClass.isAssignableFrom(DirectoryViewModel.class)) {
-				DirectoryViewModel viewModel = new DirectoryViewModel(application, dirUID);
-				return (T) viewModel;
+				return (T) new DirectoryViewModel(dirUID);
 			}
 			throw new IllegalArgumentException("Unknown ViewModel class");
 		}

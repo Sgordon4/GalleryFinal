@@ -105,11 +105,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
 		Pair<Path, String> item = list.get(position);
 
-		if(holder instanceof ImageViewHolder)
-			holder.itemView.findViewById(R.id.image).setTransitionName("rv_shared_image_"+position);
-
-
-
 		String UUIDString = list.get(position).first.getFileName().toString();
 		if(UUIDString.equals("END"))
 			UUIDString = list.get(position).first.getParent().getFileName().toString();

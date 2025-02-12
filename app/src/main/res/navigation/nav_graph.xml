@@ -13,12 +13,11 @@
 
         <argument
             android:name="directoryUID"
-            app:argType="string"
-            android:defaultValue="Error" />
+            app:argType="java.util.UUID" />
         <argument
             android:name="directoryName"
             app:argType="string"
-            android:defaultValue="Error" />
+            android:defaultValue="Directory" />
 
         <action
             android:id="@+id/action_toDirectoryFragment"
@@ -36,6 +35,9 @@
         android:label="ViewPager"
         tools:layout="@layout/fragment_viewpager">
 
+        <argument
+            android:name="directoryUID"
+            app:argType="java.util.UUID" />
         <argument
             android:name="fromPosition"
             app:argType="integer"
