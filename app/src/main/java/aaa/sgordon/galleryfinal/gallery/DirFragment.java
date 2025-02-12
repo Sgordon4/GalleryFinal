@@ -13,10 +13,13 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.view.animation.DecelerateInterpolator;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -28,8 +31,10 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.Transition;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.transition.MaterialContainerTransform;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.io.FileNotFoundException;
@@ -68,6 +73,13 @@ public class DirFragment extends Fragment {
 		dirViewModel = new ViewModelProvider(getParentFragment(),
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
+
+		Transition transition = new MaterialContainerTransform();
+		transition.setDuration(600);
+		transition.setInterpolator(new DecelerateInterpolator());
+
+		setSharedElementEnterTransition(transition);
+		setSharedElementReturnTransition(transition);
 	}
 
 	@Override
@@ -385,13 +397,12 @@ public class DirFragment extends Fragment {
 						selectionController.toggleSelectItem(fileUID);
 					//If we're not selecting, launch a new fragment
 					else if(holder instanceof ImageViewHolder) {
-						int pos = recyclerView.getChildAdapterPosition(holder.itemView);
-						holder.itemView.findViewById(R.id.image).setTransitionName("rv_shared_image_"+pos);
-
 						View imageView = holder.itemView.findViewById(R.id.image);
+						int pos = holder.getAdapterPosition();
+
 
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
-								.actionToViewPagerFragment(dirViewModel.getDirUID());
+								.actionToViewPagerFragment(dirViewModel.getDirUID(), adapter.list.get(pos).first.toString());
 						action.setFromPosition(pos);
 
 						FragmentNavigator.Extras extras = new FragmentNavigator.Extras.Builder()

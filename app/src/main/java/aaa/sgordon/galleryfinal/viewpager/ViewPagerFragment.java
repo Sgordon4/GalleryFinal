@@ -4,17 +4,22 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavBackStackEntry;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.transition.ChangeImageTransform;
+import androidx.transition.Transition;
 
 import com.google.android.material.transition.MaterialContainerTransform;
 
+import java.nio.file.Path;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -29,11 +34,12 @@ public class ViewPagerFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		MaterialContainerTransform transform = new MaterialContainerTransform();
-		transform.setDuration(600L);
+		Transition transition = new MaterialContainerTransform();
+		transition.setDuration(600);
+		transition.setInterpolator(new DecelerateInterpolator());
 
-		setSharedElementEnterTransition(transform);
-		setSharedElementReturnTransition(transform);
+		setSharedElementEnterTransition(transition);
+		setSharedElementReturnTransition(transition);
 
 		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
@@ -52,7 +58,9 @@ public class ViewPagerFragment extends Fragment {
 		int fromPos = args.getFromPosition();
 
 		View sharedView = binding.shared;
-		sharedView.setTransitionName("rv_shared_image_"+fromPos);
+		sharedView.setTransitionName(args.getItemPath());
+
+		setEnterSharedElementCallback(new SharedElementCallback() {});
 
 		return view;
 	}
@@ -62,6 +70,11 @@ public class ViewPagerFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 
 
+	}
 
+	@Override
+	public void onResume() {
+		super.onResume();
+		setSharedElementReturnTransition(new ChangeImageTransform());
 	}
 }
