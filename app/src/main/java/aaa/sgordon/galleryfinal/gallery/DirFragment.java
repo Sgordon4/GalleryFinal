@@ -8,7 +8,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.util.Pair;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -18,7 +20,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
+import androidx.navigation.NavDirections;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
+import androidx.navigation.fragment.FragmentNavigator;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -47,6 +52,7 @@ import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.GalTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class DirFragment extends Fragment {
@@ -270,8 +276,98 @@ public class DirFragment extends Fragment {
 
 
 
-		DirRVAdapter.AdapterCallbacks adapterCallbacks = GalTouchSetup.makeAdapterCallback(getContext(), dirViewModel,
-				selectionController, reorderHelper, reorderCallback, dragSelectHelper, dragSelectCallback);
+		DirRVAdapter.AdapterCallbacks adapterCallbacks = new DirRVAdapter.AdapterCallbacks() {
+			@Override
+			public boolean isItemSelected(UUID fileUID) {
+				return selectionController.isSelected(fileUID);
+			}
+			@Override
+			public boolean isDir(UUID fileUID) {
+				return dirViewModel.isDir(fileUID);
+			}
+			@Override
+			public boolean isLink(UUID fileUID) {
+				return dirViewModel.isLink(fileUID);
+			}
+
+			UUID fileUID = null;
+			BaseViewHolder holder;
+			@Override
+			public boolean onHolderMotionEvent(UUID fileUID, BaseViewHolder holder, MotionEvent event) {
+				if(event.getAction() == MotionEvent.ACTION_DOWN) {
+					this.fileUID = fileUID;
+					this.holder = holder;
+					isDoubleTapInProgress = false;
+				}
+				else if(event.getAction() == MotionEvent.ACTION_UP) {
+					isDoubleTapInProgress = false;
+				}
+
+				reorderCallback.onMotionEvent(event);
+				dragSelectCallback.onMotionEvent(event);
+
+
+				return detector.onTouchEvent(event);
+			}
+
+			boolean isDoubleTapInProgress = false;
+			final GestureDetector detector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+				@Override
+				public void onLongPress(@NonNull MotionEvent e) {
+					selectionController.startSelecting();
+					selectionController.selectItem(fileUID);
+
+					if(isDoubleTapInProgress) {
+						System.out.println("Double longPress");
+						//DoubleTap LongPress triggers a reorder
+						isDoubleTapInProgress = false;
+						reorderHelper.startDrag(holder);
+					}
+					else {
+						System.out.println("Single longPress");
+						//SingleTap LongPress triggers drag selection
+						dragSelectHelper.startDrag(holder);
+					}
+				}
+
+				@Override
+				public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+					//If we're selecting, select/deselect the item
+					if(selectionController.isSelecting())
+						selectionController.toggleSelectItem(fileUID);
+					//If we're not selecting, launch a new fragment
+					else {
+						View imageView = holder.itemView.findViewById(R.id.image);
+
+						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections.actionToViewPagerFragment();
+						action.setFromPosition(recyclerView.getChildAdapterPosition(holder.itemView));
+
+						FragmentNavigator.Extras extras = new FragmentNavigator.Extras.Builder()
+								.addSharedElement(imageView, imageView.getTransitionName())
+								.build();
+
+						System.out.println(imageView.getTransitionName());
+						navController.navigate(action, extras);
+					}
+					return true;
+				}
+
+				@Override
+				public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
+					System.out.println("Doubling");
+					if(e.getAction() == MotionEvent.ACTION_DOWN)
+						isDoubleTapInProgress = true;
+
+					System.out.println("OOOgha: "+e.getAction());
+					return false;
+				}
+
+				@Override
+				public boolean onDown(@NonNull MotionEvent e) {
+					return true;
+				}
+			});
+		};
 		adapter.setCallbacks(adapterCallbacks);
 
 

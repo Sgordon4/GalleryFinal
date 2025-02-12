@@ -15,7 +15,6 @@
             android:name="directoryUID"
             app:argType="string"
             android:defaultValue="Error" />
-
         <argument
             android:name="directoryName"
             app:argType="string"
@@ -24,5 +23,27 @@
         <action
             android:id="@+id/action_toDirectoryFragment"
             app:destination="@id/DirectoryFragment" />
+
+        <action
+            android:id="@+id/action_toViewPagerFragment"
+            app:destination="@id/ViewPagerFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/ViewPagerFragment"
+        android:name="aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment"
+        android:label="ViewPager"
+        tools:layout="@layout/fragment_viewpager">
+
+        <argument
+            android:name="fromPosition"
+            app:argType="integer"
+            android:defaultValue="0" />
+
+        <action
+            android:id="@+id/action_toDirectoryFragment"
+            app:destination="@id/DirectoryFragment" />
+
     </fragment>
 </navigation>
