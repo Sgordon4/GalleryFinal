@@ -50,10 +50,9 @@ public class ViewPagerFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		View sharedView = binding.shared;
+		ViewPagerAdapter adapter = new ViewPagerAdapter(this);
+		binding.viewpager.setAdapter(adapter);
 
-		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
-		sharedView.setTransitionName(args.getItemPath());
-		System.out.println("Setting transition name to "+args.getItemPath());
+		dirViewModel.flatList.observe(getViewLifecycleOwner(), adapter::setList);
 	}
 }

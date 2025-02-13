@@ -39,9 +39,6 @@
             android:name="directoryUID"
             app:argType="java.util.UUID" />
         <argument
-            android:name="itemPath"
-            app:argType="string" />
-        <argument
             android:name="fromPosition"
             app:argType="integer"
             android:defaultValue="0" />

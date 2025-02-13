@@ -390,7 +390,7 @@ public class DirFragment extends Fragment {
 						int pos = holder.getAdapterPosition();
 
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
-								.actionToViewPagerFragment(dirViewModel.getDirUID(), adapter.list.get(pos).first.toString());
+								.actionToViewPagerFragment(dirViewModel.getDirUID());
 						action.setFromPosition(pos);
 
 						View imageView = holder.itemView.findViewById(R.id.image);

@@ -52,7 +52,7 @@ public class DirectoryViewModel extends ViewModel {
 	private final Map<UUID, UUID> linkCache = new HashMap<>();
 
 	Thread queuedUpdateThread;
-	MutableLiveData< List<Pair<Path, String>> > flatList;
+	public MutableLiveData< List<Pair<Path, String>> > flatList;
 
 	//In our current implementation, files can't change their nature (directory/link).
 	//Therefore, we don't have to worry about concurrency or conflicting values with these.
