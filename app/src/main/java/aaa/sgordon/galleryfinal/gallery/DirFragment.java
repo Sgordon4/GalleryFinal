@@ -14,12 +14,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.animation.DecelerateInterpolator;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -31,10 +29,8 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.transition.Transition;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.transition.MaterialContainerTransform;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.io.FileNotFoundException;
@@ -73,13 +69,6 @@ public class DirFragment extends Fragment {
 		dirViewModel = new ViewModelProvider(getParentFragment(),
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
-
-		Transition transition = new MaterialContainerTransform();
-		transition.setDuration(600);
-		transition.setInterpolator(new DecelerateInterpolator());
-
-		setSharedElementEnterTransition(transition);
-		setSharedElementReturnTransition(transition);
 	}
 
 	@Override
@@ -116,6 +105,7 @@ public class DirFragment extends Fragment {
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
+
 
 		//DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		//recyclerView.addItemDecoration(dividerItemDecoration);
@@ -397,19 +387,20 @@ public class DirFragment extends Fragment {
 						selectionController.toggleSelectItem(fileUID);
 					//If we're not selecting, launch a new fragment
 					else if(holder instanceof ImageViewHolder) {
-						View imageView = holder.itemView.findViewById(R.id.image);
 						int pos = holder.getAdapterPosition();
-
 
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
 								.actionToViewPagerFragment(dirViewModel.getDirUID(), adapter.list.get(pos).first.toString());
 						action.setFromPosition(pos);
 
+						View imageView = holder.itemView.findViewById(R.id.image);
 						FragmentNavigator.Extras extras = new FragmentNavigator.Extras.Builder()
 								.addSharedElement(imageView, imageView.getTransitionName())
 								.build();
 
-						System.out.println(imageView.getTransitionName());
+
+						postponeEnterTransition(); // Pause the reenter transition so the shared element transition can complete
+
 						navController.navigate(action, extras);
 					}
 					return true;
@@ -432,6 +423,15 @@ public class DirFragment extends Fragment {
 			});
 		};
 		adapter.setCallbacks(adapterCallbacks);
+		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+			@Override
+			public boolean onPreDraw() {
+				recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+				startPostponedEnterTransition(); // Resume transition once layout is ready
+				return true;
+			}
+		});
+
 
 
 

@@ -126,7 +126,7 @@ public class DirectoryViewModel extends ViewModel {
 
 		//Add some items to start to fill in the screen for testing with scrolling
 		Thread importStart = new Thread(() -> DirSampleData.fakeImportFiles(currDirUID, 50));
-		importStart.start();
+		//importStart.start();
 
 
 		//Loop importing items for testing adapter notifications

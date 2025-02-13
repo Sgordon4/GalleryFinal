@@ -11,8 +11,8 @@
     <ImageView
         android:id="@+id/shared"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/ic_launcher_background"
-        android:transitionName="shared_image_transitionVP"/>
+        android:layout_height="400dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/ic_launcher_background" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,25 +4,17 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavBackStackEntry;
-import androidx.navigation.fragment.NavHostFragment;
-import androidx.transition.ChangeImageTransform;
 import androidx.transition.Transition;
 
 import com.google.android.material.transition.MaterialContainerTransform;
 
-import java.nio.file.Path;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerBinding;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 
@@ -35,8 +27,7 @@ public class ViewPagerFragment extends Fragment {
 		super.onCreate(savedInstanceState);
 
 		Transition transition = new MaterialContainerTransform();
-		transition.setDuration(600);
-		transition.setInterpolator(new DecelerateInterpolator());
+		transition.setDuration(200);
 
 		setSharedElementEnterTransition(transition);
 		setSharedElementReturnTransition(transition);
@@ -52,29 +43,17 @@ public class ViewPagerFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = FragmentViewpagerBinding.inflate(inflater, container, false);
-		View view =  binding.getRoot();
-
-		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
-		int fromPos = args.getFromPosition();
-
-		View sharedView = binding.shared;
-		sharedView.setTransitionName(args.getItemPath());
-
-		setEnterSharedElementCallback(new SharedElementCallback() {});
-
-		return view;
+		return binding.getRoot();
 	}
 
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
+		View sharedView = binding.shared;
 
-	}
-
-	@Override
-	public void onResume() {
-		super.onResume();
-		setSharedElementReturnTransition(new ChangeImageTransform());
+		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
+		sharedView.setTransitionName(args.getItemPath());
+		System.out.println("Setting transition name to "+args.getItemPath());
 	}
 }
