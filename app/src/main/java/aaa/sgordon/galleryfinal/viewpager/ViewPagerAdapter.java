@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.util.Pair;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -11,6 +13,9 @@ import androidx.viewpager2.adapter.FragmentViewHolder;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import aaa.sgordon.galleryfinal.R;
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
 	public List<Pair<Path, String>> list;
@@ -54,7 +59,14 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@NonNull
 	@Override
 	public Fragment createFragment(int position) {
-		Fragment fragment = new ImageFragment();
+		Pair<Path, String> item = list.get(position);
+
+		String UUIDString = item.first.getFileName().toString();
+		if(UUIDString.equals("END"))
+			UUIDString = item.first.getParent().getFileName().toString();
+		UUID fileUID = UUID.fromString(UUIDString);
+
+		Fragment fragment = new ImageFragment(fileUID);
 		return fragment;
 	}
 
@@ -63,6 +75,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 		super.onBindViewHolder(holder, position, payloads);
 
 		Pair<Path, String> item = list.get(position);
+
 		holder.itemView.setTransitionName(item.first.toString());
 	}
 

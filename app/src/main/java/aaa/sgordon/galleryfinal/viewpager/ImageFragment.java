@@ -1,19 +1,38 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.transition.Transition;
 
+import com.bumptech.glide.Glide;
+import com.google.android.material.transition.MaterialContainerTransform;
+
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.util.UUID;
+
+import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageFragment extends Fragment {
 	private FragmentViewpagerImageBinding binding;
+	private final UUID fileUID;
+
+	public ImageFragment(UUID fileUID) {
+		this.fileUID = fileUID;
+	}
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -31,5 +50,33 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
+		ImageView image = binding.image;
+
+		//We can't call getFileContent without a thread, so just Load a placeholder here
+		Glide.with(image.getContext())
+				.load(R.drawable.ic_launcher_foreground)
+				.into(image);
+
+
+		Thread thread = new Thread(() -> {
+			HybridAPI hAPI = HybridAPI.getInstance();
+			try {
+				Uri content = hAPI.getFileContent(fileUID).first;
+
+				Handler mainHandler = new Handler(image.getContext().getMainLooper());
+				mainHandler.post(() ->
+						Glide.with(image.getContext())
+								.load(content)
+								.centerCrop()
+								.override(150, 150)
+								.placeholder(R.drawable.ic_launcher_foreground)
+								.error(R.drawable.ic_launcher_background)
+								.into(image));
+			}
+			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+				//Do nothing
+			}
+		});
+		thread.start();
 	}
 }
