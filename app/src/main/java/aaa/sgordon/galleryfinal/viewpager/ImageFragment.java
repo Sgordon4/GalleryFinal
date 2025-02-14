@@ -62,22 +62,24 @@ public class ImageFragment extends Fragment {
 		ImageView image = binding.image;
 		image.setTransitionName(item.first.toString());
 
+
+
+
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
-				Uri content = hAPI.getFileContent(fileUID).first;
-
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
-				mainHandler.post(() -> {
-						getParentFragment().startPostponedEnterTransition();
 
-						Glide.with(image.getContext())
-								.load(content)
+				mainHandler.post(() -> getParentFragment().startPostponedEnterTransition());
 
-								//.placeholder(R.drawable.ic_launcher_foreground)
-								.error(R.drawable.ic_launcher_background)
-								.into(image);
-				});
+				Uri content = hAPI.getFileContent(fileUID).first;
+				mainHandler.post(() ->
+					Glide.with(image.getContext())
+						.load(content)
+
+						//.placeholder(R.drawable.ic_launcher_foreground)
+						.error(R.drawable.ic_launcher_background)
+						.into(image));
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing
