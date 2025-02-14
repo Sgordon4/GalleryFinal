@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.TransitionInflater;
+import androidx.transition.TransitionSet;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
@@ -407,6 +408,10 @@ public class DirFragment extends Fragment {
 					//If we're not selecting, launch a new fragment
 					else if(holder instanceof ImageViewHolder) {
 						int pos = holder.getAdapterPosition();
+
+						// Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
+						// instead of fading out with the rest to prevent an overlapping animation of fade and move).
+						((TransitionSet) getExitTransition()).excludeTarget(holder.itemView.findViewById(R.id.child), true);
 
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
 								.actionToViewPagerFragment(dirViewModel.getDirUID());
