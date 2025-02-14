@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Note: 175 is kinda slow, but much faster and the animation places the view in the wrong position -->
+<!-- Look into a solution to this. Maybe interpolator type? -->
 <transitionSet
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:duration="175"

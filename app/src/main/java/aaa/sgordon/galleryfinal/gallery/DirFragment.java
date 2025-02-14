@@ -410,6 +410,7 @@ public class DirFragment extends Fragment {
 					else if(holder instanceof ImageViewHolder) {
 						int pos = holder.getAdapterPosition();
 
+						/* Causing visual problems I don't like, and google photos doesn't even use an exit transition, so I'm disabling it
 						//Fade out the grid when transitioning
 						setExitTransition(TransitionInflater.from(getContext())
 								.inflateTransition(R.transition.grid_fade_transition));
@@ -417,6 +418,7 @@ public class DirFragment extends Fragment {
 						// Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
 						// instead of fading out with the rest to prevent an overlapping animation of fade and move).
 						((TransitionSet) getExitTransition()).excludeTarget(holder.itemView.findViewById(R.id.child), true);
+						 */
 
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
 								.actionToViewPagerFragment(dirViewModel.getDirUID());
