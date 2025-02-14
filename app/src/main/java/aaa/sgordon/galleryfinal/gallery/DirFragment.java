@@ -51,6 +51,7 @@ import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class DirFragment extends Fragment {
@@ -406,7 +407,7 @@ public class DirFragment extends Fragment {
 					if(selectionController.isSelecting())
 						selectionController.toggleSelectItem(fileUID);
 					//If we're not selecting, launch a new fragment
-					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder) {
+					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
 						int pos = holder.getAdapterPosition();
 
 						//Transition is causing visual problems I don't like, and Google photos

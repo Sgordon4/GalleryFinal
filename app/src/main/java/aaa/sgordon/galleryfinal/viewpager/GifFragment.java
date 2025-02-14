@@ -70,7 +70,7 @@ public class GifFragment extends Fragment {
 				mainHandler.post(() -> getParentFragment().startPostponedEnterTransition());
 
 				Uri content = hAPI.getFileContent(fileUID).first;
-				media.setImageURI(content);
+				mainHandler.post(() -> media.setImageURI(content));
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing

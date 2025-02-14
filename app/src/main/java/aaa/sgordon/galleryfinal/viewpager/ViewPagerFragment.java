@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
+import androidx.viewpager2.widget.ViewPager2;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -27,9 +28,12 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerBinding;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 
+//https://github.com/android/animation-samples/tree/main/GridToPager
+
 public class ViewPagerFragment extends Fragment {
 	private FragmentViewpagerBinding binding;
 	private DirectoryViewModel dirViewModel;
+	private int currPos = -1;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -65,10 +69,18 @@ public class ViewPagerFragment extends Fragment {
 		ViewPagerAdapter adapter = new ViewPagerAdapter(this);
 		binding.viewpager.setAdapter(adapter);
 
-		//TODO If there are 0 items (all removed), leave
 		dirViewModel.flatList.observe(getViewLifecycleOwner(), this::updateList);
 
+		binding.viewpager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+			@Override
+			public void onPageSelected(int position) {
+				super.onPageSelected(position);
+				currPos = position;
+			}
+		});
 
+
+		/*
 		//Rather than shared element transitioning to this fragment, we want to transition to a page fragment
 		//This is used in conjunction with postponeEnterTransition() to wait for the ViewPager to be ready
 		setEnterSharedElementCallback(new SharedElementCallback() {
@@ -86,6 +98,7 @@ public class ViewPagerFragment extends Fragment {
 				}
 			}
 		});
+		 */
 	}
 
 	private void updateList(List<Pair<Path, String>> newList) {
@@ -95,6 +108,16 @@ public class ViewPagerFragment extends Fragment {
 			return extension.equals("jpg") || extension.equals("png") || extension.equals("gif") || extension.equals("mp4");
 		}).collect(Collectors.toList());
 
+		//TODO If there are 0 items (all removed), leave
+
 		((ViewPagerAdapter) binding.viewpager.getAdapter()).setList(mediaOnly);
+
+		if(currPos == -1) {
+			ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
+			int fromPos = args.getFromPosition();
+
+			currPos = mediaOnly.indexOf(newList.get(fromPos));
+			binding.viewpager.setCurrentItem(currPos, false);
+		}
 	}
 }

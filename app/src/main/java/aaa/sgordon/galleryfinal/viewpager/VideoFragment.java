@@ -77,9 +77,11 @@ public class VideoFragment extends Fragment {
 				Uri content = hAPI.getFileContent(fileUID).first;
 				MediaItem mediaItem = MediaItem.fromUri(content);
 
-				player.setMediaItem(mediaItem);
-				player.prepare();
-				player.setPlayWhenReady(true);
+				mainHandler.post(() -> {
+					player.setMediaItem(mediaItem);
+					player.prepare();
+					player.setPlayWhenReady(true);
+				});
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing
