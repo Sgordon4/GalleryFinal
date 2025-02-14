@@ -25,7 +25,6 @@ import androidx.navigation.Navigation;
 import androidx.navigation.fragment.FragmentNavigator;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -63,10 +62,6 @@ public class DirFragment extends Fragment {
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		setExitTransition(TransitionInflater.from(getContext())
-				.inflateTransition(R.transition.grid_exit_transition));
-
 
 		MainViewModel mainViewModel = new ViewModelProvider(getActivity()).get(MainViewModel.class);
 		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
@@ -144,8 +139,14 @@ public class DirFragment extends Fragment {
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
 		NavController navController = Navigation.findNavController(view);
 		AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder().build();
-		NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration);
+		//NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration);
 
+		toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				navController.popBackStack();
+			}
+		});
 		//Hide the navigation icon when we're at the top-level
 		navController.addOnDestinationChangedListener((navController1, navDestination, bundle) -> {
 			if(navController1.getPreviousBackStackEntry() == null)
@@ -409,6 +410,10 @@ public class DirFragment extends Fragment {
 					else if(holder instanceof ImageViewHolder) {
 						int pos = holder.getAdapterPosition();
 
+						//Fade out the grid when transitioning
+						setExitTransition(TransitionInflater.from(getContext())
+								.inflateTransition(R.transition.grid_fade_transition));
+
 						// Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
 						// instead of fading out with the rest to prevent an overlapping animation of fade and move).
 						((TransitionSet) getExitTransition()).excludeTarget(holder.itemView.findViewById(R.id.child), true);
@@ -422,6 +427,7 @@ public class DirFragment extends Fragment {
 								.addSharedElement(imageView, imageView.getTransitionName())
 								.build();
 
+						//binding.galleryAppbar.appbar.setExpanded(false, false);
 						navController.navigate(action, extras);
 					}
 					return true;
@@ -500,6 +506,12 @@ public class DirFragment extends Fragment {
 				else if(dy < 0 && !fab.isShown()) fab.show();
 			}
 		});
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		setExitTransition(null); // Clears the transition when returning
 	}
 
 	@Override
