@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal.viewpager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.google.android.material.transition.MaterialContainerTransform;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.nio.file.Path;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -28,10 +30,17 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageFragment extends Fragment {
 	private FragmentViewpagerImageBinding binding;
+	private final Pair<Path, String> item;
 	private final UUID fileUID;
 
-	public ImageFragment(UUID fileUID) {
-		this.fileUID = fileUID;
+	public ImageFragment(Pair<Path, String> item) {
+		this.item = item;
+
+		String UUIDString = item.first.getFileName().toString();
+		if(UUIDString.equals("END"))
+			UUIDString = item.first.getParent().getFileName().toString();
+
+		this.fileUID = UUID.fromString(UUIDString);
 	}
 
 	@Override
@@ -50,7 +59,11 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
+		View sharedElementTarget = binding.sharedElementTarget;
 		ImageView image = binding.image;
+
+		sharedElementTarget.setTransitionName(item.first.toString());
+
 
 		//We can't call getFileContent without a thread, so just Load a placeholder here
 		Glide.with(image.getContext())
@@ -67,8 +80,7 @@ public class ImageFragment extends Fragment {
 				mainHandler.post(() ->
 						Glide.with(image.getContext())
 								.load(content)
-								.centerCrop()
-								.override(150, 150)
+
 								.placeholder(R.drawable.ic_launcher_foreground)
 								.error(R.drawable.ic_launcher_background)
 								.into(image));
@@ -78,5 +90,15 @@ public class ImageFragment extends Fragment {
 			}
 		});
 		thread.start();
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+
+		View sharedElementTarget = binding.sharedElementTarget;
+		ImageView image = binding.image;
+		image.setTransitionName(sharedElementTarget.getTransitionName());
+		sharedElementTarget.setTransitionName(null);
 	}
 }

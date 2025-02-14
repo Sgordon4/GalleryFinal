@@ -59,15 +59,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@NonNull
 	@Override
 	public Fragment createFragment(int position) {
-		Pair<Path, String> item = list.get(position);
-
-		String UUIDString = item.first.getFileName().toString();
-		if(UUIDString.equals("END"))
-			UUIDString = item.first.getParent().getFileName().toString();
-		UUID fileUID = UUID.fromString(UUIDString);
-
-		Fragment fragment = new ImageFragment(fileUID);
-		return fragment;
+		return new ImageFragment( list.get(position) );
 	}
 
 	@Override
@@ -76,7 +68,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
 		Pair<Path, String> item = list.get(position);
 
-		holder.itemView.setTransitionName(item.first.toString());
+		//holder.itemView.setTransitionName(item.first.toString());
 	}
 
 	@Override
