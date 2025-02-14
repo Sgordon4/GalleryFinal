@@ -74,7 +74,7 @@ public class ImageFragment extends Fragment {
 						Glide.with(image.getContext())
 								.load(content)
 
-								.placeholder(R.drawable.ic_launcher_foreground)
+								//.placeholder(R.drawable.ic_launcher_foreground)
 								.error(R.drawable.ic_launcher_background)
 								.into(image);
 				});
