@@ -8,7 +8,7 @@
     tools:context=".viewpager.ViewPagerFragment">
 
     <ImageView
-        android:id="@+id/image"
+        android:id="@+id/media"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"

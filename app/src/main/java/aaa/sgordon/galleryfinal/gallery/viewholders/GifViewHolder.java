@@ -21,7 +21,7 @@ public class GifViewHolder extends BaseViewHolder {
 	public GifViewHolder(View itemView) {
 		super(itemView);
 
-		image = itemView.findViewById(R.id.image);
+		image = itemView.findViewById(R.id.media);
 	}
 
 	@Override

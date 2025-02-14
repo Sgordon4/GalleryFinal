@@ -28,8 +28,6 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.transition.TransitionInflater;
-import androidx.transition.TransitionSet;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
@@ -51,6 +49,7 @@ import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
@@ -407,10 +406,12 @@ public class DirFragment extends Fragment {
 					if(selectionController.isSelecting())
 						selectionController.toggleSelectItem(fileUID);
 					//If we're not selecting, launch a new fragment
-					else if(holder instanceof ImageViewHolder) {
+					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder) {
 						int pos = holder.getAdapterPosition();
 
-						/* Causing visual problems I don't like, and google photos doesn't even use an exit transition, so I'm disabling it
+						//Transition is causing visual problems I don't like, and Google photos
+						// doesn't even use an exit transition, so I'm disabling it
+						/*
 						//Fade out the grid when transitioning
 						setExitTransition(TransitionInflater.from(getContext())
 								.inflateTransition(R.transition.grid_fade_transition));
@@ -424,9 +425,12 @@ public class DirFragment extends Fragment {
 								.actionToViewPagerFragment(dirViewModel.getDirUID());
 						action.setFromPosition(pos);
 
-						View imageView = holder.itemView.findViewById(R.id.image);
+						View mediaView = holder.itemView.findViewById(R.id.media);
+						System.out.println(mediaView);
+						System.out.println(mediaView.getTransitionName());
+
 						FragmentNavigator.Extras extras = new FragmentNavigator.Extras.Builder()
-								.addSharedElement(imageView, imageView.getTransitionName())
+								.addSharedElement(mediaView, mediaView.getTransitionName())
 								.build();
 
 						//binding.galleryAppbar.appbar.setExpanded(false, false);

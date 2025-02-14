@@ -17,7 +17,7 @@ public class UnknownViewHolder extends BaseViewHolder {
 		super(itemView);
 
 		color = itemView.findViewById(R.id.color);
-		image = itemView.findViewById(R.id.image);
+		image = itemView.findViewById(R.id.media);
 		name = itemView.findViewById(R.id.name);
 	}
 

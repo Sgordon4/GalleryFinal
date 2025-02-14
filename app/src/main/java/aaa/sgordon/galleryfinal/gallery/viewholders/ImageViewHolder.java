@@ -2,17 +2,14 @@ package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.net.Uri;
 import android.os.Handler;
-import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -24,7 +21,7 @@ public class ImageViewHolder extends BaseViewHolder {
 	public ImageViewHolder(View itemView) {
 		super(itemView);
 
-		image = itemView.findViewById(R.id.image);
+		image = itemView.findViewById(R.id.media);
 	}
 
 	@Override

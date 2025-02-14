@@ -10,6 +10,8 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.adapter.FragmentViewHolder;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,16 +61,21 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@NonNull
 	@Override
 	public Fragment createFragment(int position) {
-		return new ImageFragment( list.get(position) );
+		String fileExtension = FilenameUtils.getExtension( list.get(position).second );
+
+		switch (fileExtension) {
+			case "gif":
+				return new GifFragment( list.get(position) );
+			case "mp4":
+				return new VideoFragment( list.get(position) );
+			default:
+				return new ImageFragment( list.get(position) );
+		}
 	}
 
 	@Override
 	public void onBindViewHolder(@NonNull FragmentViewHolder holder, int position, @NonNull List<Object> payloads) {
 		super.onBindViewHolder(holder, position, payloads);
-
-		Pair<Path, String> item = list.get(position);
-
-		//holder.itemView.setTransitionName(item.first.toString());
 	}
 
 	@Override

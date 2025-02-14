@@ -21,7 +21,7 @@ public class VideoViewHolder extends BaseViewHolder {
 	public VideoViewHolder(View itemView) {
 		super(itemView);
 
-		image = itemView.findViewById(R.id.image);
+		image = itemView.findViewById(R.id.media);
 	}
 
 	@Override

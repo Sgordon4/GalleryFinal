@@ -18,7 +18,7 @@
         android:foreground="@drawable/selector_overlay" >
 
         <ImageView
-            android:id="@+id/image"
+            android:id="@+id/media"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 

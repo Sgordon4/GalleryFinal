@@ -7,33 +7,33 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.transition.Transition;
-
-import com.bumptech.glide.Glide;
-import com.google.android.material.transition.MaterialContainerTransform;
+import androidx.media3.common.MediaItem;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.PlayerView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
+import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerVideoBinding;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import pl.droidsonroids.gif.GifImageView;
 
-public class ImageFragment extends Fragment {
-	private FragmentViewpagerImageBinding binding;
+public class VideoFragment extends Fragment {
+	private FragmentViewpagerVideoBinding binding;
 	private final Pair<Path, String> item;
 	private final UUID fileUID;
 
-	public ImageFragment(Pair<Path, String> item) {
+	private ExoPlayer player;
+
+	public VideoFragment(Pair<Path, String> item) {
 		this.item = item;
 
 		String UUIDString = item.first.getFileName().toString();
@@ -51,7 +51,7 @@ public class ImageFragment extends Fragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		binding = FragmentViewpagerImageBinding.inflate(inflater, container, false);
+		binding = FragmentViewpagerVideoBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
 
@@ -59,30 +59,41 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		ImageView media = binding.media;
-		media.setTransitionName(item.first.toString());
+
+		PlayerView playerView = binding.media;
+		player = new ExoPlayer.Builder(getContext()).build();
+		playerView.setPlayer(player);
+
+		playerView.setTransitionName(item.first.toString());
 
 
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
-				Handler mainHandler = new Handler(media.getContext().getMainLooper());
+				Handler mainHandler = new Handler(getContext().getMainLooper());
 
 				mainHandler.post(() -> getParentFragment().startPostponedEnterTransition());
 
 				Uri content = hAPI.getFileContent(fileUID).first;
-				mainHandler.post(() ->
-					Glide.with(media.getContext())
-						.load(content)
+				MediaItem mediaItem = MediaItem.fromUri(content);
 
-						//.placeholder(R.drawable.ic_launcher_foreground)
-						.error(R.drawable.ic_launcher_background)
-						.into(media));
+				player.setMediaItem(mediaItem);
+				player.prepare();
+				player.setPlayWhenReady(true);
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing
 			}
 		});
 		thread.start();
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+		if (player != null) {
+			player.release();
+			player = null;
+		}
 	}
 }

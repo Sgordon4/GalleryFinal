@@ -5,32 +5,22 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
-import androidx.viewpager2.adapter.FragmentStateAdapter;
-import androidx.viewpager2.widget.ViewPager2;
-
-import com.google.android.material.transition.MaterialContainerTransform;
 
 import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
@@ -75,6 +65,7 @@ public class ViewPagerFragment extends Fragment {
 		ViewPagerAdapter adapter = new ViewPagerAdapter(this);
 		binding.viewpager.setAdapter(adapter);
 
+		//TODO If there are 0 items (all removed), leave
 		dirViewModel.flatList.observe(getViewLifecycleOwner(), this::updateList);
 
 
@@ -86,14 +77,12 @@ public class ViewPagerFragment extends Fragment {
 				//Grab the currently displayed ViewPager Fragment
 				FragmentManager fragmentManager = getChildFragmentManager();
 				Fragment fragment = fragmentManager.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
+				if(fragment == null || fragment.getView() == null) return;
 
-				if (fragment instanceof ImageFragment) {
-					View firstImageView = fragment.getView() != null ? fragment.getView().findViewById(R.id.image) : null;
-
-					if (firstImageView != null) {
-						//Re-map the shared element to point to the imageView inside that fragment
-						sharedElements.put(names.get(0), firstImageView);
-					}
+				View media = fragment.getView().findViewById(R.id.media);
+				if (media != null) {
+					//Re-map the shared element to point to the media view inside that fragment
+					sharedElements.put(names.get(0), media);
 				}
 			}
 		});
@@ -103,10 +92,9 @@ public class ViewPagerFragment extends Fragment {
 		//The ViewPager should only display media items
 		List<Pair<Path, String>> mediaOnly = newList.stream().filter(pathStringPair -> {
 			String extension = FilenameUtils.getExtension(pathStringPair.second);
-			return extension.equals("jpg") || extension.equals("png");
+			return extension.equals("jpg") || extension.equals("png") || extension.equals("gif") || extension.equals("mp4");
 		}).collect(Collectors.toList());
 
 		((ViewPagerAdapter) binding.viewpager.getAdapter()).setList(mediaOnly);
-		System.out.println("List updating");
 	}
 }

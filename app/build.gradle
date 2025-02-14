@@ -61,16 +61,22 @@ dependencies {
 
     implementation 'androidx.navigation:navigation-ui:2.8.6'
 
+    implementation 'commons-io:commons-io:2.18.0'
+
     //For FAB with Speed Dial
     implementation 'com.leinardi.android:speed-dial:3.3.0'
+
+
+    implementation 'com.github.bumptech.glide:glide:4.12.0'
 
     //Primary imageView
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     //Subsampling imageview
     implementation 'com.davemorrissey.labs:subsampling-scale-image-view-androidx:3.10.0'
 
+    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.19'
 
-    implementation 'commons-io:commons-io:2.18.0'
-
-    implementation 'com.github.bumptech.glide:glide:4.12.0'
+    implementation "androidx.media3:media3-exoplayer:1.5.1"
+    implementation "androidx.media3:media3-exoplayer-dash:1.5.1"
+    implementation "androidx.media3:media3-ui:1.5.1"
 }
