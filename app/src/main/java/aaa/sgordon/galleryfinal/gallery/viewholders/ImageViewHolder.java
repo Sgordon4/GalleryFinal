@@ -47,7 +47,7 @@ public class ImageViewHolder extends BaseViewHolder {
 					Glide.with(image.getContext())
 						.load(content)
 						.centerCrop()
-						.override(150, 150)
+						//.override(150, 150)
 						.placeholder(R.drawable.ic_launcher_foreground)
 						.error(R.drawable.ic_launcher_background)
 						.into(image));

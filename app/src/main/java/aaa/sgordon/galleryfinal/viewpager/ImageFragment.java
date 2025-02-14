@@ -59,17 +59,8 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		View sharedElementTarget = binding.sharedElementTarget;
 		ImageView image = binding.image;
-
-		sharedElementTarget.setTransitionName(item.first.toString());
-
-
-		//We can't call getFileContent without a thread, so just Load a placeholder here
-		Glide.with(image.getContext())
-				.load(R.drawable.ic_launcher_foreground)
-				.into(image);
-
+		image.setTransitionName(item.first.toString());
 
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
@@ -77,28 +68,21 @@ public class ImageFragment extends Fragment {
 				Uri content = hAPI.getFileContent(fileUID).first;
 
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
-				mainHandler.post(() ->
+				mainHandler.post(() -> {
+						getParentFragment().startPostponedEnterTransition();
+
 						Glide.with(image.getContext())
 								.load(content)
 
 								.placeholder(R.drawable.ic_launcher_foreground)
 								.error(R.drawable.ic_launcher_background)
-								.into(image));
+								.into(image);
+				});
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing
 			}
 		});
 		thread.start();
-	}
-
-	@Override
-	public void onStop() {
-		super.onStop();
-
-		View sharedElementTarget = binding.sharedElementTarget;
-		ImageView image = binding.image;
-		image.setTransitionName(sharedElementTarget.getTransitionName());
-		sharedElementTarget.setTransitionName(null);
 	}
 }

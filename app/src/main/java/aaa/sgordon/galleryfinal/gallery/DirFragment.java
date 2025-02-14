@@ -29,6 +29,7 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.TransitionInflater;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
@@ -61,6 +62,11 @@ public class DirFragment extends Fragment {
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		setExitTransition(TransitionInflater.from(getContext())
+				.inflateTransition(R.transition.grid_exit_transition));
+
+
 		MainViewModel mainViewModel = new ViewModelProvider(getActivity()).get(MainViewModel.class);
 		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
 
@@ -83,6 +89,8 @@ public class DirFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 
 
+		postponeEnterTransition(); // Pause the transition
+
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
 		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 4) {
@@ -102,6 +110,17 @@ public class DirFragment extends Fragment {
 			}
 		};
 		recyclerView.setLayoutManager(layoutManager);
+
+		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+			@Override
+			public boolean onPreDraw() {
+				recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+				startPostponedEnterTransition(); // Resume transition once layout is ready
+				return true;
+			}
+		});
+
+
 
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
@@ -398,9 +417,6 @@ public class DirFragment extends Fragment {
 								.addSharedElement(imageView, imageView.getTransitionName())
 								.build();
 
-
-						postponeEnterTransition(); // Pause the reenter transition so the shared element transition can complete
-
 						navController.navigate(action, extras);
 					}
 					return true;
@@ -423,14 +439,6 @@ public class DirFragment extends Fragment {
 			});
 		};
 		adapter.setCallbacks(adapterCallbacks);
-		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-			@Override
-			public boolean onPreDraw() {
-				recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
-				startPostponedEnterTransition(); // Resume transition once layout is ready
-				return true;
-			}
-		});
 
 
 
