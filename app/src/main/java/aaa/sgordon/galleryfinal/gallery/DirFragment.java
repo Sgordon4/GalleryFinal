@@ -18,7 +18,10 @@ import android.view.ViewTreeObserver;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -36,9 +39,12 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -84,9 +90,6 @@ public class DirFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-
-		postponeEnterTransition(); // Pause the transition
-
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
 		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 4) {
@@ -107,6 +110,8 @@ public class DirFragment extends Fragment {
 		};
 		recyclerView.setLayoutManager(layoutManager);
 
+
+		postponeEnterTransition(); // Pause the transition
 		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
 			@Override
 			public boolean onPreDraw() {
@@ -141,12 +146,8 @@ public class DirFragment extends Fragment {
 		AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder().build();
 		//NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration);
 
-		toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View view) {
-				navController.popBackStack();
-			}
-		});
+		toolbar.setNavigationOnClickListener(view4 -> navController.popBackStack());
+
 		//Hide the navigation icon when we're at the top-level
 		navController.addOnDestinationChangedListener((navController1, navDestination, bundle) -> {
 			if(navController1.getPreviousBackStackEntry() == null)
@@ -422,6 +423,8 @@ public class DirFragment extends Fragment {
 						((TransitionSet) getExitTransition()).excludeTarget(holder.itemView.findViewById(R.id.child), true);
 						 */
 
+
+
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
 								.actionToViewPagerFragment(dirViewModel.getDirUID());
 						action.setFromPosition(pos);
@@ -466,6 +469,21 @@ public class DirFragment extends Fragment {
 			dragSelectCallback.onMotionEvent(motionEvent);
 			return false;
 		});
+
+
+
+
+		setExitSharedElementCallback(new SharedElementCallback() {
+			@Override
+			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				//super.onMapSharedElements(names, sharedElements);
+				System.out.println("This is dumb as fuck I swear to god");
+				System.out.println(Arrays.toString(names.toArray()));
+				System.out.println(Arrays.toString(sharedElements.keySet().toArray()));
+			}
+		});
+
+
 
 
 
@@ -519,6 +537,7 @@ public class DirFragment extends Fragment {
 	public void onResume() {
 		super.onResume();
 		setExitTransition(null); // Clears the transition when returning
+		setExitSharedElementCallback(null);
 	}
 
 	@Override

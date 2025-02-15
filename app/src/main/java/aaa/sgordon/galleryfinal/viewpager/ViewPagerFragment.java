@@ -12,6 +12,8 @@ import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
 import androidx.viewpager2.widget.ViewPager2;
@@ -19,6 +21,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,15 +42,51 @@ public class ViewPagerFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		//Postpone the transition until the viewPager is ready
+		Transition transition = TransitionInflater.from(getContext())
+				.inflateTransition(R.transition.image_shared_element_transition);
+		setSharedElementEnterTransition(transition);
+
+		//Postpone the transition until the viewPager is ready, but only if this is our first creation
 		//WARNING: The ViewPage Fragment MUST call 'getParentFragment().startPostponedEnterTransition();'
-		postponeEnterTransition();
+		if(savedInstanceState == null)
+			postponeEnterTransition();
 
 		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
 		dirViewModel = new ViewModelProvider(getParentFragment(),
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
+
+
+		/*
+
+		//Rather than shared element transitioning to this fragment, we want to transition to a page fragment
+		//This is used in conjunction with postponeEnterTransition() to wait for the ViewPager to be ready
+		setEnterSharedElementCallback(new SharedElementCallback() {
+			@Override
+			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				System.out.println("VIEWPAGER ENTER");
+				System.out.println(Arrays.asList(names.toArray()));
+				System.out.println(Arrays.asList(sharedElements.keySet().toArray()));
+
+				Fragment currentFragment = getChildFragmentManager()
+						.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
+				View newSharedElement = currentFragment.getView().findViewById(R.id.media);
+
+				if (newSharedElement != null) {
+					names.clear();
+					//sharedElements.clear();
+					names.add(newSharedElement.getTransitionName());
+					sharedElements.put(newSharedElement.getTransitionName(), newSharedElement);
+				}
+				System.out.println("VIEWPAGER NOWWWWW");
+				System.out.println(Arrays.asList(names.toArray()));
+				System.out.println(Arrays.asList(sharedElements.keySet().toArray()));
+			}
+		});
+
+		 */
+
 	}
 
 	@Nullable
@@ -55,9 +94,43 @@ public class ViewPagerFragment extends Fragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = FragmentViewpagerBinding.inflate(inflater, container, false);
 
-		Transition transition = TransitionInflater.from(getContext())
-				.inflateTransition(R.transition.image_shared_element_transition);
-		setSharedElementEnterTransition(transition);
+		setEnterSharedElementCallback(
+				new SharedElementCallback() {
+					@Override
+					public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+						System.out.println("Inside");
+
+						Fragment currentFragment = getChildFragmentManager()
+								.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
+						System.out.println("Frags: "+Arrays.toString(getChildFragmentManager().getFragments().toArray()));
+						System.out.println("CurrItem: "+binding.viewpager.getCurrentItem());
+						System.out.println("CurrFrag: "+currentFragment);
+
+						for(Fragment frag : getChildFragmentManager().getFragments()) {
+							System.out.println("Setting "+frag.getTag());
+							frag.getView().findViewById(R.id.media).setTransitionName(frag.getTag());
+						}
+
+						View view = currentFragment.getView();
+						if (view == null) return;
+
+						// Map the first shared element name to the child ImageView.
+						sharedElements.put(names.get(0), view.findViewById(R.id.media));
+						view.findViewById(R.id.media).setTransitionName(names.get(0));
+
+						System.out.println("View: "+view);
+						System.out.println("Media: "+view.findViewById(R.id.media));
+						System.out.println("Transition: "+view.findViewById(R.id.media).getTransitionName());
+
+
+						/*
+						names.clear();
+						//sharedElements.clear();
+						names.add(view.findViewById(R.id.media).getTransitionName());
+						sharedElements.put(view.findViewById(R.id.media).getTransitionName(), view.findViewById(R.id.media));
+						 */
+					}
+				});
 
 		return binding.getRoot();
 	}
@@ -68,6 +141,7 @@ public class ViewPagerFragment extends Fragment {
 
 		ViewPagerAdapter adapter = new ViewPagerAdapter(this);
 		binding.viewpager.setAdapter(adapter);
+		binding.viewpager.setOffscreenPageLimit(1);
 
 		dirViewModel.flatList.observe(getViewLifecycleOwner(), this::updateList);
 
@@ -76,29 +150,36 @@ public class ViewPagerFragment extends Fragment {
 			public void onPageSelected(int position) {
 				super.onPageSelected(position);
 				currPos = position;
-			}
-		});
+				System.out.println("NEW: "+adapter.list.get(position).first);
+
+				NavController navController = Navigation.findNavController(getView());
+				navController.getPreviousBackStackEntry().getSavedStateHandle()
+						.set("lastPath", adapter.list.get(position).first.toString());
 
 
-		/*
-		//Rather than shared element transitioning to this fragment, we want to transition to a page fragment
-		//This is used in conjunction with postponeEnterTransition() to wait for the ViewPager to be ready
-		setEnterSharedElementCallback(new SharedElementCallback() {
-			@Override
-			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				//Grab the currently displayed ViewPager Fragment
-				FragmentManager fragmentManager = getChildFragmentManager();
-				Fragment fragment = fragmentManager.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
-				if(fragment == null || fragment.getView() == null) return;
-
-				View media = fragment.getView().findViewById(R.id.media);
-				if (media != null) {
-					//Re-map the shared element to point to the media view inside that fragment
-					sharedElements.put(names.get(0), media);
+				/*
+				Fragment currentFragment = getChildFragmentManager()
+						.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
+				if (currentFragment != null && getView() != null) {
+					View sharedElement = currentFragment.getView().findViewById(R.id.media);
+					if (sharedElement != null) {
+						System.out.println("Changing to "+sharedElement.getTransitionName());
+						requireActivity().getSupportFragmentManager()
+								.beginTransaction()
+								.setReorderingAllowed(true)
+								.addSharedElement(sharedElement, sharedElement.getTransitionName())
+								.commit();
+					}
 				}
+				 */
 			}
 		});
-		 */
+
+
+
+
+
+
 	}
 
 	private void updateList(List<Pair<Path, String>> newList) {
@@ -119,5 +200,18 @@ public class ViewPagerFragment extends Fragment {
 			currPos = mediaOnly.indexOf(newList.get(fromPos));
 			binding.viewpager.setCurrentItem(currPos, false);
 		}
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+		System.out.println("Stopping");
+
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		System.out.println("Destroying");
 	}
 }
