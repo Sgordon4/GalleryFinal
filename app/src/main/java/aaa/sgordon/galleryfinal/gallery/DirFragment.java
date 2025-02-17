@@ -184,7 +184,7 @@ public class DirFragment extends Fragment {
 			searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
 				@Override
 				public boolean onMenuItemActionExpand(MenuItem item) {
-					binding.galleryAppbar.tagFilter.setVisibility(View.VISIBLE);
+					binding.galleryAppbar.chipScroll.setVisibility(View.VISIBLE);
 
 					//Hide other menu items when SearchView expands
 					toolbar.post(() -> {
@@ -196,7 +196,7 @@ public class DirFragment extends Fragment {
 
 				@Override
 				public boolean onMenuItemActionCollapse(MenuItem item) {
-					binding.galleryAppbar.tagFilter.setVisibility(View.GONE);
+					binding.galleryAppbar.chipScroll.setVisibility(View.GONE);
 
 					//Restore menu items when SearchView collapses
 					toolbar.post(() -> {
