@@ -56,82 +56,12 @@ public class ViewPagerFragment extends Fragment {
 		dirViewModel = new ViewModelProvider(getParentFragment(),
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
-
-
-		/*
-
-		//Rather than shared element transitioning to this fragment, we want to transition to a page fragment
-		//This is used in conjunction with postponeEnterTransition() to wait for the ViewPager to be ready
-		setEnterSharedElementCallback(new SharedElementCallback() {
-			@Override
-			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				System.out.println("VIEWPAGER ENTER");
-				System.out.println(Arrays.asList(names.toArray()));
-				System.out.println(Arrays.asList(sharedElements.keySet().toArray()));
-
-				Fragment currentFragment = getChildFragmentManager()
-						.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
-				View newSharedElement = currentFragment.getView().findViewById(R.id.media);
-
-				if (newSharedElement != null) {
-					names.clear();
-					//sharedElements.clear();
-					names.add(newSharedElement.getTransitionName());
-					sharedElements.put(newSharedElement.getTransitionName(), newSharedElement);
-				}
-				System.out.println("VIEWPAGER NOWWWWW");
-				System.out.println(Arrays.asList(names.toArray()));
-				System.out.println(Arrays.asList(sharedElements.keySet().toArray()));
-			}
-		});
-
-		 */
-
 	}
 
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = FragmentViewpagerBinding.inflate(inflater, container, false);
-
-		setEnterSharedElementCallback(
-				new SharedElementCallback() {
-					@Override
-					public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-						System.out.println("Inside");
-
-						Fragment currentFragment = getChildFragmentManager()
-								.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
-						System.out.println("Frags: "+Arrays.toString(getChildFragmentManager().getFragments().toArray()));
-						System.out.println("CurrItem: "+binding.viewpager.getCurrentItem());
-						System.out.println("CurrFrag: "+currentFragment);
-
-						for(Fragment frag : getChildFragmentManager().getFragments()) {
-							System.out.println("Setting "+frag.getTag());
-							frag.getView().findViewById(R.id.media).setTransitionName(frag.getTag());
-						}
-
-						View view = currentFragment.getView();
-						if (view == null) return;
-
-						// Map the first shared element name to the child ImageView.
-						sharedElements.put(names.get(0), view.findViewById(R.id.media));
-						view.findViewById(R.id.media).setTransitionName(names.get(0));
-
-						System.out.println("View: "+view);
-						System.out.println("Media: "+view.findViewById(R.id.media));
-						System.out.println("Transition: "+view.findViewById(R.id.media).getTransitionName());
-
-
-						/*
-						names.clear();
-						//sharedElements.clear();
-						names.add(view.findViewById(R.id.media).getTransitionName());
-						sharedElements.put(view.findViewById(R.id.media).getTransitionName(), view.findViewById(R.id.media));
-						 */
-					}
-				});
-
 		return binding.getRoot();
 	}
 
@@ -150,28 +80,6 @@ public class ViewPagerFragment extends Fragment {
 			public void onPageSelected(int position) {
 				super.onPageSelected(position);
 				currPos = position;
-				System.out.println("NEW: "+adapter.list.get(position).first);
-
-				NavController navController = Navigation.findNavController(getView());
-				navController.getPreviousBackStackEntry().getSavedStateHandle()
-						.set("lastPath", adapter.list.get(position).first.toString());
-
-
-				/*
-				Fragment currentFragment = getChildFragmentManager()
-						.findFragmentByTag("f" + binding.viewpager.getCurrentItem());
-				if (currentFragment != null && getView() != null) {
-					View sharedElement = currentFragment.getView().findViewById(R.id.media);
-					if (sharedElement != null) {
-						System.out.println("Changing to "+sharedElement.getTransitionName());
-						requireActivity().getSupportFragmentManager()
-								.beginTransaction()
-								.setReorderingAllowed(true)
-								.addSharedElement(sharedElement, sharedElement.getTransitionName())
-								.commit();
-					}
-				}
-				 */
 			}
 		});
 
@@ -200,18 +108,5 @@ public class ViewPagerFragment extends Fragment {
 			currPos = mediaOnly.indexOf(newList.get(fromPos));
 			binding.viewpager.setCurrentItem(currPos, false);
 		}
-	}
-
-	@Override
-	public void onStop() {
-		super.onStop();
-		System.out.println("Stopping");
-
-	}
-
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		System.out.println("Destroying");
 	}
 }

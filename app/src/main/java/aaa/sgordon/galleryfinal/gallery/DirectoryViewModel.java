@@ -46,6 +46,7 @@ public class DirectoryViewModel extends ViewModel {
 	private final UUID currDirUID;
 
 	private final SelectionController.SelectionRegistry selectionRegistry;
+	private String filterQuery = "";
 
 	private final HybridListeners.FileChangeListener fileChangeListener;
 	private final Map<UUID, List<Pair<UUID, String>>> directoryCache = new HashMap<>();
@@ -71,6 +72,13 @@ public class DirectoryViewModel extends ViewModel {
 	}
 	public boolean isLink(UUID fileUID) {
 		return isLinkCache.contains(fileUID);
+	}
+
+	public String getFilterQuery() {
+		return filterQuery;
+	}
+	public void setFilterQuery(String query) {
+		filterQuery = query;
 	}
 
 	public DirectoryViewModel(UUID currDirUID) {

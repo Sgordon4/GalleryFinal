@@ -7,9 +7,12 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +21,8 @@ import android.view.ViewTreeObserver;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
@@ -142,10 +147,8 @@ public class DirFragment extends Fragment {
 
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
-		NavController navController = Navigation.findNavController(view);
-		AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder().build();
-		//NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration);
 
+		NavController navController = Navigation.findNavController(view);
 		toolbar.setNavigationOnClickListener(view4 -> navController.popBackStack());
 
 		//Hide the navigation icon when we're at the top-level
@@ -157,7 +160,72 @@ public class DirFragment extends Fragment {
 		//Must set title after configuration
 		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
 		String directoryName = args.getDirectoryName();
-		binding.galleryAppbar.toolbar.setTitle(directoryName);
+		toolbar.setTitle(directoryName);
+
+
+
+		toolbar.setOnMenuItemClickListener(item -> {
+			if (item.getItemId() == R.id.gallery_filter) {
+				System.out.println("Clicked filter");
+			}
+			else if (item.getItemId() == R.id.gallery_tag) {
+				System.out.println("Clicked tags");
+			}
+			return false;
+		});
+
+		MenuItem searchItem = toolbar.getMenu().findItem(R.id.gallery_filter);
+		SearchView searchView = (SearchView) searchItem.getActionView();
+		if(searchView != null) {
+			searchView.setQueryHint("Search...");
+
+			searchView.setMaxWidth(Integer.MAX_VALUE);
+			searchView.setSubmitButtonEnabled(false);
+			searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+				@Override
+				public boolean onMenuItemActionExpand(MenuItem item) {
+					binding.galleryAppbar.tagFilter.setVisibility(View.VISIBLE);
+
+					//Hide other menu items when SearchView expands
+					toolbar.post(() -> {
+						toolbar.getMenu().findItem(R.id.gallery_tag).setVisible(false);
+						toolbar.getMenu().findItem(R.id.action_settings).setVisible(false);
+					});
+					return true;
+				}
+
+				@Override
+				public boolean onMenuItemActionCollapse(MenuItem item) {
+					binding.galleryAppbar.tagFilter.setVisibility(View.GONE);
+
+					//Restore menu items when SearchView collapses
+					toolbar.post(() -> {
+						toolbar.getMenu().findItem(R.id.gallery_filter).setVisible(true);
+						toolbar.getMenu().findItem(R.id.gallery_tag).setVisible(true);
+						toolbar.getMenu().findItem(R.id.action_settings).setVisible(true);
+					});
+					return true;
+				}
+			});
+
+			searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+				@Override
+				public boolean onQueryTextSubmit(String query) {
+					System.out.println("Submitted");
+					return false;
+				}
+
+				@Override
+				public boolean onQueryTextChange(String newText) {
+					dirViewModel.setFilterQuery(newText);
+					return false;
+				}
+			});
+
+		}
+
+
+
 
 
 		SelectionController.SelectionCallbacks selectionCallbacks = new SelectionController.SelectionCallbacks() {
@@ -473,15 +541,7 @@ public class DirFragment extends Fragment {
 
 
 
-		setExitSharedElementCallback(new SharedElementCallback() {
-			@Override
-			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				//super.onMapSharedElements(names, sharedElements);
-				System.out.println("This is dumb as fuck I swear to god");
-				System.out.println(Arrays.toString(names.toArray()));
-				System.out.println(Arrays.toString(sharedElements.keySet().toArray()));
-			}
-		});
+
 
 
 
