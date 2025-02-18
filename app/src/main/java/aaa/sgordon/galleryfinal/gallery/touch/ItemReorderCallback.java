@@ -145,15 +145,16 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	public void onDragComplete() {
 		Pair<Path, String> draggedItem = adapter.list.get(draggedItemPos);
 		Path nextItem = draggedItemPos != adapter.list.size() - 1 ? adapter.list.get(draggedItemPos + 1).first : null;
-		Path destination = (nextItem != null) ? nextItem.getParent() : null;
+		//The nextItem is only null if the dragged item was moved to the end of the list, and should therefore be placed in its relative root
+		Path destination = (nextItem != null) ? nextItem.getParent() : draggedItem.first.getName(0);
 
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
-		Path newPath = (destination == null) ? draggedItem.first.getFileName() : destination.resolve(draggedItem.first.getFileName());
+		Path newPath = destination.resolve(draggedItem.first.getFileName());
 		Pair<Path, String> updatedItem = new Pair<>(newPath, draggedItem.second+" ");	//Add a space to force a DiffUtil update
 		if(!newPath.equals(draggedItem.first))
 			adapter.list.set(draggedItemPos, updatedItem);
 
-		System.out.println("OWA OWA");
+		//System.out.println("OWA OWA");
 
 		callback.onReorderComplete(destination, nextItem);
 	}

@@ -32,11 +32,11 @@ public class AdapterTouchSetup {
 			}
 			@Override
 			public boolean isDir(UUID fileUID) {
-				return dirViewModel.isDir(fileUID);
+				return dirViewModel.getDirCache().isDir(fileUID);
 			}
 			@Override
 			public boolean isLink(UUID fileUID) {
-				return dirViewModel.isLink(fileUID);
+				return dirViewModel.getDirCache().isLink(fileUID);
 			}
 
 			UUID fileUID = null;

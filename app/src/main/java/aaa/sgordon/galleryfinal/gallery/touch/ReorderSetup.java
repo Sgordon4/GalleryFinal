@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
@@ -47,15 +48,24 @@ public class ReorderSetup {
 
 
 				try {
-					boolean successful = dirViewModel.moveFiles(destination, nextItem, toMove);
+					UUID destinationUID = UUID.fromString(destination.getFileName().toString());
+					destinationUID = dirViewModel.getDirCache().resolveDirUID(destinationUID);
+					if(destinationUID == null) throw new RuntimeException();
+
+
+					UUID nextItemUID = null;
+					if(nextItem != null && !nextItem.getFileName().toString().equals("END"))
+						nextItemUID = UUID.fromString(nextItem.getFileName().toString());
+
+
+					boolean successful = DirUtilities.moveFiles(toMove, destinationUID, nextItemUID);
 					if(successful) return;
 
 					//If the move was not successful, we want to return the list to how it was before we dragged
 					Runnable myRunnable = () -> adapter.setList(dirViewModel.flatList.getValue());
 					new Handler(getMainLooper()).post(myRunnable);
 
-				} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException |
-						 ConnectException e) {
+				} catch (FileNotFoundException | ContentsNotFoundException | ConnectException | NotDirectoryException e) {
 					throw new RuntimeException(e);
 				}
 			});

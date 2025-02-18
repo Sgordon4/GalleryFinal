@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.gallery.touch;
 import android.util.Pair;
 import android.view.View;
 
-import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
