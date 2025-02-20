@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
@@ -69,7 +70,12 @@ public class AdapterTouchSetup {
 					if(isDoubleTapInProgress) {
 						//DoubleTap LongPress triggers a reorder
 						isDoubleTapInProgress = false;
-						reorderHelper.startDrag(holder);
+
+						//If the list is not currently filtered, the user is free to drag
+						if(dirViewModel.activeTags.getValue().isEmpty())
+							reorderHelper.startDrag(holder);
+						else
+							Toast.makeText(context, "Cannot reorder while filtering.", Toast.LENGTH_SHORT).show();
 					}
 					else {
 						//SingleTap LongPress triggers drag selection

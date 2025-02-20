@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -24,9 +25,16 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
@@ -157,7 +165,7 @@ public class DirFragment extends Fragment {
 			searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
 				@Override
 				public boolean onMenuItemActionExpand(MenuItem item) {
-					binding.galleryAppbar.chipScroll.setVisibility(View.VISIBLE);
+					binding.galleryAppbar.tagBar.setVisibility(View.VISIBLE);
 
 					//Hide other menu items when SearchView expands
 					toolbar.post(() -> {
@@ -169,7 +177,7 @@ public class DirFragment extends Fragment {
 
 				@Override
 				public boolean onMenuItemActionCollapse(MenuItem item) {
-					binding.galleryAppbar.chipScroll.setVisibility(View.GONE);
+					binding.galleryAppbar.tagBar.setVisibility(View.GONE);
 
 					//Restore menu items when SearchView collapses
 					toolbar.post(() -> {
@@ -184,17 +192,26 @@ public class DirFragment extends Fragment {
 			searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
 				@Override
 				public boolean onQueryTextSubmit(String query) {
-					System.out.println("Submitted");
+					dirViewModel.setActiveQuery(query);
 					return false;
 				}
 
 				@Override
 				public boolean onQueryTextChange(String newText) {
-					dirViewModel.setFilterQuery(newText);
+					dirViewModel.setQuery(newText);
+
+					if(newText.isEmpty())
+						dirViewModel.setActiveQuery(newText);
+
 					return false;
 				}
 			});
 		}
+
+		binding.galleryAppbar.tagClear.setOnClickListener(view2 -> {
+			dirViewModel.activeTags.postValue(new HashSet<>());
+			dirViewModel.onActiveTagsChanged();
+		});
 
 
 		//-----------------------------------------------------------------------------------------
@@ -225,6 +242,64 @@ public class DirFragment extends Fragment {
 
 			adapter.setList(list);
 			reorderCallback.applyReorder();
+		});
+
+		dirViewModel.filteredTags.observe(getViewLifecycleOwner(), tags -> {
+			List<String> sortedTags = tags.stream().sorted().collect(Collectors.toList());
+			ChipGroup chipGroup = binding.galleryAppbar.chipGroup;
+
+			//Grab the currently displayed tags
+			List<String> currentTags = new ArrayList<>();
+			for(int i = 0; i < chipGroup.getChildCount(); i++) {
+				Chip chip = (Chip) chipGroup.getChildAt(i);
+				currentTags.add(chip.getText().toString());
+			}
+
+			//If there are no visible changes, do nothing
+			if(sortedTags.equals(currentTags))
+				return;
+
+			//Create a new list of chips to display based on the sorted tags
+			List<Chip> chips = new ArrayList<>();
+			for(String tag : sortedTags) {
+				Chip chip = (Chip) getLayoutInflater().inflate(R.layout.dir_tag_chip, chipGroup, false);
+				chip.setText(tag);
+
+				if(dirViewModel.activeTags.getValue().contains(tag)) {
+					chip.setChecked(true);
+				}
+
+				chip.setOnClickListener(view2 -> {
+					Set<String> activeTags = dirViewModel.activeTags.getValue();
+					boolean isChecked = activeTags.contains(tag);
+					if(isChecked)
+						activeTags.remove(tag);
+					else
+						activeTags.add(tag);
+
+					dirViewModel.activeTags.postValue(activeTags);
+				});
+
+				chips.add(chip);
+			}
+
+			chipGroup.removeAllViews();
+			for(Chip chip : chips)
+				chipGroup.addView(chip);
+		});
+
+
+		dirViewModel.activeTags.observe(getViewLifecycleOwner(), tags -> {
+			dirViewModel.onActiveTagsChanged();
+
+			ChipGroup chipGroup = binding.galleryAppbar.chipGroup;
+			//Make sure each chip is checked/unchecked based on the active tags, which can be updated in the background
+			for(int i = 0; i < chipGroup.getChildCount(); i++) {
+				Chip chip = (Chip) chipGroup.getChildAt(i);
+
+				boolean isActive = tags.contains(chip.getText().toString());
+				chip.setChecked(isActive);
+			}
 		});
 
 

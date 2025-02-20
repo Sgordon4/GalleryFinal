@@ -7,6 +7,9 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.room.Room;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -180,6 +183,71 @@ public class DirSampleData {
 			}
 		});
 		goFuckYourself.start();
+
+
+
+		Thread attributeThread = new Thread(() -> {
+			try {
+				UUID fileUID = r_l1.first;
+				hapi.lockLocal(fileUID);
+				HFile fileProps = hapi.getFileProps(fileUID);
+				JsonArray tags = new JsonArray();
+				tags.add("link");
+				tags.add("combined");
+				fileProps.userattr.add("tags", tags);
+				hapi.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hapi.unlockLocal(r_l1.first);
+			}
+
+			try {
+				UUID fileUID = r_d1.first;
+				hapi.lockLocal(fileUID);
+				HFile fileProps = hapi.getFileProps(fileUID);
+				JsonArray tags = new JsonArray();
+				tags.add("directory");
+				tags.add("combined");
+				fileProps.userattr.add("tags", tags);
+				hapi.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hapi.unlockLocal(r_d1.first);
+			}
+
+			try {
+				UUID fileUID = r_l3.first;
+				hapi.lockLocal(fileUID);
+				HFile fileProps = hapi.getFileProps(fileUID);
+				JsonArray tags = new JsonArray();
+				tags.add("link");
+				tags.add("notcombined");
+				fileProps.userattr.add("tags", tags);
+				hapi.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hapi.unlockLocal(r_l3.first);
+			}
+
+			try {
+				UUID fileUID = r_f1.first;
+				hapi.lockLocal(fileUID);
+				HFile fileProps = hapi.getFileProps(fileUID);
+				JsonArray tags = new JsonArray();
+				tags.add("actualfile");
+				tags.add("combined");
+				fileProps.userattr.add("tags", tags);
+				hapi.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hapi.unlockLocal(r_f1.first);
+			}
+		});
+		attributeThread.start();
 
 
 		/*
