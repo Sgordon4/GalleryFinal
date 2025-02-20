@@ -32,7 +32,7 @@ public class ReorderSetup {
 				List<Pair<Path, String>> toMove = new ArrayList<>();
 
 				//Grab the first instance of each selected item in the list
-				List<Pair<Path, String>> currList = dirViewModel.flatList.getValue();
+				List<Pair<Path, String>> currList = dirViewModel.filteredList.getValue();
 				for(int i = 0; i < currList.size(); i++) {
 					//Get the UUID of this item
 					String UUIDString = currList.get(i).first.getFileName().toString();
@@ -62,7 +62,7 @@ public class ReorderSetup {
 					if(successful) return;
 
 					//If the move was not successful, we want to return the list to how it was before we dragged
-					Runnable myRunnable = () -> adapter.setList(dirViewModel.flatList.getValue());
+					Runnable myRunnable = () -> adapter.setList(dirViewModel.filteredList.getValue());
 					new Handler(getMainLooper()).post(myRunnable);
 
 				} catch (FileNotFoundException | ContentsNotFoundException | ConnectException | NotDirectoryException e) {

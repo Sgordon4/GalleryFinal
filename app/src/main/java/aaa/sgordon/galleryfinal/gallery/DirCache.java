@@ -51,8 +51,6 @@ public class DirCache {
 	private final HybridListeners.FileChangeListener fileChangeListener;
 	private final UpdateListeners updateListeners;
 
-	//TODO Make listeners for this
-
 
 	public static DirCache getInstance() {
 		return SingletonHelper.INSTANCE;

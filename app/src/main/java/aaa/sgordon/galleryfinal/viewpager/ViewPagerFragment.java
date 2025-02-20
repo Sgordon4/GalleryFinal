@@ -8,12 +8,8 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
 import androidx.viewpager2.widget.ViewPager2;
@@ -21,9 +17,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -73,7 +67,7 @@ public class ViewPagerFragment extends Fragment {
 		binding.viewpager.setAdapter(adapter);
 		binding.viewpager.setOffscreenPageLimit(1);
 
-		dirViewModel.flatList.observe(getViewLifecycleOwner(), this::updateList);
+		dirViewModel.filteredList.observe(getViewLifecycleOwner(), this::updateList);
 
 		binding.viewpager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
 			@Override

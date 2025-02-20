@@ -219,7 +219,7 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 
-		dirViewModel.flatList.observe(getViewLifecycleOwner(), list -> {
+		dirViewModel.filteredList.observe(getViewLifecycleOwner(), list -> {
 			if(selectionController.isSelecting())
 				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks, adapter);
 
