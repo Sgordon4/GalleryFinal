@@ -1,15 +1,23 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -147,12 +155,11 @@ public class DirFragment extends Fragment {
 
 		toolbar.setOnMenuItemClickListener(item -> {
 			if (item.getItemId() == R.id.gallery_filter) {
-				System.out.println("Clicked filter");
 				View filterView = binding.galleryAppbar.filterBar.getRoot();
 				if(filterView.getVisibility() == View.GONE)
 					filterView.setVisibility(View.VISIBLE);
 				else
-					filterView.setVisibility(View.GONE);
+					requireActivity().getOnBackPressedDispatcher().onBackPressed();
 			}
 			else if (item.getItemId() == R.id.gallery_tag) {
 				System.out.println("Clicked tags");
@@ -165,23 +172,34 @@ public class DirFragment extends Fragment {
 
 
 
-		binding.galleryAppbar.filterBar.search.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+		//Listen for text changes in the search bar
+		binding.galleryAppbar.filterBar.search.addTextChangedListener(new TextWatcher() {
 			@Override
-			public boolean onQueryTextSubmit(String query) {
-				System.out.println("Submitted '"+query+"'");
-				dirViewModel.setActiveQuery(query);
-				return false;
+			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+				dirViewModel.setQuery(charSequence.toString());
 			}
+
 			@Override
-			public boolean onQueryTextChange(String newText) {
-				dirViewModel.setQuery(newText);
-				return false;
-			}
+			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+			@Override
+			public void afterTextChanged(Editable editable) {}
+		});
+
+		//Upon pressing enter, update active query
+		binding.galleryAppbar.filterBar.search.setOnEditorActionListener((textView, actionID, keyEvent) -> {
+			if(actionID == EditorInfo.IME_ACTION_DONE || (keyEvent != null && keyEvent.getAction() == KeyEvent.ACTION_DOWN))
+				dirViewModel.setActiveQuery(textView.getText().toString());
+			return true;
 		});
 
 
+
+		binding.galleryAppbar.filterBar.searchClear.setOnClickListener(view2 -> {
+			binding.galleryAppbar.filterBar.search.setText("");
+		});
+
 		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 -> {
-			dirViewModel.setActiveQuery(binding.galleryAppbar.filterBar.search.getQuery().toString());
+			dirViewModel.setActiveQuery(binding.galleryAppbar.filterBar.search.getText().toString());
 		});
 
 
@@ -323,6 +341,11 @@ public class DirFragment extends Fragment {
 				//If the filter menu is open, close that first
 				if(binding.galleryAppbar.filterBar.getRoot().getVisibility() == View.VISIBLE) {
 					binding.galleryAppbar.filterBar.getRoot().setVisibility(View.GONE);
+
+					//Hide the keyboard
+					EditText search = binding.galleryAppbar.filterBar.search;
+					InputMethodManager imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+					imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
 				}
 				//If we're selecting, stop selection mode rather than leaving
 				else if(selectionController.isSelecting()) {
