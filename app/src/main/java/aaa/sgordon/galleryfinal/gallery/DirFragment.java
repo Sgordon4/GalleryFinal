@@ -147,9 +147,12 @@ public class DirFragment extends Fragment {
 
 		toolbar.setOnMenuItemClickListener(item -> {
 			if (item.getItemId() == R.id.gallery_filter) {
-				binding.galleryAppbar.filter.getRoot().setVisibility(View.VISIBLE);
-				binding.galleryAppbar.toolbar.setVisibility(View.GONE);
 				System.out.println("Clicked filter");
+				View filterView = binding.galleryAppbar.filterBar.getRoot();
+				if(filterView.getVisibility() == View.GONE)
+					filterView.setVisibility(View.VISIBLE);
+				else
+					filterView.setVisibility(View.GONE);
 			}
 			else if (item.getItemId() == R.id.gallery_tag) {
 				System.out.println("Clicked tags");
@@ -162,68 +165,30 @@ public class DirFragment extends Fragment {
 
 
 
-
-		/*
-		MenuItem searchItem = toolbar.getMenu().findItem(R.id.gallery_filter);
-		SearchView searchView = (SearchView) searchItem.getActionView();
-		if(searchView != null) {
-			searchView.setQueryHint("Search...");
-
-			searchView.setMaxWidth(Integer.MAX_VALUE);
-			searchView.setSubmitButtonEnabled(false);
-			searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
-				@Override
-				public boolean onMenuItemActionExpand(MenuItem item) {
-					binding.galleryAppbar.tagBar.setVisibility(View.VISIBLE);
-
-					//Hide other menu items when SearchView expands
-					toolbar.post(() -> {
-						toolbar.getMenu().findItem(R.id.gallery_tag).setVisible(false);
-						toolbar.getMenu().findItem(R.id.action_settings).setVisible(false);
-					});
-					return true;
-				}
-
-				@Override
-				public boolean onMenuItemActionCollapse(MenuItem item) {
-					binding.galleryAppbar.tagBar.setVisibility(View.GONE);
-
-					//Restore menu items when SearchView collapses
-					toolbar.post(() -> {
-						toolbar.getMenu().findItem(R.id.gallery_filter).setVisible(true);
-						toolbar.getMenu().findItem(R.id.gallery_tag).setVisible(true);
-						toolbar.getMenu().findItem(R.id.action_settings).setVisible(true);
-					});
-					return true;
-				}
-			});
-
-			searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-				@Override
-				public boolean onQueryTextSubmit(String query) {
-					dirViewModel.setActiveQuery(query);
-					return false;
-				}
-
-				@Override
-				public boolean onQueryTextChange(String newText) {
-					dirViewModel.setQuery(newText);
-
-					if(newText.isEmpty())
-						dirViewModel.setActiveQuery(newText);
-
-					return false;
-				}
-			});
-		}
+		binding.galleryAppbar.filterBar.search.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+			@Override
+			public boolean onQueryTextSubmit(String query) {
+				System.out.println("Submitted '"+query+"'");
+				dirViewModel.setActiveQuery(query);
+				return false;
+			}
+			@Override
+			public boolean onQueryTextChange(String newText) {
+				dirViewModel.setQuery(newText);
+				return false;
+			}
+		});
 
 
-		binding.galleryAppbar.tagClear.setOnClickListener(view2 -> {
+		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 -> {
+			dirViewModel.setActiveQuery(binding.galleryAppbar.filterBar.search.getQuery().toString());
+		});
+
+
+		binding.galleryAppbar.filterBar.tagClear.setOnClickListener(view2 -> {
 			dirViewModel.activeTags.postValue(new HashSet<>());
 			dirViewModel.onActiveTagsChanged();
 		});
-
-		 */
 
 
 		//-----------------------------------------------------------------------------------------
@@ -257,7 +222,7 @@ public class DirFragment extends Fragment {
 		});
 
 		dirViewModel.filteredTags.observe(getViewLifecycleOwner(), tags -> {
-			ChipGroup chipGroup = binding.galleryAppbar.filter.chipGroup;
+			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
 
 			if(tags.isEmpty()) {
 				chipGroup.removeAllViews();
@@ -317,7 +282,7 @@ public class DirFragment extends Fragment {
 		dirViewModel.activeTags.observe(getViewLifecycleOwner(), tags -> {
 			dirViewModel.onActiveTagsChanged();
 
-			ChipGroup chipGroup = binding.galleryAppbar.filter.chipGroup;
+			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
 			//Make sure each chip is checked/unchecked based on the active tags, which can be updated in the background
 			for(int i = 0; i < chipGroup.getChildCount(); i++) {
 				Chip chip = (Chip) chipGroup.getChildAt(i);
@@ -348,16 +313,7 @@ public class DirFragment extends Fragment {
 
 
 
-		binding.galleryAppbar.filter.searchBack.setOnClickListener(view2 -> {
-			requireActivity().getOnBackPressedDispatcher().onBackPressed();
-		});
-
 		selectionToolbar.setNavigationOnClickListener(view2 -> {
-			//If we're filtering still, don't display the base toolbar or they'll overlap
-			if(binding.galleryAppbar.filter.getRoot().getVisibility() != View.VISIBLE)
-				toolbar.setVisibility(View.VISIBLE);
-			selectionToolbar.setVisibility(View.GONE);
-
 			selectionController.stopSelecting();
 		});
 
@@ -365,16 +321,11 @@ public class DirFragment extends Fragment {
 			@Override
 			public void handleOnBackPressed() {
 				//If the filter menu is open, close that first
-				if(binding.galleryAppbar.filter.getRoot().getVisibility() == View.VISIBLE) {
-					binding.galleryAppbar.filter.getRoot().setVisibility(View.GONE);
-					if(!selectionController.isSelecting())
-						toolbar.setVisibility(View.VISIBLE);
+				if(binding.galleryAppbar.filterBar.getRoot().getVisibility() == View.VISIBLE) {
+					binding.galleryAppbar.filterBar.getRoot().setVisibility(View.GONE);
 				}
 				//If we're selecting, stop selection mode rather than leaving
 				else if(selectionController.isSelecting()) {
-					toolbar.setVisibility(View.VISIBLE);
-					selectionToolbar.setVisibility(View.GONE);
-
 					selectionController.stopSelecting();
 				}
 				else if (navController.getPreviousBackStackEntry() != null) {

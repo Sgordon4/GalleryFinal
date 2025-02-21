@@ -31,8 +31,8 @@ public class SelectionSetup {
 			}
 			@Override
 			public void onSelectionStopped() {
-				//toolbar.setVisibility(View.VISIBLE);
-				//selectionToolbar.setVisibility(View.GONE);
+				toolbar.setVisibility(View.VISIBLE);
+				selectionToolbar.setVisibility(View.GONE);
 			}
 
 			@Override

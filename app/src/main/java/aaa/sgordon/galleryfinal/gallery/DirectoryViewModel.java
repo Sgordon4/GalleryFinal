@@ -194,9 +194,6 @@ public class DirectoryViewModel extends ViewModel {
 			if(fileName.toLowerCase().contains(activeQuery.toLowerCase()))
 				keep = true;
 
-			//TODO Decide what we want to do here. Right now I'm disallowing filtering by name
-			keep = true;
-
 			//If we're filtering for tags, make sure each item has all filtered tags
 			if(keep && !activeTags.getValue().isEmpty()) {
 				//Get the UUID of the file from the path
