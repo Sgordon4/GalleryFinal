@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal.gallery.touch;
 import android.util.Pair;
 import android.view.View;
 
+import androidx.activity.OnBackPressedDispatcher;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -30,8 +31,8 @@ public class SelectionSetup {
 			}
 			@Override
 			public void onSelectionStopped() {
-				toolbar.setVisibility(View.VISIBLE);
-				selectionToolbar.setVisibility(View.GONE);
+				//toolbar.setVisibility(View.VISIBLE);
+				//selectionToolbar.setVisibility(View.GONE);
 			}
 
 			@Override
@@ -117,13 +118,6 @@ public class SelectionSetup {
 			toolbar.setVisibility(View.GONE);
 			selectionToolbar.setVisibility(View.VISIBLE);
 		}
-
-		selectionToolbar.setNavigationOnClickListener(view2 -> {
-			toolbar.setVisibility(View.VISIBLE);
-			selectionToolbar.setVisibility(View.GONE);
-
-			selectionController.stopSelecting();
-		});
 	}
 
 

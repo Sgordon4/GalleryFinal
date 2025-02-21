@@ -15,61 +15,29 @@
         app:layout_collapseMode="pin"
         app:titleEnabled="false">
 
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/icon_arrow_back"
+            app:menu="@menu/gallery_menu_main"/>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/toolbar"
+                android:id="@+id/selection_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 app:navigationIcon="@drawable/icon_arrow_back"
-                app:menu="@menu/gallery_menu_main"/>
+                app:menu="@menu/gallery_menu_selection"
+                android:visibility="gone" />
 
-            <LinearLayout
-                android:id="@+id/tag_bar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <HorizontalScrollView
-                    android:id="@+id/chip_scroll"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp">
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chip_group"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:singleLine="true"/>
-                </HorizontalScrollView>
-
-                <ImageButton
-                    android:id="@+id/tag_clear"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:layout_gravity="end"
-                    android:src="@drawable/icon_trash"
-                    android:contentDescription="Clear tags"
-                    android:background="?android:selectableItemBackground"/>
-
-            </LinearLayout>
-
+            <include android:id="@+id/filter" layout="@layout/fragment_directory_filter" />
 
         </LinearLayout>
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/selection_toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/icon_arrow_back"
-            app:menu="@menu/gallery_menu_selection"
-            android:visibility="gone" />
 
     </com.google.android.material.appbar.CollapsingToolbarLayout>
 
