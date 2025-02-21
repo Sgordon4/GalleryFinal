@@ -9,7 +9,9 @@
 		android:orderInCategory="1"
 		android:title="Filter"
 		android:icon="@drawable/icon_filter"
-		app:showAsAction="ifRoom"/>
+		app:showAsAction="ifRoom"
+		android:checkable="true"
+		app:iconTint="@color/tint_selector"/>
 
 	<item
 		android:id="@+id/gallery_tag"

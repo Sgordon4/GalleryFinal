@@ -46,7 +46,8 @@
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
             android:layout_gravity="end"
-            android:src="@drawable/icon_check_circle"
+            android:src="@drawable/icon_search_list"
+            app:tint="@color/tint_selector"
             android:background="?android:selectableItemBackgroundBorderless"/>
 
     </LinearLayout>

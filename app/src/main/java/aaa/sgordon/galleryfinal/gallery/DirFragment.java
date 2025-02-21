@@ -2,8 +2,13 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.BlendModeColorFilter;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.text.Editable;
@@ -17,13 +22,17 @@ import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -38,6 +47,7 @@ import com.google.android.material.chip.ChipGroup;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -188,24 +198,54 @@ public class DirFragment extends Fragment {
 		//Upon pressing enter, update active query
 		binding.galleryAppbar.filterBar.search.setOnEditorActionListener((textView, actionID, keyEvent) -> {
 			if(actionID == EditorInfo.IME_ACTION_DONE || (keyEvent != null && keyEvent.getAction() == KeyEvent.ACTION_DOWN))
-				dirViewModel.setActiveQuery(textView.getText().toString());
+				binding.galleryAppbar.filterBar.searchGo.callOnClick();		//Listener is defined just below
 			return true;
 		});
 
-
+		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 -> {
+			dirViewModel.activeQuery.postValue(binding.galleryAppbar.filterBar.search.getText().toString());
+			dirViewModel.onActiveQueryChanged();
+		});
 
 		binding.galleryAppbar.filterBar.searchClear.setOnClickListener(view2 -> {
 			binding.galleryAppbar.filterBar.search.setText("");
 		});
 
-		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 -> {
-			dirViewModel.setActiveQuery(binding.galleryAppbar.filterBar.search.getText().toString());
-		});
 
 
 		binding.galleryAppbar.filterBar.tagClear.setOnClickListener(view2 -> {
 			dirViewModel.activeTags.postValue(new HashSet<>());
-			dirViewModel.onActiveTagsChanged();
+			//dirViewModel.onActiveTagsChanged();
+			//Using this instead so we refresh tag list too (make sure this doesn't backfire if we change things)
+			dirViewModel.onActiveQueryChanged();
+		});
+
+		dirViewModel.activeQuery.observe(getViewLifecycleOwner(), query -> {
+			ImageButton searchGo = binding.galleryAppbar.filterBar.searchGo;
+			searchGo.setSelected(!query.isEmpty());
+		});
+
+		//Highlight the filter button when there are active filters
+		dirViewModel.activeQuery.observe(getViewLifecycleOwner(), query -> {
+			boolean active = !query.isEmpty() || !dirViewModel.activeTags.getValue().isEmpty();
+			System.out.println("ActiveQuery: "+active);
+			MenuItem menuItem = toolbar.getMenu().findItem(R.id.gallery_filter);
+			System.out.println("IsChecked: "+menuItem.isChecked());
+
+			if(active)
+				menuItem.getIcon().setTintList(new ColorStateList(androidx.appcompat.R.attr.colorControlNormal));
+				//menuItem.getIcon().setTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), androidx.appcompat.R.attr.colorControlNormal)));
+			else
+				menuItem.getIcon().setTintList(null);
+		});
+		dirViewModel.activeTags.observe(getViewLifecycleOwner(), tags -> {
+			boolean active = !dirViewModel.activeQuery.getValue().isEmpty() || !tags.isEmpty();
+			System.out.println("ActiveTags: "+active);
+			MenuItem menuItem = toolbar.getMenu().findItem(R.id.gallery_filter);
+			menuItem.setChecked(active);
+			System.out.println("IsChecked: "+menuItem.isChecked());
+			toolbar.invalidateMenu();
+			toolbar.invalidate();
 		});
 
 
@@ -231,13 +271,29 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 
-		dirViewModel.filteredList.observe(getViewLifecycleOwner(), list -> {
+		dirViewModel.fullList.observe(getViewLifecycleOwner(), list -> {
 			if(selectionController.isSelecting())
-				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks, adapter);
-
+				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks);
+		});
+		dirViewModel.filteredList.observe(getViewLifecycleOwner(), list -> {
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
+
+
+		dirViewModel.activeTags.observe(getViewLifecycleOwner(), tags -> {
+			dirViewModel.onActiveTagsChanged();
+
+			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
+			//Make sure each chip is checked/unchecked based on the active tags, which can be updated in the background
+			for(int i = 0; i < chipGroup.getChildCount(); i++) {
+				Chip chip = (Chip) chipGroup.getChildAt(i);
+
+				boolean isActive = tags.contains(chip.getText().toString());
+				chip.setChecked(isActive);
+			}
+		});
+
 
 		dirViewModel.filteredTags.observe(getViewLifecycleOwner(), tags -> {
 			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
@@ -254,7 +310,20 @@ public class DirFragment extends Fragment {
 			}
 
 
-			List<String> sortedTags = tags.stream().sorted().collect(Collectors.toList());
+			//List<String> sortedTags = tags.stream().sorted().collect(Collectors.toList());
+			List<String> sortedTags = tags.stream().sorted((a, b) -> {
+				//Check if the items are active
+				Set<String> activeTags = dirViewModel.activeTags.getValue();
+				boolean isActive_A = activeTags.contains(a);
+				boolean isActive_B = activeTags.contains(b);
+
+				//If a is active but b is not, a comes before b
+				if (isActive_A && !isActive_B) return -1;
+				if (!isActive_A && isActive_B) return 1;
+
+				//If both are active or both are not, sort alphabetically
+				return a.compareTo(b);
+			}).collect(Collectors.toList());
 
 			//Grab the currently displayed tags
 			List<String> currentTags = new ArrayList<>();
@@ -294,20 +363,6 @@ public class DirFragment extends Fragment {
 			chipGroup.removeAllViews();
 			for(Chip chip : chips)
 				chipGroup.addView(chip);
-		});
-
-
-		dirViewModel.activeTags.observe(getViewLifecycleOwner(), tags -> {
-			dirViewModel.onActiveTagsChanged();
-
-			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
-			//Make sure each chip is checked/unchecked based on the active tags, which can be updated in the background
-			for(int i = 0; i < chipGroup.getChildCount(); i++) {
-				Chip chip = (Chip) chipGroup.getChildAt(i);
-
-				boolean isActive = tags.contains(chip.getText().toString());
-				chip.setChecked(isActive);
-			}
 		});
 
 

@@ -34,14 +34,15 @@ public class DirectoryViewModel extends ViewModel {
 	private final AttrCache.UpdateListener attrListener;
 
 	private Thread queuedUpdateThread;
-	private List<Pair<Path, String>> fullList;
-	private Set<String> availableTags;
 
 	//Query is the current string in the searchView, activeQuery is the one that was last submitted
 	private String query;
-	private String activeQuery;
+	public final MutableLiveData<String> activeQuery;
+
+	private Set<String> availableTags;
 	public final MutableLiveData< Set<String> > activeTags;
 
+	public MutableLiveData< List<Pair<Path, String>> > fullList;
 	public final MutableLiveData< List<Pair<Path, String>> > filteredList;
 	public final MutableLiveData< Set<String> > filteredTags;
 
@@ -66,18 +67,12 @@ public class DirectoryViewModel extends ViewModel {
 	public void setQuery(String query) {
 		this.query = query;
 
-		Thread filter = new Thread(() -> {
-			applyFilteringToTags();
-		});
+		Thread filter = new Thread(this::applyFilteringToTags);
 		filter.start();
 	}
 
-	public String getActiveQuery() {
-		return activeQuery;
-	}
-	public void setActiveQuery(String query) {
-		this.activeQuery = query;
 
+	public void onActiveQueryChanged() {
 		Thread filter = new Thread(() -> {
 			applyFilteringToList();
 			applyFilteringToTags();
@@ -100,12 +95,15 @@ public class DirectoryViewModel extends ViewModel {
 
 		this.query = "";
 
-		this.activeQuery = "";
-		this.activeTags = new MutableLiveData<>();
+		this.activeQuery = new MutableLiveData<>();
+		this.activeQuery.setValue("");
 
-		this.fullList = new ArrayList<>();
 		this.availableTags = new HashSet<>();
+		this.activeTags = new MutableLiveData<>();
 		this.activeTags.setValue(new HashSet<>());
+
+		this.fullList = new MutableLiveData<>();
+		this.fullList.setValue(new ArrayList<>());
 
 		this.filteredList = new MutableLiveData<>();
 		this.filteredList.setValue(new ArrayList<>());
@@ -144,7 +142,7 @@ public class DirectoryViewModel extends ViewModel {
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
-			availableTags = compileTags();
+			availableTags = compileTags(fullList.getValue());
 			applyFilteringToTags();
 		};
 		attrCache.addListener(attrListener);
@@ -170,9 +168,10 @@ public class DirectoryViewModel extends ViewModel {
 
 	private void refreshList() {
 		try {
-			fullList = dirCache.getDirList(currDirUID);
+			List<Pair<Path, String>> newList = dirCache.getDirList(currDirUID);
+			fullList.postValue(newList);
 
-			availableTags = compileTags();
+			availableTags = compileTags(newList);
 			applyFilteringToTags();
 
 			applyFilteringToList();
@@ -186,12 +185,12 @@ public class DirectoryViewModel extends ViewModel {
 
 	//Take the fullList and filter out anything that doesn't match our filters (name and tags)
 	private void applyFilteringToList() {
-		List<Pair<Path, String>> filtered = fullList.stream().filter(pathStringPair -> {
+		List<Pair<Path, String>> filtered = fullList.getValue().stream().filter(pathStringPair -> {
 			boolean keep = false;
 
 			//Make sure the fileName contains the query string
 			String fileName = pathStringPair.second;
-			if(fileName.toLowerCase().contains(activeQuery.toLowerCase()))
+			if(fileName.toLowerCase().contains(activeQuery.getValue().toLowerCase()))
 				keep = true;
 
 			//If we're filtering for tags, make sure each item has all filtered tags
@@ -236,11 +235,11 @@ public class DirectoryViewModel extends ViewModel {
 		filteredTags.postValue(filtered);
 	}
 
-	private Set<String> compileTags() {
+	private Set<String> compileTags(List<Pair<Path, String>> newList) {
 		Set<String> compiled = new HashSet<>();
 
 		//Compile a list of all the tags used by any file
-		for(Pair<Path, String> file : fullList) {
+		for(Pair<Path, String> file : newList) {
 			String UUIDString = file.first.getFileName().toString();
 			if(UUIDString.equals("END"))	//Don't consider ends, we already considered their parent
 				continue;

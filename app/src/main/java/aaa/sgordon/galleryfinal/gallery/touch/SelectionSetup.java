@@ -122,12 +122,13 @@ public class SelectionSetup {
 
 
 
-	public static void deselectAnyRemoved(List<Pair<Path, String>> list, DirectoryViewModel dirViewModel,
-										  SelectionController.SelectionCallbacks selectionCallbacks, DirRVAdapter adapter) {
-		//Unselect any items that are no longer in the list
-		//Note: This is completely untested
+	//Unselect any items that are no longer in the list
+	//Note: This is mostly untested
+	public static void deselectAnyRemoved(List<Pair<Path, String>> newList, DirectoryViewModel dirViewModel,
+										  SelectionController.SelectionCallbacks selectionCallbacks) {
+		//Grab all UUIDs from the full list
 		Set<UUID> inAdapter = new HashSet<>();
-		for(Pair<Path, String> item : adapter.list) {
+		for(Pair<Path, String> item : dirViewModel.fullList.getValue()) {
 			String UUIDString = item.first.getFileName().toString();
 			if(UUIDString.equals("END"))
 				UUIDString = item.first.getParent().getFileName().toString();
@@ -135,8 +136,10 @@ public class SelectionSetup {
 
 			inAdapter.add(itemUID);
 		}
+
+		//Grab all UUIDs from the new list
 		Set<UUID> inNewList = new HashSet<>();
-		for(Pair<Path, String> item : list) {
+		for(Pair<Path, String> item : newList) {
 			String UUIDString = item.first.getFileName().toString();
 			if(UUIDString.equals("END"))
 				UUIDString = item.first.getParent().getFileName().toString();
@@ -145,11 +148,11 @@ public class SelectionSetup {
 			inNewList.add(itemUID);
 		}
 
-		//Since the items are gone and won't be in the list anymore, we can just directly deselect them
+		//Directly deselect any missing items (no need to worry about visuals, the items don't exist anymore)
 		inAdapter.removeAll(inNewList);
-		for(UUID itemUID : inAdapter) {
+		for(UUID itemUID : inAdapter)
 			dirViewModel.getSelectionRegistry().deselectItem(itemUID);
-		}
+
 		selectionCallbacks.onNumSelectedChanged(dirViewModel.getSelectionRegistry().getNumSelected());
 	}
 }
