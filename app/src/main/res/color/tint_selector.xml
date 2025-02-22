@@ -4,13 +4,3 @@
     <item android:state_selected="true" android:color="@color/goldenrod" />
     <item android:color="?attr/colorControlNormal" />
 </selector>
-
-
-
-<!--
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_checked="true" android:color="@color/purple_200" />
-    <item android:state_selected="true" android:color="@color/purple_200" />
-    <item android:color="?attr/colorControlNormal" />
-</selector>
--->

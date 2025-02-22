@@ -75,7 +75,7 @@ public class AdapterTouchSetup {
 						isDoubleTapInProgress = false;
 
 						//If the list is not currently filtered, the user is free to drag
-						if(dirViewModel.activeTags.getValue().isEmpty())
+						if(dirViewModel.activeQuery.getValue().isEmpty() && dirViewModel.activeTags.getValue().isEmpty())
 							reorderHelper.startDrag(holder);
 						else
 							Toast.makeText(context, "Cannot reorder while filtering.", Toast.LENGTH_SHORT).show();
