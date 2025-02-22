@@ -2,11 +2,7 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.BlendModeColorFilter;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -23,16 +19,13 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -47,7 +40,6 @@ import com.google.android.material.chip.ChipGroup;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,17 +49,17 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
-import aaa.sgordon.galleryfinal.gallery.touch.AdapterTouchSetup;
+import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
-import aaa.sgordon.galleryfinal.gallery.touch.ReorderSetup;
+import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
+import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
-import aaa.sgordon.galleryfinal.gallery.touch.SelectionSetup;
+import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 
 public class DirFragment extends Fragment {
-	private FragmentDirectoryBinding binding;
-
-	DirectoryViewModel dirViewModel;
+	public FragmentDirectoryBinding binding;
+	public DirectoryViewModel dirViewModel;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -181,73 +173,7 @@ public class DirFragment extends Fragment {
 		});
 
 
-
-		//Listen for text changes in the search bar
-		binding.galleryAppbar.filterBar.search.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				dirViewModel.setQuery(charSequence.toString());
-			}
-
-			@Override
-			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
-			@Override
-			public void afterTextChanged(Editable editable) {}
-		});
-
-		//Upon pressing enter, update active query
-		binding.galleryAppbar.filterBar.search.setOnEditorActionListener((textView, actionID, keyEvent) -> {
-			if(actionID == EditorInfo.IME_ACTION_DONE || (keyEvent != null && keyEvent.getAction() == KeyEvent.ACTION_DOWN))
-				binding.galleryAppbar.filterBar.searchGo.callOnClick();		//Listener is defined just below
-			return true;
-		});
-
-		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 -> {
-			dirViewModel.activeQuery.postValue(binding.galleryAppbar.filterBar.search.getText().toString());
-			dirViewModel.onActiveQueryChanged();
-		});
-
-		binding.galleryAppbar.filterBar.searchClear.setOnClickListener(view2 -> {
-			binding.galleryAppbar.filterBar.search.setText("");
-		});
-
-
-
-		binding.galleryAppbar.filterBar.tagClear.setOnClickListener(view2 -> {
-			dirViewModel.activeTags.postValue(new HashSet<>());
-			//dirViewModel.onActiveTagsChanged();
-			//Using this instead so we refresh tag list too (make sure this doesn't backfire if we change things)
-			dirViewModel.onActiveQueryChanged();
-		});
-
-		dirViewModel.activeQuery.observe(getViewLifecycleOwner(), query -> {
-			ImageButton searchGo = binding.galleryAppbar.filterBar.searchGo;
-			searchGo.setSelected(!query.isEmpty());
-		});
-
-		//Highlight the filter button when there are active filters
-		dirViewModel.activeQuery.observe(getViewLifecycleOwner(), query -> {
-			boolean active = !query.isEmpty() || !dirViewModel.activeTags.getValue().isEmpty();
-			System.out.println("ActiveQuery: "+active);
-			MenuItem menuItem = toolbar.getMenu().findItem(R.id.gallery_filter);
-			System.out.println("IsChecked: "+menuItem.isChecked());
-
-			if(active)
-				menuItem.getIcon().setTintList(new ColorStateList(androidx.appcompat.R.attr.colorControlNormal));
-				//menuItem.getIcon().setTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), androidx.appcompat.R.attr.colorControlNormal)));
-			else
-				menuItem.getIcon().setTintList(null);
-		});
-		dirViewModel.activeTags.observe(getViewLifecycleOwner(), tags -> {
-			boolean active = !dirViewModel.activeQuery.getValue().isEmpty() || !tags.isEmpty();
-			System.out.println("ActiveTags: "+active);
-			MenuItem menuItem = toolbar.getMenu().findItem(R.id.gallery_filter);
-			menuItem.setChecked(active);
-			System.out.println("IsChecked: "+menuItem.isChecked());
-			toolbar.invalidateMenu();
-			toolbar.invalidate();
-		});
-
+		FilterSetup.setupFilters(this);
 
 		//-----------------------------------------------------------------------------------------
 

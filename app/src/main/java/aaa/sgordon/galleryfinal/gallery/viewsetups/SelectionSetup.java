@@ -1,9 +1,8 @@
-package aaa.sgordon.galleryfinal.gallery.touch;
+package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.util.Pair;
 import android.view.View;
 
-import androidx.activity.OnBackPressedDispatcher;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -17,6 +16,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 
 public class SelectionSetup {
 

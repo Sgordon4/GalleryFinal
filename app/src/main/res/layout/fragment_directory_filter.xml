@@ -25,6 +25,7 @@
             android:drawablePadding="8dp"
             android:paddingEnd="36dp"
             tools:ignore="RtlSymmetry"
+            android:importantForAutofill="no"
             android:hint="Search..." />
 
         <ImageButton
@@ -37,7 +38,8 @@
             android:layout_gravity="end"
             android:src="@drawable/icon_close"
             android:alpha=".5"
-            android:background="?android:selectableItemBackgroundBorderless"/>
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="Clear search"/>
 
         <ImageButton
             android:id="@+id/search_go"
@@ -48,7 +50,8 @@
             android:layout_gravity="end"
             android:src="@drawable/icon_search_list"
             app:tint="@color/tint_selector"
-            android:background="?android:selectableItemBackgroundBorderless"/>
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="Apply filter" />
 
     </LinearLayout>
 
@@ -81,8 +84,9 @@
             android:paddingEnd="8dp"
             android:layout_gravity="end"
             android:src="@drawable/icon_trash"
-            android:contentDescription="Clear tags"
-            android:background="?android:selectableItemBackground"/>
+            app:tint="@color/tint_selector"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="Clear tags" />
 
     </LinearLayout>
 

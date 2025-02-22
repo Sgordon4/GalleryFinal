@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.touch;
+package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.content.Context;
 import android.view.GestureDetector;
@@ -17,6 +17,9 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
+import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
@@ -24,8 +27,8 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 
 public class AdapterTouchSetup {
 	public static DirRVAdapter.AdapterCallbacks setupAdapterCallbacks(DirectoryViewModel dirViewModel, SelectionController selectionController,
-									  ItemReorderCallback reorderCallback, DragSelectCallback dragSelectCallback, Context context,
-									  ItemTouchHelper reorderHelper, ItemTouchHelper dragSelectHelper, NavController navController) {
+																	  ItemReorderCallback reorderCallback, DragSelectCallback dragSelectCallback, Context context,
+																	  ItemTouchHelper reorderHelper, ItemTouchHelper dragSelectHelper, NavController navController) {
 		return new DirRVAdapter.AdapterCallbacks() {
 			@Override
 			public boolean isItemSelected(UUID fileUID) {

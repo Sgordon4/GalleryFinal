@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.touch;
+package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import static android.os.Looper.getMainLooper;
 
@@ -20,6 +20,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class ReorderSetup {

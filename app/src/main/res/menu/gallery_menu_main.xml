@@ -10,8 +10,7 @@
 		android:title="Filter"
 		android:icon="@drawable/icon_filter"
 		app:showAsAction="ifRoom"
-		android:checkable="true"
-		app:iconTint="@color/tint_selector"/>
+		android:checkable="true"/>
 
 	<item
 		android:id="@+id/gallery_tag"
