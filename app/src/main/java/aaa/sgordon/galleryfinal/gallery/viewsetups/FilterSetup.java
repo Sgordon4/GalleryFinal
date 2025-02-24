@@ -82,7 +82,7 @@ public class FilterSetup {
 		final int activeColor = ContextCompat.getColor(dirFragment.getContext(), R.color.goldenrod);
 		dirViewModel.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
 			boolean active = !query.isEmpty() || !dirViewModel.activeTags.getValue().isEmpty();
-			MenuItem filterItem = toolbar.getMenu().findItem(R.id.gallery_filter);
+			MenuItem filterItem = toolbar.getMenu().findItem(R.id.filter);
 			Drawable filterDrawable = filterItem.getIcon();
 
 			if(active) DrawableCompat.setTint(filterDrawable, activeColor);
@@ -90,7 +90,7 @@ public class FilterSetup {
 		});
 		dirViewModel.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
 			boolean active = !dirViewModel.activeQuery.getValue().isEmpty() || !tags.isEmpty();
-			MenuItem filterItem = toolbar.getMenu().findItem(R.id.gallery_filter);
+			MenuItem filterItem = toolbar.getMenu().findItem(R.id.filter);
 			Drawable filterDrawable = filterItem.getIcon();
 
 			if(active) DrawableCompat.setTint(filterDrawable, activeColor);

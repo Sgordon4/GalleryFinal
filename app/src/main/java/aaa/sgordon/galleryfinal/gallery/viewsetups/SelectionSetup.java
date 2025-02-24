@@ -14,8 +14,11 @@ import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 
 public class SelectionSetup {
@@ -64,7 +67,9 @@ public class SelectionSetup {
 			@Override
 			public void onNumSelectedChanged(int numSelected) {
 				selectionToolbar.setTitle( String.valueOf(numSelected) );
-				selectionToolbar.getMenu().getItem(1).setEnabled(numSelected == 1);	//Disable edit button unless only one item is selected
+				selectionToolbar.getMenu().findItem(R.id.edit).setEnabled(numSelected == 1);	//Disable edit button unless only one item is selected
+				selectionToolbar.getMenu().findItem(R.id.tag).setEnabled(numSelected >= 1);		//Disable tag button unless one or more items are selected
+				selectionToolbar.getMenu().findItem(R.id.share).setEnabled(numSelected >= 1);	//Disable share button unless one or more items are selected
 			}
 
 			@Override
@@ -80,8 +85,15 @@ public class SelectionSetup {
 
 
 
-	public static void setupSelectionToolbar(MaterialToolbar toolbar, MaterialToolbar selectionToolbar, DirRVAdapter adapter,
-											 SelectionController selectionController) {
+	public static void setupSelectionToolbar(DirFragment dirFragment, SelectionController selectionController) {
+		FragmentDirectoryBinding binding = dirFragment.binding;
+
+		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
+		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
+
+		DirRVAdapter adapter = (DirRVAdapter) binding.recyclerview.getAdapter();
+
+
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
 			//TODO How do we deal with disappearing items that are selected? Do we just watch for that in the livedata listener?
 			if(menuItem.getItemId() == R.id.select_all) {
@@ -106,7 +118,11 @@ public class SelectionSetup {
 
 			} else if(menuItem.getItemId() == R.id.edit) {
 				System.out.println("Edit!");
-			} else if(menuItem.getItemId() == R.id.share) {
+			} else if(menuItem.getItemId() == R.id.tag) {
+				TagFullscreen.newInstance(dirFragment.getChildFragmentManager());
+				System.out.println("Clicked tags");
+			}
+			else if(menuItem.getItemId() == R.id.share) {
 				System.out.println("Share!");
 			}
 			return false;

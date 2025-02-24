@@ -156,17 +156,14 @@ public class DirFragment extends Fragment {
 
 
 		toolbar.setOnMenuItemClickListener(item -> {
-			if (item.getItemId() == R.id.gallery_filter) {
+			if (item.getItemId() == R.id.filter) {
 				View filterView = binding.galleryAppbar.filterBar.getRoot();
 				if(filterView.getVisibility() == View.GONE)
 					filterView.setVisibility(View.VISIBLE);
 				else
 					requireActivity().getOnBackPressedDispatcher().onBackPressed();
 			}
-			else if (item.getItemId() == R.id.gallery_tag) {
-				System.out.println("Clicked tags");
-			}
-			else if (item.getItemId() == R.id.action_settings) {
+			else if (item.getItemId() == R.id.settings) {
 				System.out.println("Clicked settings");
 			}
 			return false;
@@ -180,7 +177,7 @@ public class DirFragment extends Fragment {
 		SelectionController.SelectionCallbacks selectionCallbacks = SelectionSetup.makeSelectionCallbacks(toolbar, selectionToolbar, recyclerView);
 		SelectionController selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
 
-		SelectionSetup.setupSelectionToolbar(toolbar, selectionToolbar, adapter, selectionController);
+		SelectionSetup.setupSelectionToolbar(this, selectionController);
 
 		//-----------------------------------------------------------------------------------------
 
