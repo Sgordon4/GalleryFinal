@@ -119,7 +119,7 @@ public class SelectionSetup {
 			} else if(menuItem.getItemId() == R.id.edit) {
 				System.out.println("Edit!");
 			} else if(menuItem.getItemId() == R.id.tag) {
-				TagFullscreen.newInstance(dirFragment.getChildFragmentManager());
+				TagFullscreen.launch(dirFragment);
 				System.out.println("Clicked tags");
 			}
 			else if(menuItem.getItemId() == R.id.share) {

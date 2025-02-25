@@ -36,10 +36,10 @@ public class DirectoryViewModel extends ViewModel {
 	private Thread queuedUpdateThread;
 
 	//Query is the current string in the searchView, activeQuery is the one that was last submitted
-	private String query;
+	public final MutableLiveData<String> query;
 	public final MutableLiveData<String> activeQuery;
 
-	private Set<String> availableTags;
+	public final MutableLiveData< Set<String> > fullTags;
 	public final MutableLiveData< Set<String> > activeTags;
 
 	public MutableLiveData< List<Pair<Path, String>> > fullList;
@@ -61,27 +61,32 @@ public class DirectoryViewModel extends ViewModel {
 		return attrCache;
 	}
 
-	public String getQuery() {
-		return query;
-	}
-	public void setQuery(String query) {
-		this.query = query;
 
-		Thread filter = new Thread(this::applyFilteringToTags);
-		filter.start();
-	}
+	public void onQueryChanged(String newQuery) {
+		this.query.postValue(newQuery);
 
-
-	public void onActiveQueryChanged() {
 		Thread filter = new Thread(() -> {
-			applyFilteringToList();
-			applyFilteringToTags();
+			Set<String> filtered = filterTags(newQuery, fullTags.getValue());
+			filteredTags.postValue(filtered);
 		});
 		filter.start();
 	}
 
-	public void onActiveTagsChanged() {
-		applyFilteringToList();
+
+	public void onActiveQueryChanged(String newActiveQuery) {
+		Thread filter = new Thread(() -> {
+			List<Pair<Path, String>> filtered = filterList(newActiveQuery, activeTags.getValue(), fullList.getValue());
+			filteredList.postValue(filtered);
+		});
+		filter.start();
+	}
+
+	public void onActiveTagsChanged(Set<String> newActiveTags) {
+		Thread filter = new Thread(() -> {
+			List<Pair<Path, String>> filtered = filterList(activeQuery.getValue(), newActiveTags, fullList.getValue());
+			filteredList.postValue(filtered);
+		});
+		filter.start();
 	}
 
 
@@ -93,22 +98,23 @@ public class DirectoryViewModel extends ViewModel {
 		this.dirCache = DirCache.getInstance();
 		this.attrCache = AttrCache.getInstance();
 
-		this.query = "";
+		this.query = new MutableLiveData<>();
+		this.query.setValue("");
 
 		this.activeQuery = new MutableLiveData<>();
 		this.activeQuery.setValue("");
-
-		this.availableTags = new HashSet<>();
 		this.activeTags = new MutableLiveData<>();
 		this.activeTags.setValue(new HashSet<>());
 
-		this.fullList = new MutableLiveData<>();
-		this.fullList.setValue(new ArrayList<>());
-
-		this.filteredList = new MutableLiveData<>();
-		this.filteredList.setValue(new ArrayList<>());
+		this.fullTags = new MutableLiveData<>();
+		this.fullTags.setValue(new HashSet<>());
 		this.filteredTags = new MutableLiveData<>();
 		this.filteredTags.setValue(new HashSet<>());
+
+		this.fullList = new MutableLiveData<>();
+		this.fullList.setValue(new ArrayList<>());
+		this.filteredList = new MutableLiveData<>();
+		this.filteredList.setValue(new ArrayList<>());
 
 		this.selectionRegistry = new SelectionController.SelectionRegistry();
 
@@ -142,8 +148,11 @@ public class DirectoryViewModel extends ViewModel {
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
-			availableTags = compileTags(fullList.getValue());
-			applyFilteringToTags();
+			Set<String> newTags = compileTags(fullList.getValue());
+			fullTags.postValue(newTags);
+
+			Set<String> filtered = filterTags(query.getValue(), newTags);
+			filteredTags.postValue(filtered);
 		};
 		attrCache.addListener(attrListener);
 
@@ -171,10 +180,15 @@ public class DirectoryViewModel extends ViewModel {
 			List<Pair<Path, String>> newList = dirCache.getDirList(currDirUID);
 			fullList.postValue(newList);
 
-			availableTags = compileTags(newList);
-			applyFilteringToTags();
+			List<Pair<Path, String>> fList = filterList(activeQuery.getValue(), activeTags.getValue(), newList);
+			filteredList.postValue(fList);
 
-			applyFilteringToList();
+
+			Set<String> newTags = compileTags(newList);
+			fullTags.postValue(newTags);
+
+			Set<String> fTags = filterTags(query.getValue(), newTags);
+			filteredTags.postValue(fTags);
 		}
 		catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 			//TODO Actually handle the error. Dir should be on local, but jic
@@ -183,18 +197,18 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
-	//Take the fullList and filter out anything that doesn't match our filters (name and tags)
-	private void applyFilteringToList() {
-		List<Pair<Path, String>> filtered = fullList.getValue().stream().filter(pathStringPair -> {
+	//Take the list and filter out anything that doesn't match our filters (name and tags)
+	private List<Pair<Path, String>> filterList(String filterQuery, Set<String> filterTags, List<Pair<Path, String>> list) {
+		return list.stream().filter(pathStringPair -> {
 			boolean keep = false;
 
 			//Make sure the fileName contains the query string
 			String fileName = pathStringPair.second;
-			if(fileName.toLowerCase().contains(activeQuery.getValue().toLowerCase()))
+			if(fileName.toLowerCase().contains(filterQuery.toLowerCase()))
 				keep = true;
 
 			//If we're filtering for tags, make sure each item has all filtered tags
-			if(keep && !activeTags.getValue().isEmpty()) {
+			if(keep && !filterTags.isEmpty()) {
 				//Get the UUID of the file from the path
 				Path path = pathStringPair.first;
 				String UUIDString = path.getFileName().toString();
@@ -213,7 +227,7 @@ public class DirectoryViewModel extends ViewModel {
 					//Check if any of the tags we're searching for are contained in the file's tags
 					keep = false;
 					for(JsonElement tag : fileTags) {
-						if(activeTags.getValue().contains(tag.getAsString())) {
+						if(filterTags.contains(tag.getAsString())) {
 							keep = true;
 							break;
 						}
@@ -225,14 +239,12 @@ public class DirectoryViewModel extends ViewModel {
 
 			return keep;
 		}).collect(Collectors.toList());
-		filteredList.postValue(filtered);
 	}
 
-	private void applyFilteringToTags() {
-		Set<String> filtered = availableTags.stream()
-				.filter(tag -> tag.contains(query))
+	private Set<String> filterTags(String filter, Set<String> tags) {
+		return tags.stream()
+				.filter(tag -> tag.contains(filter))
 				.collect(Collectors.toSet());
-		filteredTags.postValue(filtered);
 	}
 
 	private Set<String> compileTags(List<Pair<Path, String>> newList) {
