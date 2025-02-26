@@ -27,19 +27,21 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.FilterController;
 
 public class FilterSetup {
 	public static void setupFilters(@NonNull DirFragment dirFragment) {
 		FragmentDirectoryBinding binding = dirFragment.binding;
 		DirectoryViewModel dirViewModel = dirFragment.dirViewModel;
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
+		FilterController fControl = dirViewModel.getFilterController();
 
 
 		//Listen for text changes in the search bar
 		binding.galleryAppbar.filterBar.search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				dirViewModel.onQueryChanged(charSequence.toString());
+				fControl.onQueryChanged(charSequence.toString(), dirViewModel.fullTags.getValue());
 			}
 
 			@Override
@@ -56,7 +58,7 @@ public class FilterSetup {
 		});
 
 		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 ->
-				dirViewModel.onActiveQueryChanged( binding.galleryAppbar.filterBar.search.getText().toString() ));
+				fControl.onActiveQueryChanged( binding.galleryAppbar.filterBar.search.getText().toString() , dirViewModel.fullList.getValue()));
 
 		binding.galleryAppbar.filterBar.searchClear.setOnClickListener(view2 ->
 				binding.galleryAppbar.filterBar.search.setText(""));
@@ -65,16 +67,16 @@ public class FilterSetup {
 		//Color icons based on filter results
 
 		binding.galleryAppbar.filterBar.tagClear.setOnClickListener(view2 -> {
-			dirViewModel.onActiveTagsChanged(new HashSet<>());
+			fControl.onActiveTagsChanged(new HashSet<>(), dirViewModel.fullList.getValue());
 			//Using this too so we refresh tag list (make sure this doesn't backfire if we change things)
-			dirViewModel.onActiveQueryChanged(dirViewModel.activeQuery.getValue());
+			//dirViewModel.onActiveQueryChanged(dirViewModel.activeQuery.getValue());
 		});
 
-		dirViewModel.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
+		fControl.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
 			ImageButton searchGo = binding.galleryAppbar.filterBar.searchGo;
 			searchGo.setSelected(!query.isEmpty());
 		});
-		dirViewModel.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
+		fControl.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
 			ImageButton tagClear = binding.galleryAppbar.filterBar.tagClear;
 			tagClear.setSelected(!tags.isEmpty());
 		});
@@ -82,16 +84,16 @@ public class FilterSetup {
 
 		//The filter button itself unfortunately can't just use a selector since it's in a menu so it has to be special
 		final int activeColor = ContextCompat.getColor(dirFragment.getContext(), R.color.goldenrod);
-		dirViewModel.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
-			boolean active = !query.isEmpty() || !dirViewModel.activeTags.getValue().isEmpty();
+		fControl.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
+			boolean active = !query.isEmpty() || !fControl.activeTags.getValue().isEmpty();
 			MenuItem filterItem = toolbar.getMenu().findItem(R.id.filter);
 			Drawable filterDrawable = filterItem.getIcon();
 
 			if(active) DrawableCompat.setTint(filterDrawable, activeColor);
 			else filterItem.setIcon(R.drawable.icon_filter);		//Reset the color to default by just resetting the icon
 		});
-		dirViewModel.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
-			boolean active = !dirViewModel.activeQuery.getValue().isEmpty() || !tags.isEmpty();
+		fControl.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
+			boolean active = !fControl.activeQuery.getValue().isEmpty() || !tags.isEmpty();
 			MenuItem filterItem = toolbar.getMenu().findItem(R.id.filter);
 			Drawable filterDrawable = filterItem.getIcon();
 
@@ -103,7 +105,7 @@ public class FilterSetup {
 		//-----------------------------------------------------------------------------------------
 
 
-		dirViewModel.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
+		fControl.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
 			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
 			//Make sure each chip is checked/unchecked based on the active tags, which can be updated in the background
 			for(int i = 0; i < chipGroup.getChildCount(); i++) {
@@ -115,7 +117,7 @@ public class FilterSetup {
 		});
 
 
-		dirViewModel.filteredTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
+		fControl.filteredTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
 			ChipGroup chipGroup = binding.galleryAppbar.filterBar.chipGroup;
 
 			if(tags.isEmpty()) {
@@ -133,7 +135,7 @@ public class FilterSetup {
 			//List<String> sortedTags = tags.stream().sorted().collect(Collectors.toList());
 			List<String> sortedTags = tags.stream().sorted((a, b) -> {
 				//Check if the items are active
-				Set<String> activeTags = dirViewModel.activeTags.getValue();
+				Set<String> activeTags = fControl.activeTags.getValue();
 				boolean isActive_A = activeTags.contains(a);
 				boolean isActive_B = activeTags.contains(b);
 
@@ -162,19 +164,19 @@ public class FilterSetup {
 				Chip chip = (Chip) dirFragment.getLayoutInflater().inflate(R.layout.dir_tag_chip, chipGroup, false);
 				chip.setText(tag);
 
-				if(dirViewModel.activeTags.getValue().contains(tag)) {
+				if(fControl.activeTags.getValue().contains(tag)) {
 					chip.setChecked(true);
 				}
 
 				chip.setOnClickListener(view2 -> {
-					Set<String> activeTags = dirViewModel.activeTags.getValue();
+					Set<String> activeTags = fControl.activeTags.getValue();
 					boolean isChecked = activeTags.contains(tag);
 					if(isChecked)
 						activeTags.remove(tag);
 					else
 						activeTags.add(tag);
 
-					dirViewModel.onActiveTagsChanged(activeTags);
+					fControl.onActiveTagsChanged(activeTags, dirViewModel.fullList.getValue());
 				});
 
 				chips.add(chip);

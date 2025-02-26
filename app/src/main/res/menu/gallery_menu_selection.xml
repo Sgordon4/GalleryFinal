@@ -6,28 +6,31 @@
 
     <item
         android:id="@+id/edit"
-        android:orderInCategory="1"
         android:title="Edit Item"
         android:icon="@drawable/icon_pencil_outline"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/tag"
-        android:orderInCategory="2"
         android:title="Tags"
         android:icon="@drawable/icon_label"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="always"/>
+
+    <item
+        android:id="@+id/filter"
+        android:title="Filter"
+        android:icon="@drawable/icon_filter"
+        app:showAsAction="always"
+        android:checkable="true"/>
 
     <item
         android:id="@+id/share"
-        android:orderInCategory="3"
         android:title="Share"
         android:icon="@drawable/icon_share"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/select_all"
-        android:orderInCategory="4"
         android:title="Select All"
         android:icon="@drawable/icon_select_all"
         app:showAsAction="ifRoom" />

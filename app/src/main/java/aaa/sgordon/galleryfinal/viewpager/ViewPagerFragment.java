@@ -67,7 +67,7 @@ public class ViewPagerFragment extends Fragment {
 		binding.viewpager.setAdapter(adapter);
 		binding.viewpager.setOffscreenPageLimit(1);
 
-		dirViewModel.filteredList.observe(getViewLifecycleOwner(), this::updateList);
+		dirViewModel.getFilterController().filteredList.observe(getViewLifecycleOwner(), this::updateList);
 
 		binding.viewpager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
 			@Override

@@ -198,7 +198,7 @@ public class DirFragment extends Fragment {
 			if(selectionController.isSelecting())
 				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks);
 		});
-		dirViewModel.filteredList.observe(getViewLifecycleOwner(), list -> {
+		dirViewModel.getFilterController().filteredList.observe(getViewLifecycleOwner(), list -> {
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});

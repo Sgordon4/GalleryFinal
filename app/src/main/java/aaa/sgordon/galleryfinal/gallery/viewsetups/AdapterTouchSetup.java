@@ -17,6 +17,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -75,7 +76,8 @@ public class AdapterTouchSetup {
 						isDoubleTapInProgress = false;
 
 						//If the list is not currently filtered, the user is free to drag
-						if(dirViewModel.activeQuery.getValue().isEmpty() && dirViewModel.activeTags.getValue().isEmpty())
+						FilterController fControl = dirViewModel.getFilterController();
+						if(fControl.activeQuery.getValue().isEmpty() && fControl.activeTags.getValue().isEmpty())
 							reorderHelper.startDrag(holder);
 						else
 							Toast.makeText(context, "Cannot reorder while filtering.", Toast.LENGTH_SHORT).show();
