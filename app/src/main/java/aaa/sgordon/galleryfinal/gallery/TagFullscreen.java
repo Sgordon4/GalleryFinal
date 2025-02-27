@@ -80,7 +80,7 @@ public class TagFullscreen extends DialogFragment {
 		search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				Set<String> filteredTags = dirViewModel.fullTags.getValue().stream()
+				Set<String> filteredTags = dirViewModel.fileTags.getValue().stream()
 						.filter(tag -> tag.contains(charSequence.toString()))
 						.collect(Collectors.toSet());
 				refreshChips(filteredTags);

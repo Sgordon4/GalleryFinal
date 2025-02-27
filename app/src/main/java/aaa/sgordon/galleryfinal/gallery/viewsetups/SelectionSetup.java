@@ -140,18 +140,18 @@ public class SelectionSetup {
 		});
 
 		//The filter button itself unfortunately can't just use a selector since it's in a menu so it has to be special
-		FilterController fControl = dirFragment.dirViewModel.getFilterController();
+		FilterController.FilterRegistry fregistry = dirFragment.dirViewModel.getFilterRegistry();
 		final int activeColor = ContextCompat.getColor(dirFragment.getContext(), R.color.goldenrod);
-		fControl.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
-			boolean active = !query.isEmpty() || !fControl.activeTags.getValue().isEmpty();
+		fregistry.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
+			boolean active = !query.isEmpty() || !fregistry.activeTags.getValue().isEmpty();
 			MenuItem filterItem = selectionToolbar.getMenu().findItem(R.id.filter);
 			Drawable filterDrawable = filterItem.getIcon();
 
 			if(active) DrawableCompat.setTint(filterDrawable, activeColor);
 			else filterItem.setIcon(R.drawable.icon_filter);		//Reset the color to default by just resetting the icon
 		});
-		fControl.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
-			boolean active = !fControl.activeQuery.getValue().isEmpty() || !tags.isEmpty();
+		fregistry.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
+			boolean active = !fregistry.activeQuery.getValue().isEmpty() || !tags.isEmpty();
 			MenuItem filterItem = selectionToolbar.getMenu().findItem(R.id.filter);
 			Drawable filterDrawable = filterItem.getIcon();
 
@@ -175,7 +175,7 @@ public class SelectionSetup {
 										  SelectionController.SelectionCallbacks selectionCallbacks) {
 		//Grab all UUIDs from the full list
 		Set<UUID> inAdapter = new HashSet<>();
-		for(Pair<Path, String> item : dirViewModel.fullList.getValue()) {
+		for(Pair<Path, String> item : dirViewModel.fileList.getValue()) {
 			String UUIDString = item.first.getFileName().toString();
 			if(UUIDString.equals("END"))
 				UUIDString = item.first.getParent().getFileName().toString();

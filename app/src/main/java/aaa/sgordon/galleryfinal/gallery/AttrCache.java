@@ -64,7 +64,7 @@ public class AttrCache {
 	}
 
 
-	//Compile a list of all the tags used by any file
+	//Compile a list of all the tags used by any file in the provided list
 	public Set<String> compileTags(List<UUID> fileUIDs) {
 		Set<String> compiled = new HashSet<>();
 		for(UUID file : fileUIDs) {

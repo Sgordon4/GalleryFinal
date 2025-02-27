@@ -111,11 +111,9 @@ public class DirectoryViewModel extends ViewModel {
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
-			Set<String> newTags = attrCache.compileTags(fileList);
+			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(fileList.getValue());
+			Set<String> newTags = attrCache.compileTags(fileUIDs);
 			fileTags.postValue(newTags);
-
-			Set<String> filtered = fControl.filterTags(fControl.query.getValue(), newTags);
-			fControl.filteredTags.postValue(filtered);
 		};
 		attrCache.addListener(attrListener);
 

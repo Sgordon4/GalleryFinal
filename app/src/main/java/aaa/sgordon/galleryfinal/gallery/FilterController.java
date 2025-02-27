@@ -34,51 +34,49 @@ public class FilterController {
 	}
 
 	public void onTagsUpdated(Set<String> newTags) {
+		Set<String> filteredTags = filterTagsByQuery(registry.query, newTags);
+		registry.filteredTags.postValue(filteredTags);
+
 		//Remove any active tags that have vanished from the list of tags
 		Set<String> active = registry.activeTags.getValue();
 		active.retainAll(newTags);
 		registry.activeTags.postValue(active);
+	}
 
-		Set<String> filteredTags = newTags.stream()
-				.filter(tag -> tag.contains(registry.query))
-				.collect(Collectors.toSet());
+
+
+	public void onQueryChanged(String newQuery, Set<String> fullTags) {
+		registry.query = newQuery;
+
+		Set<String> filteredTags = filterTagsByQuery(registry.query, fullTags);
 		registry.filteredTags.postValue(filteredTags);
 	}
 
 
-	public void onQueryChanged(String newQuery, Set<String> fullTags) {
-		query.postValue(newQuery);
-
-		Set<String> filtered = onTagsUpdated(newQuery, fullTags);
-		filteredTags.postValue(filtered);
-	}
-
-
 	public void onActiveQueryChanged(String newActiveQuery, List<Pair<Path, String>> fullList) {
-		activeQuery.postValue(newActiveQuery);
+		registry.activeQuery.postValue(newActiveQuery);
 
-		Thread filter = new Thread(() -> {
-			List<Pair<Path, String>> filtered = filterListByQuery(newActiveQuery, fullList);
-			filtered = filterListByTags(activeTags.getValue(), filtered, attrCache);
-			filteredList.postValue(filtered);
-		});
-		filter.start();
+		List<Pair<Path, String>> filtered = filterListByQuery(newActiveQuery, fullList);
+		filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+		registry.filteredList.postValue(filtered);
 	}
 
 	public void onActiveTagsChanged(Set<String> newActiveTags, List<Pair<Path, String>> fullList) {
-		activeTags.postValue(newActiveTags);
+		registry.activeTags.postValue(newActiveTags);
 
-		Thread filter = new Thread(() -> {
-			List<Pair<Path, String>> filtered = filterListByQuery(activeQuery.getValue(), fullList);
-			filtered = filterListByTags(newActiveTags, filtered, attrCache);
-			filteredList.postValue(filtered);
-		});
-		filter.start();
+		List<Pair<Path, String>> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
+		filtered = filterListByTags(newActiveTags, filtered, attrCache);
+		registry.filteredList.postValue(filtered);
 	}
 
 
 
 
+	private Set<String> filterTagsByQuery(String query, Set<String> tags) {
+		return tags.stream()
+				.filter(tag -> tag.contains(query))
+				.collect(Collectors.toSet());
+	}
 
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
