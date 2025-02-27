@@ -97,7 +97,7 @@ public class TagFullscreen extends DialogFragment {
 
 		searchClear.setOnClickListener(view2 -> search.setText(""));
 
-		//dirViewModel.getFilterController().filteredTags.observe(getViewLifecycleOwner(), tags -> );
+		dirViewModel.fileTags.observe(getViewLifecycleOwner(), this::refreshChips);
 	}
 
 	private Map<String, Set<UUID>> filterTags(String query, Map<String, Set<UUID>> tags) {
@@ -127,7 +127,8 @@ public class TagFullscreen extends DialogFragment {
 
 		//Make the chips for all the given tags
 		List<Chip> chips = new ArrayList<>();
-		for(String tag : tags.keySet()) {
+		List<String> sorted = tags.keySet().stream().sorted().collect(Collectors.toList());
+		for(String tag : sorted) {
 			Chip chip = (Chip) dirFragment.getLayoutInflater().inflate(R.layout.dir_tag_chip, chipGroup, false);
 			chip.setText(tag);
 			chips.add(chip);
@@ -219,7 +220,7 @@ public class TagFullscreen extends DialogFragment {
 			});
 		}
 
-		
+
 		chipGroup.removeAllViews();
 		for(Chip chip : chips)
 			chipGroup.addView(chip);
