@@ -75,9 +75,6 @@ public class TagFullscreen extends DialogFragment {
 			return true;
 		});
 
-
-		refreshChips(dirViewModel.fileTags.getValue());
-
 		//Use this for the fullscreen filter, not this one
 		//search.setText(dirViewModel.query.getValue());
 
