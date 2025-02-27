@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,18 +14,18 @@ import android.widget.ImageButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +33,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class TagFullscreen extends DialogFragment {
 	private final DirFragment dirFragment;
@@ -74,16 +75,17 @@ public class TagFullscreen extends DialogFragment {
 			return true;
 		});
 
+
+		refreshChips(dirViewModel.fileTags.getValue());
+
 		//Use this for the fullscreen filter, not this one
 		//search.setText(dirViewModel.query.getValue());
 
 		search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				Set<String> filteredTags = dirViewModel.fileTags.getValue().stream()
-						.filter(tag -> tag.contains(charSequence.toString()))
-						.collect(Collectors.toSet());
-				refreshChips(filteredTags);
+				Map<String, Set<UUID>> filtered = filterTags(charSequence.toString(), dirViewModel.fileTags.getValue());
+				refreshChips(filtered);
 				//dirViewModel.onQueryChanged(charSequence.toString());
 			}
 
@@ -95,11 +97,23 @@ public class TagFullscreen extends DialogFragment {
 
 		searchClear.setOnClickListener(view2 -> search.setText(""));
 
-
 		//dirViewModel.getFilterController().filteredTags.observe(getViewLifecycleOwner(), tags -> );
 	}
 
-	private void refreshChips(Set<String> tags) {
+	private Map<String, Set<UUID>> filterTags(String query, Map<String, Set<UUID>> tags) {
+		if(query.isEmpty())
+			return tags;
+
+		Map<String, Set<UUID>> filtered = new HashMap<>();
+		for(Map.Entry<String, Set<UUID>> entry : tags.entrySet()) {
+			if(entry.getKey().contains(query))
+				filtered.put(entry.getKey(), entry.getValue());
+		}
+		return filtered;
+	}
+
+
+	private void refreshChips(Map<String, Set<UUID>> tags) {
 		if(tags.isEmpty()) {
 			chipGroup.removeAllViews();
 			Chip noTags = (Chip) dirFragment.getLayoutInflater().inflate(R.layout.dir_tag_chip, chipGroup, false);
@@ -113,7 +127,7 @@ public class TagFullscreen extends DialogFragment {
 
 		//Make the chips for all the given tags
 		List<Chip> chips = new ArrayList<>();
-		for(String tag : tags) {
+		for(String tag : tags.keySet()) {
 			Chip chip = (Chip) dirFragment.getLayoutInflater().inflate(R.layout.dir_tag_chip, chipGroup, false);
 			chip.setText(tag);
 			chips.add(chip);
@@ -121,51 +135,91 @@ public class TagFullscreen extends DialogFragment {
 
 		//Grab the tags of the selected files
 		Set<UUID> selected = dirViewModel.getSelectionRegistry().getSelectedList();
-		Map<String, Integer> tagCount = new HashMap<>();
-		for(UUID fileUID : selected) {
-			try {
-				//Grab the list of tags for this file from its attributes
-				JsonArray tagArray = dirViewModel.getAttrCache().getAttr(fileUID).getAsJsonArray("tags");
-				if(tagArray == null) continue;
-
-				//Convert the JsonArray to a List of Strings
-				List<String> fileTags = tagArray.asList().stream().map(JsonElement::getAsString).collect(Collectors.toList());
-
-				//Add the tags to our tag count
-				for(String tag : fileTags) {
-					if(!tagCount.containsKey(tag))
-						tagCount.put(tag, 0);
-					tagCount.put(tag, tagCount.get(tag) + 1);
-				}
-			} catch (FileNotFoundException e) {
-				//Just skip if we can't find the file
-			}
-		}
 
 
 		//Style the chips based on if they appear in the tags of the selected items
-		int selectedCount = selected.size();
 		for(Chip chip : chips) {
 			String tag = chip.getText().toString();
-			if(tagCount.containsKey(tag)) {
-				int count = tagCount.get(tag);
-				if(count == selectedCount) {
+			if(tags.containsKey(tag)) {
+				//Get the set of fileUIDs that have this tag
+				Set<UUID> fileUIDs = tags.get(tag);
+
+				//Disregard any fileUIDs that have this tag that aren't in the selected list
+				Set<UUID> selectedWithTag = new HashSet<>(selected);
+				selectedWithTag.retainAll(fileUIDs);
+
+				//If EVERY selected file has this tag, mark the chip accordingly
+				if(selected.size() == selectedWithTag.size()) {
 					chip.setChecked(true);
 				}
-				else if(count > 0) {
+				//If only some of the selected files have this tag, mark the chip accordingly
+				else if (!selectedWithTag.isEmpty()) {
 					chip.setSelected(true);
 				}
 			}
 		}
 
+		//Upon clicking a chip, add/remove it as a tag from all selected items
 		for(Chip chip : chips) {
 			chip.setOnClickListener(view1 -> {
-				System.out.println("Clicking on "+chip.getText());
+
+				//Of the selected items...
+				Set<UUID> filesToChange = new HashSet<>(selected);
+
+				//If we're adding the tag (the chip is now checked)...
+				boolean shouldAdd = chip.isChecked();
+
+				//Exclude any files that already have the tag
+				String tag = chip.getText().toString();
+				if(shouldAdd) filesToChange.removeAll(tags.get(tag));
+
+
+				Thread change = new Thread(() -> {
+					HybridAPI hAPI = HybridAPI.getInstance();
+
+					//For each of the files we're changing...
+					for(UUID fileUID : filesToChange) {
+						try {
+							hAPI.lockLocal(fileUID);
+
+							//Get the file tags from the repository
+							HFile fileProps = hAPI.getFileProps(fileUID);
+							JsonArray fileTags = fileProps.userattr.getAsJsonArray("tags");
+							if(fileTags == null) fileTags = new JsonArray();
+
+							//Convert the JsonArray to a workable format
+							//Use a Set rather than just the JsonArray to avoid duplicates
+							Set<String> update = new HashSet<>();
+							for(JsonElement fileTag : fileTags)
+								update.add(fileTag.getAsString());
+
+							//Add or remove the tag from the file tags based on our earlier check
+							if(shouldAdd)
+								update.add(tag);
+							else
+								update.remove(tag);
+
+
+							//Update the tag array in the file attributes
+							JsonArray newTags = new JsonArray();
+							for(String newTag : update)
+								newTags.add(newTag);
+							fileProps.userattr.add("tags", newTags);
+
+							//Update the file attributes in the repository
+							hAPI.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
+						} catch (FileNotFoundException e) {
+							//Just skip this file if it doesn't exist
+						} finally {
+							hAPI.unlockLocal(fileUID);
+						}
+					}
+				});
+				change.start();
 			});
 		}
 
-
-
+		
 		chipGroup.removeAllViews();
 		for(Chip chip : chips)
 			chipGroup.addView(chip);

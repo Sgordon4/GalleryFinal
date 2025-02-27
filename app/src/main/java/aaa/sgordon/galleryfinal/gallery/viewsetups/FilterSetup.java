@@ -133,7 +133,7 @@ public class FilterSetup {
 
 
 			//List<String> sortedTags = tags.stream().sorted().collect(Collectors.toList());
-			List<String> sortedTags = tags.stream().sorted((a, b) -> {
+			List<String> sortedTags = tags.keySet().stream().sorted((a, b) -> {
 				//Check if the items are active
 				Set<String> activeTags = registry.activeTags.getValue();
 				boolean isActive_A = activeTags.contains(a);

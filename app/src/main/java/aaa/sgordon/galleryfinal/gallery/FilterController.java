@@ -11,8 +11,10 @@ import com.google.gson.JsonObject;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,22 +35,22 @@ public class FilterController {
 		registry.filteredList.postValue(filtered);
 	}
 
-	public void onTagsUpdated(Set<String> newTags) {
-		Set<String> filteredTags = filterTagsByQuery(registry.query, newTags);
+	public void onTagsUpdated(Map<String, Set<UUID>> newTags) {
+		Map<String, Set<UUID>> filteredTags = filterTagsByQuery(registry.query, newTags);
 		registry.filteredTags.postValue(filteredTags);
 
 		//Remove any active tags that have vanished from the list of tags
 		Set<String> active = registry.activeTags.getValue();
-		active.retainAll(newTags);
+		active.retainAll(newTags.keySet());
 		registry.activeTags.postValue(active);
 	}
 
 
 
-	public void onQueryChanged(String newQuery, Set<String> fullTags) {
+	public void onQueryChanged(String newQuery, Map<String, Set<UUID>> fullTags) {
 		registry.query = newQuery;
 
-		Set<String> filteredTags = filterTagsByQuery(registry.query, fullTags);
+		Map<String, Set<UUID>> filteredTags = filterTagsByQuery(registry.query, fullTags);
 		registry.filteredTags.postValue(filteredTags);
 	}
 
@@ -72,10 +74,13 @@ public class FilterController {
 
 
 
-	private Set<String> filterTagsByQuery(String query, Set<String> tags) {
-		return tags.stream()
-				.filter(tag -> tag.contains(query))
-				.collect(Collectors.toSet());
+	private Map<String, Set<UUID>> filterTagsByQuery(String query, Map<String, Set<UUID>> tags) {
+		Map<String, Set<UUID>> filtered = new HashMap<>();
+		for(Map.Entry<String, Set<UUID>> entry : tags.entrySet()) {
+			if(entry.getKey().contains(query))
+				filtered.put(entry.getKey(), entry.getValue());
+		}
+		return filtered;
 	}
 
 
@@ -132,7 +137,7 @@ public class FilterController {
 	public static class FilterRegistry {
 		public final MutableLiveData< List<Pair<Path, String>> > filteredList;
 
-		public final MutableLiveData< Set<String> > filteredTags;
+		public final MutableLiveData< Map<String, Set<UUID>> > filteredTags;
 
 		//Query is the current string in the searchView, activeQuery is the one that was last submitted
 		public String query;
@@ -151,7 +156,7 @@ public class FilterController {
 			this.filteredList = new MutableLiveData<>();
 			this.filteredList.setValue(new ArrayList<>());
 			this.filteredTags = new MutableLiveData<>();
-			this.filteredTags.setValue(new HashSet<>());
+			this.filteredTags.setValue(new HashMap<>());
 		}
 	}
 }

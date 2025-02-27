@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,8 +66,9 @@ public class AttrCache {
 
 
 	//Compile a list of all the tags used by any file in the provided list
-	public Set<String> compileTags(List<UUID> fileUIDs) {
-		Set<String> compiled = new HashSet<>();
+	public Map<String, Set<UUID>> compileTags(List<UUID> fileUIDs) {
+		Map<String, Set<UUID>> compiled = new HashMap<>();
+
 		for(UUID file : fileUIDs) {
 			try {
 				JsonObject attrs = getAttr(file);
@@ -74,8 +76,10 @@ public class AttrCache {
 				JsonArray tags = attrs.getAsJsonArray("tags");
 				if(tags == null) continue;
 
-				for(JsonElement tag : tags)
-					compiled.add(tag.getAsString());
+				for(JsonElement tag : tags) {
+					compiled.putIfAbsent(tag.getAsString(), new HashSet<>());
+					compiled.get(tag.getAsString()).add(file);
+				}
 			} catch (FileNotFoundException e) {
 				//Skip the file if we can't find it
 			}

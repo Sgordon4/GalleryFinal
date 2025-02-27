@@ -11,8 +11,10 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,7 +37,7 @@ public class DirectoryViewModel extends ViewModel {
 	private final SelectionController.SelectionRegistry selectionRegistry;
 
 	public final MutableLiveData< List<Pair<Path, String>> > fileList;
-	public final MutableLiveData< Set<String> > fileTags;
+	public final MutableLiveData< Map<String, Set<UUID>> > fileTags;
 
 
 	public UUID getDirUID() {
@@ -76,7 +78,7 @@ public class DirectoryViewModel extends ViewModel {
 		this.fileList = new MutableLiveData<>();
 		this.fileList.setValue(new ArrayList<>());
 		this.fileTags = new MutableLiveData<>();
-		this.fileTags.setValue(new HashSet<>());
+		this.fileTags.setValue(new HashMap<>());
 
 
 
@@ -112,7 +114,7 @@ public class DirectoryViewModel extends ViewModel {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
 			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(fileList.getValue());
-			Set<String> newTags = attrCache.compileTags(fileUIDs);
+			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 			fileTags.postValue(newTags);
 		};
 		attrCache.addListener(attrListener);
@@ -147,7 +149,7 @@ public class DirectoryViewModel extends ViewModel {
 
 			//Grab all tags for each file
 			//TODO Expand this to include a list of files per tag
-			Set<String> newTags = attrCache.compileTags(fileUIDs);
+			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 
 			fileList.postValue(newFileList);
 			fileTags.postValue(newTags);
