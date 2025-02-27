@@ -21,22 +21,25 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class FilterController {
+	private final AttrCache attrCache;
+
+	public final MutableLiveData<Set<String>> fullTags;
+	public final MutableLiveData< Set<String> > filteredTags;
+
 	//Query is the current string in the searchView, activeQuery is the one that was last submitted
 	public final MutableLiveData<String> query;
 	public final MutableLiveData<String> activeQuery;
-
-	public final MutableLiveData< List<Pair<Path, String>> > filteredList;
-
 	public final MutableLiveData< Set<String> > activeTags;
 
-
-	public final MutableLiveData< Set<String> > filteredTags;
-
-	private final AttrCache attrCache;
 
 
 	public FilterController(AttrCache attrCache) {
 		this.attrCache = attrCache;
+
+		this.fullTags = new MutableLiveData<>();
+		this.fullTags.setValue(new HashSet<>());
+		this.filteredTags = new MutableLiveData<>();
+		this.filteredTags.setValue(new HashSet<>());
 
 		this.query = new MutableLiveData<>();
 		this.query.setValue("");
@@ -45,11 +48,6 @@ public class FilterController {
 		this.activeQuery.setValue("");
 		this.activeTags = new MutableLiveData<>();
 		this.activeTags.setValue(new HashSet<>());
-
-		this.filteredList = new MutableLiveData<>();
-		this.filteredList.setValue(new ArrayList<>());
-		this.filteredTags = new MutableLiveData<>();
-		this.filteredTags.setValue(new HashSet<>());
 	}
 
 

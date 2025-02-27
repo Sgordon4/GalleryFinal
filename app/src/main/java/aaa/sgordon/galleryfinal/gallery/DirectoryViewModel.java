@@ -35,7 +35,8 @@ public class DirectoryViewModel extends ViewModel {
 
 
 	public MutableLiveData<List<Pair<Path, String>>> fullList;
-	public final MutableLiveData<Set<String>> fullTags;
+	public final MutableLiveData< List<Pair<Path, String>> > filteredList;
+
 
 
 
@@ -77,8 +78,9 @@ public class DirectoryViewModel extends ViewModel {
 
 		this.fullList = new MutableLiveData<>();
 		this.fullList.setValue(new ArrayList<>());
-		this.fullTags = new MutableLiveData<>();
-		this.fullTags.setValue(new HashSet<>());
+		this.filteredList = new MutableLiveData<>();
+		this.filteredList.setValue(new ArrayList<>());
+
 
 
 
