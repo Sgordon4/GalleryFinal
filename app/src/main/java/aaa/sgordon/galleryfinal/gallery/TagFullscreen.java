@@ -94,7 +94,10 @@ public class TagFullscreen extends DialogFragment {
 
 		searchClear.setOnClickListener(view2 -> search.setText(""));
 
-		dirViewModel.fileTags.observe(getViewLifecycleOwner(), this::refreshChips);
+		dirViewModel.fileTags.observe(getViewLifecycleOwner(), tags -> {
+			Map<String, Set<UUID>> filtered = filterTags(search.getText().toString(), dirViewModel.fileTags.getValue());
+			refreshChips(filtered);
+		});
 	}
 
 	private Map<String, Set<UUID>> filterTags(String query, Map<String, Set<UUID>> tags) {
