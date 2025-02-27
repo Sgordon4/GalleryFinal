@@ -2,11 +2,14 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import androidx.annotation.NonNull;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -58,6 +61,26 @@ public class AttrCache {
 		JsonObject attr = hAPI.getFileProps(fileUID).userattr;
 		attrCache.put(fileUID, attr);
 		return attr;
+	}
+
+
+	//Compile a list of all the tags used by any file
+	public Set<String> compileTags(List<UUID> fileUIDs) {
+		Set<String> compiled = new HashSet<>();
+		for(UUID file : fileUIDs) {
+			try {
+				JsonObject attrs = getAttr(file);
+				if(attrs == null) continue;
+				JsonArray tags = attrs.getAsJsonArray("tags");
+				if(tags == null) continue;
+
+				for(JsonElement tag : tags)
+					compiled.add(tag.getAsString());
+			} catch (FileNotFoundException e) {
+				//Skip the file if we can't find it
+			}
+		}
+		return compiled;
 	}
 
 

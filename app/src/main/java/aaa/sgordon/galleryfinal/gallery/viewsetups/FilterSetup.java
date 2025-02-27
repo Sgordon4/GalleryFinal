@@ -30,11 +30,10 @@ import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 
 public class FilterSetup {
-	public static void setupFilters(@NonNull DirFragment dirFragment) {
+	public static void setupFilters(@NonNull DirFragment dirFragment, FilterController fControl) {
 		FragmentDirectoryBinding binding = dirFragment.binding;
 		DirectoryViewModel dirViewModel = dirFragment.dirViewModel;
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
-		FilterController fControl = dirViewModel.getFilterController();
 
 
 		//Listen for text changes in the search bar

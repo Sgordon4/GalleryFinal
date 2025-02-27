@@ -2,29 +2,19 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.ImageButton;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -35,16 +25,9 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 import com.leinardi.android.speeddial.SpeedDialView;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
@@ -170,7 +153,17 @@ public class DirFragment extends Fragment {
 		});
 
 
-		FilterSetup.setupFilters(this);
+		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry(), dirViewModel.getAttrCache());
+
+		FilterSetup.setupFilters(this, filterController);
+
+		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
+			filterController.onListUpdated(list);
+		});
+		dirViewModel.fileTags.observe(getViewLifecycleOwner(), tags -> {
+			filterController.onTagsUpdated(tags);
+		});
+
 
 		//-----------------------------------------------------------------------------------------
 
@@ -178,6 +171,11 @@ public class DirFragment extends Fragment {
 		SelectionController selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
 
 		SelectionSetup.setupSelectionToolbar(this, selectionController);
+
+		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
+			if(selectionController.isSelecting())
+				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks);
+		});
 
 		//-----------------------------------------------------------------------------------------
 
@@ -193,12 +191,7 @@ public class DirFragment extends Fragment {
 
 		//-----------------------------------------------------------------------------------------
 
-
-		dirViewModel.fullList.observe(getViewLifecycleOwner(), list -> {
-			if(selectionController.isSelecting())
-				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks);
-		});
-		dirViewModel.getFilterController().filteredList.observe(getViewLifecycleOwner(), list -> {
+		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});

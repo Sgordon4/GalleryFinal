@@ -9,7 +9,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
-import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,47 +17,40 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-
 public class FilterController {
 	private final AttrCache attrCache;
-
-	public final MutableLiveData<Set<String>> fullTags;
-	public final MutableLiveData< Set<String> > filteredTags;
-
-	//Query is the current string in the searchView, activeQuery is the one that was last submitted
-	public final MutableLiveData<String> query;
-	public final MutableLiveData<String> activeQuery;
-	public final MutableLiveData< Set<String> > activeTags;
-
-
-
-	public FilterController(AttrCache attrCache) {
+	public final FilterRegistry registry;
+	public FilterController(FilterRegistry registry, AttrCache attrCache) {
+		this.registry = registry;
 		this.attrCache = attrCache;
+	}
 
-		this.fullTags = new MutableLiveData<>();
-		this.fullTags.setValue(new HashSet<>());
-		this.filteredTags = new MutableLiveData<>();
-		this.filteredTags.setValue(new HashSet<>());
 
-		this.query = new MutableLiveData<>();
-		this.query.setValue("");
+	public void onListUpdated(List<Pair<Path, String>> fileList) {
+		//Filter the list of files based on the current query
+		List<Pair<Path, String>> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
+		filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+		registry.filteredList.postValue(filtered);
+	}
 
-		this.activeQuery = new MutableLiveData<>();
-		this.activeQuery.setValue("");
-		this.activeTags = new MutableLiveData<>();
-		this.activeTags.setValue(new HashSet<>());
+	public void onTagsUpdated(Set<String> newTags) {
+		//Remove any active tags that have vanished from the list of tags
+		Set<String> active = registry.activeTags.getValue();
+		active.retainAll(newTags);
+		registry.activeTags.postValue(active);
+
+		Set<String> filteredTags = newTags.stream()
+				.filter(tag -> tag.contains(registry.query))
+				.collect(Collectors.toSet());
+		registry.filteredTags.postValue(filteredTags);
 	}
 
 
 	public void onQueryChanged(String newQuery, Set<String> fullTags) {
 		query.postValue(newQuery);
 
-		Thread filter = new Thread(() -> {
-			Set<String> filtered = filterTags(newQuery, fullTags);
-			filteredTags.postValue(filtered);
-		});
-		filter.start();
+		Set<String> filtered = onTagsUpdated(newQuery, fullTags);
+		filteredTags.postValue(filtered);
 	}
 
 
@@ -91,6 +83,9 @@ public class FilterController {
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
 	public static List<Pair<Path, String>> filterListByQuery(String filterQuery, List<Pair<Path, String>> list) {
+		if(filterQuery.isEmpty())
+			return list;
+
 		return list.stream().filter(pathStringPair -> {
 			//Make sure the fileName contains the query string
 			String fileName = pathStringPair.second;
@@ -133,40 +128,32 @@ public class FilterController {
 		}).collect(Collectors.toList());
 	}
 
-	public Set<String> filterTags(String filter, Set<String> tags) {
-		return tags.stream()
-				.filter(tag -> tag.contains(filter))
-				.collect(Collectors.toSet());
-	}
 
-	public Set<String> compileTags(List<Pair<Path, String>> newList) {
-		Set<String> compiled = new HashSet<>();
+	//---------------------------------------------------------------------------------------------
 
-		//Compile a list of all the tags used by any file
-		for(Pair<Path, String> file : newList) {
-			String UUIDString = file.first.getFileName().toString();
-			if(UUIDString.equals("END"))	//Don't consider ends, we already considered their parent
-				continue;
-			UUID thisFileUID = UUID.fromString(UUIDString);
+	public static class FilterRegistry {
+		public final MutableLiveData< List<Pair<Path, String>> > filteredList;
 
-			try {
-				JsonObject attrs = attrCache.getAttr(thisFileUID);
-				if(attrs == null) continue;
-				JsonArray tags = attrs.getAsJsonArray("tags");
-				if(tags == null) continue;
+		public final MutableLiveData< Set<String> > filteredTags;
 
-				for(JsonElement tag : tags)
-					compiled.add(tag.getAsString());
-			} catch (FileNotFoundException e) {
-				//Do nothing
-			}
+		//Query is the current string in the searchView, activeQuery is the one that was last submitted
+		public String query;
+		public final MutableLiveData<String> activeQuery;
+		public final MutableLiveData< Set<String> > activeTags;
+
+
+		public FilterRegistry() {
+			this.query = "";
+
+			this.activeQuery = new MutableLiveData<>();
+			this.activeQuery.setValue("");
+			this.activeTags = new MutableLiveData<>();
+			this.activeTags.setValue(new HashSet<>());
+
+			this.filteredList = new MutableLiveData<>();
+			this.filteredList.setValue(new ArrayList<>());
+			this.filteredTags = new MutableLiveData<>();
+			this.filteredTags.setValue(new HashSet<>());
 		}
-
-		//Remove any active tags that have vanished from the list of tags
-		Set<String> active = activeTags.getValue();
-		active.retainAll(compiled);
-		activeTags.postValue(active);
-
-		return compiled;
 	}
 }

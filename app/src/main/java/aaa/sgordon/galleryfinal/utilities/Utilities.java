@@ -1,13 +1,31 @@
 package aaa.sgordon.galleryfinal.utilities;
 
+import android.util.Pair;
+
 import androidx.annotation.NonNull;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class Utilities {
 
+	public static List<UUID> getUUIDsFromPaths(@NonNull List<Pair<Path, String>> paths) {
+		//Grab the UUIDs of all the files in the new list
+		List<UUID> fileUIDs = new ArrayList<>();
+		for(Pair<Path, String> file : paths) {
+			String UUIDString = file.first.getFileName().toString();
+			if(UUIDString.equals("END"))	//Don't consider ends, we already considered their parent
+				continue;
+			UUID thisFileUID = UUID.fromString(UUIDString);
+			fileUIDs.add(thisFileUID);
+		}
+		return fileUIDs;
+	}
 
 	public static String computeChecksum(@NonNull byte[] data) {
 		try {

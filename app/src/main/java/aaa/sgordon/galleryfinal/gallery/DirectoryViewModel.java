@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class DirectoryViewModel extends ViewModel {
 	private final static String TAG = "Gal.DirVM";
@@ -30,14 +31,11 @@ public class DirectoryViewModel extends ViewModel {
 
 	private Thread queuedUpdateThread;
 
-	private final FilterController fControl;
+	private final FilterController.FilterRegistry filterRegistry;
 	private final SelectionController.SelectionRegistry selectionRegistry;
 
-
-	public MutableLiveData<List<Pair<Path, String>>> fullList;
-	public final MutableLiveData< List<Pair<Path, String>> > filteredList;
-
-
+	public final MutableLiveData< List<Pair<Path, String>> > fileList;
+	public final MutableLiveData< Set<String> > fileTags;
 
 
 	public UUID getDirUID() {
@@ -52,9 +50,8 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
-
-	public FilterController getFilterController() {
-		return fControl;
+	public FilterController.FilterRegistry getFilterRegistry() {
+		return filterRegistry;
 	}
 
 	public SelectionController.SelectionRegistry getSelectionRegistry() {
@@ -73,13 +70,14 @@ public class DirectoryViewModel extends ViewModel {
 		this.dirCache = DirCache.getInstance();
 		this.attrCache = AttrCache.getInstance();
 
-		this.fControl = new FilterController(attrCache);
+		this.filterRegistry = new FilterController.FilterRegistry();
 		this.selectionRegistry = new SelectionController.SelectionRegistry();
 
-		this.fullList = new MutableLiveData<>();
-		this.fullList.setValue(new ArrayList<>());
-		this.filteredList = new MutableLiveData<>();
-		this.filteredList.setValue(new ArrayList<>());
+		this.fileList = new MutableLiveData<>();
+		this.fileList.setValue(new ArrayList<>());
+		this.fileTags = new MutableLiveData<>();
+		this.fileTags.setValue(new HashSet<>());
+
 
 
 
@@ -113,8 +111,8 @@ public class DirectoryViewModel extends ViewModel {
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
-			Set<String> newTags = fControl.compileTags(fullList.getValue());
-			fullTags.postValue(newTags);
+			Set<String> newTags = attrCache.compileTags(fileList);
+			fileTags.postValue(newTags);
 
 			Set<String> filtered = fControl.filterTags(fControl.query.getValue(), newTags);
 			fControl.filteredTags.postValue(filtered);
@@ -143,23 +141,18 @@ public class DirectoryViewModel extends ViewModel {
 
 	private void refreshList() {
 		try {
-			//Grab the current list of all files from the system
-			List<Pair<Path, String>> newList = dirCache.getDirList(currDirUID);
-			fullList.postValue(newList);
+			//Grab the current list of all files in this directory from the system
+			List<Pair<Path, String>> newFileList = dirCache.getDirList(currDirUID);
 
-			//And grab all their tags
-			Set<String> newTags = fControl.compileTags(newList);
-			fullTags.postValue(newTags);
+			//Grab the UUIDs of all the files in the new list
+			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(newFileList);
 
+			//Grab all tags for each file
+			//TODO Expand this to include a list of files per tag
+			Set<String> newTags = attrCache.compileTags(fileUIDs);
 
-			//Filter the list of files based on the current query
-			List<Pair<Path, String>> filtered = FilterController.filterListByQuery(fControl.activeQuery.getValue(), fullList.getValue());
-			filtered = FilterController.filterListByTags(fControl.activeTags.getValue(), filtered, attrCache);
-			fControl.filteredList.postValue(filtered);
-
-			//Filter the list of tags based on the current query
-			Set<String> fTags = fControl.filterTags(fControl.query.getValue(), newTags);
-			fControl.filteredTags.postValue(fTags);
+			fileList.postValue(newFileList);
+			fileTags.postValue(newTags);
 		}
 		catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 			//TODO Actually handle the error. Dir should be on local, but jic
