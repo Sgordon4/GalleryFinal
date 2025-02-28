@@ -55,6 +55,17 @@
             android:background="?android:selectableItemBackgroundBorderless"
             android:contentDescription="Clear search"/>
 
+        <ImageButton
+            android:id="@+id/tag_add"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:layout_gravity="end"
+            android:src="@drawable/icon_add"
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:contentDescription="Add tag" />
+
     </LinearLayout>
 
 

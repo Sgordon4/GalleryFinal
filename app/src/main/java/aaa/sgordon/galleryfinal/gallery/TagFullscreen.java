@@ -42,6 +42,7 @@ public class TagFullscreen extends DialogFragment {
 	private MaterialToolbar toolbar;
 	private EditText search;
 	private ImageButton searchClear;
+	private ImageButton tagAdd;
 	private ChipGroup chipGroup;
 
 	public static void launch(DirFragment fragment) {
@@ -61,6 +62,7 @@ public class TagFullscreen extends DialogFragment {
 		toolbar = view.findViewById(R.id.toolbar);
 		search = view.findViewById(R.id.search);
 		searchClear = view.findViewById(R.id.search_clear);
+		tagAdd = view.findViewById(R.id.tag_add);
 		chipGroup = view.findViewById(R.id.chip_group);
 		return view;
 	}
@@ -93,6 +95,16 @@ public class TagFullscreen extends DialogFragment {
 		});
 
 		searchClear.setOnClickListener(view2 -> search.setText(""));
+
+		tagAdd.setOnClickListener(view2 -> {
+			//Add the searched text as a new tag
+			String tag = search.getText().toString();
+			//To every selected item
+			Set<UUID> filesToChange = new HashSet<>(dirViewModel.getSelectionRegistry().getSelectedList());
+
+			Thread change = new Thread(() -> updateTags(tag, true, filesToChange));
+			change.start();
+		});
 
 		dirViewModel.fileTags.observe(getViewLifecycleOwner(), tags -> {
 			Map<String, Set<UUID>> filtered = filterTags(search.getText().toString(), dirViewModel.fileTags.getValue());
@@ -176,45 +188,7 @@ public class TagFullscreen extends DialogFragment {
 
 
 				Thread change = new Thread(() -> {
-					HybridAPI hAPI = HybridAPI.getInstance();
-
-					//For each of the files we're changing...
-					for(UUID fileUID : filesToChange) {
-						try {
-							hAPI.lockLocal(fileUID);
-
-							//Get the file tags from the repository
-							HFile fileProps = hAPI.getFileProps(fileUID);
-							JsonArray fileTags = fileProps.userattr.getAsJsonArray("tags");
-							if(fileTags == null) fileTags = new JsonArray();
-
-							//Convert the JsonArray to a workable format
-							//Use a Set rather than just the JsonArray to avoid duplicates
-							Set<String> update = new HashSet<>();
-							for(JsonElement fileTag : fileTags)
-								update.add(fileTag.getAsString());
-
-							//Add or remove the tag from the file tags based on our earlier check
-							if(shouldAdd)
-								update.add(tag);
-							else
-								update.remove(tag);
-
-
-							//Update the tag array in the file attributes
-							JsonArray newTags = new JsonArray();
-							for(String newTag : update)
-								newTags.add(newTag);
-							fileProps.userattr.add("tags", newTags);
-
-							//Update the file attributes in the repository
-							hAPI.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
-						} catch (FileNotFoundException e) {
-							//Just skip this file if it doesn't exist
-						} finally {
-							hAPI.unlockLocal(fileUID);
-						}
-					}
+					updateTags(tag, shouldAdd, filesToChange);
 				});
 				change.start();
 			});
@@ -225,6 +199,50 @@ public class TagFullscreen extends DialogFragment {
 		for(Chip chip : chips)
 			chipGroup.addView(chip);
 	}
+
+
+	public void updateTags(String tag, boolean shouldAdd, Set<UUID> filesToChange) {
+		HybridAPI hAPI = HybridAPI.getInstance();
+
+		//For each of the files we're changing...
+		for(UUID fileUID : filesToChange) {
+			try {
+				hAPI.lockLocal(fileUID);
+
+				//Get the file tags from the repository
+				HFile fileProps = hAPI.getFileProps(fileUID);
+				JsonArray fileTags = fileProps.userattr.getAsJsonArray("tags");
+				if(fileTags == null) fileTags = new JsonArray();
+
+				//Convert the JsonArray to a workable format
+				//Use a Set rather than just the JsonArray to avoid duplicates
+				Set<String> update = new HashSet<>();
+				for(JsonElement fileTag : fileTags)
+					update.add(fileTag.getAsString());
+
+				//Add or remove the tag from the file tags based on our earlier check
+				if(shouldAdd)
+					update.add(tag);
+				else
+					update.remove(tag);
+
+
+				//Update the tag array in the file attributes
+				JsonArray newTags = new JsonArray();
+				for(String newTag : update)
+					newTags.add(newTag);
+				fileProps.userattr.add("tags", newTags);
+
+				//Update the file attributes in the repository
+				hAPI.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
+			} catch (FileNotFoundException e) {
+				//Just skip this file if it doesn't exist
+			} finally {
+				hAPI.unlockLocal(fileUID);
+			}
+		}
+	}
+
 
 
 
