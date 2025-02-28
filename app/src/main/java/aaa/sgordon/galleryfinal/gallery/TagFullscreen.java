@@ -250,6 +250,8 @@ public class TagFullscreen extends DialogFragment {
 	@Override
 	public void onStart() {
 		super.onStart();
+
+		//Make the dialog fullscreen
 		Dialog dialog = getDialog();
 		if (dialog != null) {
 			int width = ViewGroup.LayoutParams.MATCH_PARENT;
