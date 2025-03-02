@@ -146,6 +146,7 @@ public class DirFragment extends Fragment {
 				else
 					requireActivity().getOnBackPressedDispatcher().onBackPressed();
 			}
+			//TODO Add fab options
 			else if (item.getItemId() == R.id.settings) {
 				System.out.println("Clicked settings");
 			}
