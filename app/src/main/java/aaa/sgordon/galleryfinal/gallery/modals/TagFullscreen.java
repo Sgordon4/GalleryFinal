@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery;
+package aaa.sgordon.galleryfinal.gallery.modals;
 
 import android.app.Dialog;
 import android.graphics.Color;
@@ -20,7 +20,6 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -33,6 +32,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
