@@ -88,7 +88,6 @@ public class DirFragment extends Fragment {
 			}
 		};
 		recyclerView.setLayoutManager(layoutManager);
-		//TODO Doing actually nothing
 
 		postponeEnterTransition(); // Pause the transition
 		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
