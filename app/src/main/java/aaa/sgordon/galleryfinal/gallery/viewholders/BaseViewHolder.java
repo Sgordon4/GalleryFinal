@@ -5,11 +5,13 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.util.UUID;
 
 public class BaseViewHolder extends RecyclerView.ViewHolder {
-	private UUID fileUID;
-	private String fileName;
+	protected UUID fileUID;
+	protected String fileName;
 
 	public BaseViewHolder(@NonNull View itemView) {
 		super(itemView);

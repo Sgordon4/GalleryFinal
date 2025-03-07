@@ -5,6 +5,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -20,6 +22,7 @@ public class LinkViewHolder extends BaseViewHolder {
 
 	@Override
 	public void bind(UUID fileUID, String fileName) {
+		fileName = FilenameUtils.removeExtension(fileName);
 		super.bind(fileUID, fileName);
 
 		name.setText(fileName);

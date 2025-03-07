@@ -25,6 +25,6 @@ public class UnknownViewHolder extends BaseViewHolder {
 	public void bind(UUID fileUID, String fileName) {
 		super.bind(fileUID, fileName);
 
-		name.setText(fileName);
+		name.setText(this.fileName);
 	}
 }

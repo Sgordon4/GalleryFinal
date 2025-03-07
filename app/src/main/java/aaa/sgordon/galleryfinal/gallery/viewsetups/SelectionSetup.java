@@ -17,6 +17,9 @@ import com.google.gson.JsonObject;
 
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -110,7 +113,6 @@ public class SelectionSetup {
 
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
-			//TODO How do we deal with disappearing items that are selected? Do we just watch for that in the livedata listener?
 			if(menuItem.getItemId() == R.id.select_all) {
 				System.out.println("Select all!");
 				Set<UUID> toSelect = new HashSet<>();
@@ -130,71 +132,26 @@ public class SelectionSetup {
 					selectionController.selectAll(toSelect);
 				else
 					selectionController.deselectAll();
+			}
 
-			} else if (menuItem.getItemId() == R.id.filter) {
+			else if (menuItem.getItemId() == R.id.filter) {
 				View filterView = binding.galleryAppbar.filterBar.getRoot();
 				if(filterView.getVisibility() == View.GONE)
 					filterView.setVisibility(View.VISIBLE);
 				else
 					dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
-			} else if(menuItem.getItemId() == R.id.edit) {
-				//Get the current selected item
-				UUID fileUID = selectionController.getSelectedList().iterator().next();
-
-				//Get the filename from the file list
-				String fileName = null;
-				for(Pair<Path, String> item : adapter.list) {
-					String UUIDString = item.first.getFileName().toString();
-					if(UUIDString.equals("END"))
-						UUIDString = item.first.getParent().getFileName().toString();
-					UUID itemUID = UUID.fromString(UUIDString);
-
-					if(itemUID.equals(fileUID)) {
-						fileName = item.second;
-						break;
-					}
-				}
-				if(fileName == null) {
-					Toast.makeText(dirFragment.getContext(), "Selected file was removed, cannot edit!", Toast.LENGTH_SHORT).show();
-					return false;
-				}
-
-				//TODO Get the dirUID from the path and update the name
-
-				String finalFileName = fileName;
-				Thread thread = new Thread(() -> {
-					HybridAPI hAPI = HybridAPI.getInstance();
-					try {
-						//Get the file attributes from the system
-						JsonObject attributes = hAPI.getFileProps(fileUID).userattr;
-
-						//Grab any items we can edit
-						JsonElement colorElement = attributes.get("color");
-						Integer color = colorElement == null ? null : colorElement.getAsInt();
-						JsonElement descriptionElement = attributes.get("description");
-						String description = descriptionElement == null ? null : descriptionElement.getAsString();
-
-						//Compile them into a props object
-						EditItemModal.EditProps props = new EditItemModal.EditProps(fileUID, finalFileName, color, description);
-
-
-						//Launch the edit modal
-						Handler mainHandler = new Handler(dirFragment.getContext().getMainLooper());
-						mainHandler.post(() -> EditItemModal.launch(dirFragment, props));
-
-					} catch (Exception e) {
-
-					}
-				});
-				thread.start();
-
-
-
-				System.out.println("Edit!");
-			} else if(menuItem.getItemId() == R.id.tag) {
-				TagFullscreen.launch(dirFragment);
-				System.out.println("Clicked tags");
 			}
+
+			else if(menuItem.getItemId() == R.id.edit) {
+				System.out.println("Edit!");
+				return EditItemModal.launchHelper(dirFragment, selectionController, adapter.list);
+			}
+
+			else if(menuItem.getItemId() == R.id.tag) {
+				System.out.println("Clicked tags");
+				TagFullscreen.launch(dirFragment);
+			}
+
 			else if(menuItem.getItemId() == R.id.share) {
 				System.out.println("Share!");
 			}

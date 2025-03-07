@@ -2,8 +2,10 @@ package aaa.sgordon.galleryfinal.gallery.modals;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,15 +17,24 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
@@ -32,16 +43,20 @@ public class EditItemModal extends DialogFragment {
 	private final DirFragment dirFragment;
 
 	private EditProps props;
-	private EditProps originalProps;
 
 	private EditText name;
 	private EditText color;
 	private EditText description;
 
+	private final Integer defaultColor = Color.GRAY;
+	private final String defaultDescription = "";
+
 
 	public static class EditProps {
 		@NonNull
 		public UUID fileUID;
+		@NonNull
+		public UUID dirUID;
 		@NonNull
 		public String fileName;
 		@Nullable
@@ -49,8 +64,9 @@ public class EditItemModal extends DialogFragment {
 		@Nullable
 		public String description;
 
-		public EditProps(@NonNull UUID fileUID, @NonNull String fileName, @Nullable Integer color, @Nullable String description) {
+		public EditProps(@NonNull UUID fileUID, @NonNull UUID dirUID, @NonNull String fileName, @Nullable Integer color, @Nullable String description) {
 			this.fileUID = fileUID;
+			this.dirUID = dirUID;
 			this.fileName = fileName;
 			this.color = color;
 			this.description = description;
@@ -64,7 +80,6 @@ public class EditItemModal extends DialogFragment {
 	private EditItemModal(@NonNull DirFragment fragment, EditProps props) {
 		this.dirFragment = fragment;
 		this.props = props;
-		this.originalProps = new EditProps(props.fileUID, props.fileName, props.color, props.description);
 	}
 
 
@@ -79,15 +94,17 @@ public class EditItemModal extends DialogFragment {
 		View view = inflater.inflate(R.layout.fragment_directory_edit, null);
 		builder.setView(view);
 
+
+
 		name = view.findViewById(R.id.name);
 		color = view.findViewById(R.id.color);
 		description = view.findViewById(R.id.description);
 
-		boolean isMedia = Utilities.isFileMedia(props.fileName);
-
 
 		name.setText(props.fileName);
 
+		boolean isMedia = Utilities.isFileMedia(props.fileName);
+		System.out.println("IsMedia: "+isMedia);
 		if(isMedia) {
 			color.setVisibility(View.GONE);
 			description.setVisibility(View.VISIBLE);
@@ -105,53 +122,156 @@ public class EditItemModal extends DialogFragment {
 
 		builder.setPositiveButton("OK", (dialog, which) -> {
 			System.out.println("OK Clicked");
+			commitProps();
 		});
 		builder.setNegativeButton("Cancel", (dialog, which) -> {
 			System.out.println("Cancel clicked");
 		});
 
 
-		return builder.create();
+		AlertDialog dialog = builder.create();
+		dialog.setCanceledOnTouchOutside(false);
+		return dialog;
 	}
 
 
 	private void commitProps() {
+		//Grab the current properties, setting them to null if they are default
+		Integer newColor = color.getText().toString().isEmpty() ? defaultColor : Integer.parseInt(color.getText().toString());
+		if(newColor.equals(defaultColor))
+			newColor = null;
+
+		String newDescription = description.getText().toString();
+		if(newDescription.equals(defaultDescription))
+			newDescription = null;
+
+
+		final Integer fnewColor = newColor;
+		final String fnewDescription = newDescription;
+
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 
-			//Update the file attributes
-			try {
-				hAPI.lockLocal(props.fileUID);
-
-				HFile fileProps = hAPI.getFileProps(props.fileUID);
-
-				JsonObject attributes = fileProps.userattr;
-				if(!Objects.equals(originalProps.color, props.color))
-					attributes.addProperty("color", Integer.parseInt(color.getText().toString()));
-				if(!Objects.equals(originalProps.description, props.description))
-					attributes.addProperty("description", description.getText().toString());
-
-				hAPI.setAttributes(props.fileUID, attributes, fileProps.attrhash);
-			}
-			catch (FileNotFoundException e) {
-				Toast.makeText(getContext(), "Cannot save, file not found!", Toast.LENGTH_SHORT).show();
-				dismiss();
-			}
-			finally {
-				hAPI.unlockLocal(props.fileUID);
-			}
 
 
-			//Update the file name
-			try {
-				UUID dirUID = dirFragment.dirViewModel.getDirUID();
-				hAPI.lockLocal(dirUID);
+			if(!Objects.equals(props.color, fnewColor) || !Objects.equals(props.description, fnewDescription)) {
+				//Update the file attributes
+				try {
+					hAPI.lockLocal(props.fileUID);
 
+					HFile fileProps = hAPI.getFileProps(props.fileUID);
 
-				dirFragment.dirViewModel.getDirCache().
+					JsonObject attributes = fileProps.userattr;
+					if(!Objects.equals(props.color, fnewColor))
+						attributes.addProperty("color", Integer.parseInt(color.getText().toString()));
+					if(!Objects.equals(props.description, fnewDescription))
+						attributes.addProperty("description", description.getText().toString());
+
+					hAPI.setAttributes(props.fileUID, attributes, fileProps.attrhash);
+				}
+				catch (FileNotFoundException e) {
+					Toast.makeText(getContext(), "Cannot save, file not found!", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				finally {
+					hAPI.unlockLocal(props.fileUID);
+				}
 			}
 
+
+
+			//Make sure the new filename isn't an empty string
+			String newFilename = name.getText().toString();
+			if(newFilename.isEmpty())
+				newFilename = props.fileName;
+
+			//Rename the file if the filename changed
+			if(!Objects.equals(props.fileName, newFilename)) {
+				try {
+					//DirUID could be a link to a directory, we need the directory itself
+					UUID dirUID = dirFragment.dirViewModel.getDirCache().resolveDirUID(props.dirUID);
+					if(dirUID == null) {
+						Toast.makeText(getContext(), "Cannot rename, broken link!", Toast.LENGTH_SHORT).show();
+						return;
+					}
+
+					DirUtilities.renameFile(props.fileUID, dirUID, newFilename);
+				} catch (ContentsNotFoundException e) {
+					throw new RuntimeException(e);
+				} catch (FileNotFoundException | NotDirectoryException e) {
+					Toast.makeText(getContext(), "Cannot rename, file not found!", Toast.LENGTH_SHORT).show();
+					return;
+				} catch (ConnectException e) {
+					Toast.makeText(getContext(), "Could not connect, rename failed!", Toast.LENGTH_SHORT).show();
+					return;
+				}
+			}
 		});
 		thread.start();
+	}
+
+
+
+	//---------------------------------------------------------------------------------------------
+
+	public static boolean launchHelper(@NonNull DirFragment dirFragment, SelectionController selectionController, List<Pair<Path, String>> adapterList) {
+		//Get the current selected item
+		UUID fileUID = selectionController.getSelectedList().iterator().next();
+
+		//Get the filename from the file list
+		String fileName = null;
+		UUID dirUID = null;
+		for(Pair<Path, String> item : adapterList) {
+			Path UUIDPath = item.first;
+			if(UUIDPath.getFileName().toString().equals("END"))
+				UUIDPath = UUIDPath.getParent();
+			UUID itemUID = UUID.fromString(UUIDPath.getFileName().toString());
+
+			if(itemUID.equals(fileUID)) {
+				fileName = item.second;
+				dirUID = UUID.fromString(UUIDPath.getParent().getFileName().toString());
+				break;
+			}
+		}
+		if(fileName == null) {
+			Toast.makeText(dirFragment.getContext(), "Selected file was removed, cannot edit!", Toast.LENGTH_SHORT).show();
+			return false;
+		}
+		if(dirUID == null) {
+			throw new RuntimeException("Somehow DirUID is null");
+		}
+
+
+		//TODO Get the dirUID from the path and update the name
+
+		String finalFileName = fileName;
+		UUID finalDirUID = dirUID;
+		Thread thread = new Thread(() -> {
+			HybridAPI hAPI = HybridAPI.getInstance();
+			try {
+				//Get the file attributes from the system
+				JsonObject attributes = hAPI.getFileProps(fileUID).userattr;
+
+				//Grab any items we can edit
+				JsonElement colorElement = attributes.get("color");
+				Integer color = colorElement == null ? null : colorElement.getAsInt();
+				JsonElement descriptionElement = attributes.get("description");
+				String description = descriptionElement == null ? null : descriptionElement.getAsString();
+
+				//Compile them into a props object
+				EditItemModal.EditProps props = new EditItemModal.EditProps(fileUID, finalDirUID, finalFileName, color, description);
+
+
+				//Launch the edit modal
+				Handler mainHandler = new Handler(dirFragment.getContext().getMainLooper());
+				mainHandler.post(() -> EditItemModal.launch(dirFragment, props));
+
+			} catch (Exception e) {
+
+			}
+		});
+		thread.start();
+
+		return true;
 	}
 }

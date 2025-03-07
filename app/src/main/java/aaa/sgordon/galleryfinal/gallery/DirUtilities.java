@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal.gallery;
 import android.net.Uri;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,16 +36,18 @@ public class DirUtilities {
 
 
 	public static List<Pair<UUID, String>> readDir(@NonNull UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		//Otherwise we gotta get it from the file itself
+		//Get the contents of the directory
 		Uri uri = HybridAPI.getInstance().getFileContent(dirUID).first;
 
+
 		//Read the directory into a list of UUID::FileName pairs
-		ArrayList<Pair<UUID, String>> dirList = new ArrayList<>();
+		List<Pair<UUID, String>> dirList = new ArrayList<>();
 		try (InputStream inputStream = new URL(uri.toString()).openStream();
 			 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
 			String line;
 			while ((line = reader.readLine()) != null) {
+				//TODO Handle invalid filenames
 				//Split each line into UUID::FileName and add it to our list
 				String[] parts = line.trim().split(" ", 2);
 				Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
@@ -66,6 +69,40 @@ public class DirUtilities {
 			return UUID.fromString(firstLine);
 		}
 		catch (IOException e) { throw new RuntimeException(e); }
+	}
+
+
+
+	public static void renameFile(@NonNull UUID fileUID, @NonNull UUID dirUID, @NonNull String newName)
+			throws FileNotFoundException, ContentsNotFoundException, ConnectException {
+
+		HybridAPI hAPI = HybridAPI.getInstance();
+		try {
+			hAPI.lockLocal(dirUID);
+
+			HFile fileProps = hAPI.getFileProps(dirUID);
+
+			//Find the fileUID in the current list and replace its name
+			List<Pair<UUID, String>> dirList = readDir(dirUID);
+			for(int i = 0; i < dirList.size(); i++) {
+				Pair<UUID, String> entry = dirList.get(i);
+				if(entry.first.equals(fileUID)) {
+					dirList.set(i, new Pair<>(entry.first, newName));
+					break;
+				}
+			}
+
+			//Compile the list into a String
+			List<String> rootLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+					.collect(Collectors.toList());
+			byte[] newContent = String.join("\n", rootLines).getBytes();
+
+			//Write the new content to the directory
+			hAPI.writeFile(dirUID, newContent, fileProps.checksum);
+
+		} finally {
+			hAPI.unlockLocal(dirUID);
+		}
 	}
 
 

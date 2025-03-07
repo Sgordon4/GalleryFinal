@@ -4,6 +4,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -23,6 +25,7 @@ public class DirectoryViewHolder extends BaseViewHolder{
 
 	@Override
 	public void bind(UUID fileUID, String fileName) {
+		fileName = FilenameUtils.removeExtension(fileName);
 		super.bind(fileUID, fileName);
 
 		name.setText(fileName);

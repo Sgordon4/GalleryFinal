@@ -135,6 +135,7 @@ public class DirCache {
 
 
 
+	//Recursively read directory contents, drilling down only through links to directories
 	public List<Pair<Path, String>> getDirList(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		return traverse(dirUID, new HashSet<>(), Paths.get(dirUID.toString()));
 	}
@@ -228,24 +229,7 @@ public class DirCache {
 		if(directoryCache.containsKey(dirUID))
 			return directoryCache.get(dirUID);
 
-		//Otherwise we gotta get it from the file itself
-		Uri uri = hAPI.getFileContent(dirUID).first;
-
-		//Read the directory into a list of UUID::FileName pairs
-		ArrayList<Pair<UUID, String>> dirList = new ArrayList<>();
-		try (InputStream inputStream = new URL(uri.toString()).openStream();
-			 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-
-			String line;
-			while ((line = reader.readLine()) != null) {
-				//Split each line into UUID::FileName and add it to our list
-				String[] parts = line.trim().split(" ", 2);
-				Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
-				dirList.add(entry);
-			}
-		}
-		catch (IOException e) { throw new RuntimeException(e); }
-
+		List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
 		directoryCache.put(dirUID, dirList);
 		return dirList;
 	}
