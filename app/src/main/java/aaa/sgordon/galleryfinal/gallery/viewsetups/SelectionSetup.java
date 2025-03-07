@@ -23,6 +23,7 @@ import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
+import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 
@@ -128,6 +129,10 @@ public class SelectionSetup {
 				else
 					dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
 			} else if(menuItem.getItemId() == R.id.edit) {
+
+				//Get the current selected item
+				UUID fileUID = selectionController.getSelectedList().iterator().next();
+				EditItemModal.launch(dirFragment);
 				System.out.println("Edit!");
 			} else if(menuItem.getItemId() == R.id.tag) {
 				TagFullscreen.launch(dirFragment);
