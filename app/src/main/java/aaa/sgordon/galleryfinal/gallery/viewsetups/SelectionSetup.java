@@ -1,15 +1,21 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
 import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -26,6 +32,9 @@ import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class SelectionSetup {
 
@@ -129,10 +138,58 @@ public class SelectionSetup {
 				else
 					dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
 			} else if(menuItem.getItemId() == R.id.edit) {
-
 				//Get the current selected item
 				UUID fileUID = selectionController.getSelectedList().iterator().next();
-				EditItemModal.launch(dirFragment);
+
+				//Get the filename from the file list
+				String fileName = null;
+				for(Pair<Path, String> item : adapter.list) {
+					String UUIDString = item.first.getFileName().toString();
+					if(UUIDString.equals("END"))
+						UUIDString = item.first.getParent().getFileName().toString();
+					UUID itemUID = UUID.fromString(UUIDString);
+
+					if(itemUID.equals(fileUID)) {
+						fileName = item.second;
+						break;
+					}
+				}
+				if(fileName == null) {
+					Toast.makeText(dirFragment.getContext(), "Selected file was removed, cannot edit!", Toast.LENGTH_SHORT).show();
+					return false;
+				}
+
+				//TODO Get the dirUID from the path and update the name
+
+				String finalFileName = fileName;
+				Thread thread = new Thread(() -> {
+					HybridAPI hAPI = HybridAPI.getInstance();
+					try {
+						//Get the file attributes from the system
+						JsonObject attributes = hAPI.getFileProps(fileUID).userattr;
+
+						//Grab any items we can edit
+						JsonElement colorElement = attributes.get("color");
+						Integer color = colorElement == null ? null : colorElement.getAsInt();
+						JsonElement descriptionElement = attributes.get("description");
+						String description = descriptionElement == null ? null : descriptionElement.getAsString();
+
+						//Compile them into a props object
+						EditItemModal.EditProps props = new EditItemModal.EditProps(fileUID, finalFileName, color, description);
+
+
+						//Launch the edit modal
+						Handler mainHandler = new Handler(dirFragment.getContext().getMainLooper());
+						mainHandler.post(() -> EditItemModal.launch(dirFragment, props));
+
+					} catch (Exception e) {
+
+					}
+				});
+				thread.start();
+
+
+
 				System.out.println("Edit!");
 			} else if(menuItem.getItemId() == R.id.tag) {
 				TagFullscreen.launch(dirFragment);

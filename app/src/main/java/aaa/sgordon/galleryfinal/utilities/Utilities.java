@@ -4,6 +4,8 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -13,6 +15,12 @@ import java.util.List;
 import java.util.UUID;
 
 public class Utilities {
+
+	public static boolean isFileMedia(@NonNull String fileName) {
+		String extension = FilenameUtils.getExtension(fileName);
+		return extension.equals("jpg") || extension.equals("jpeg") || extension.equals("png") ||
+				extension.equals("gif") || extension.equals("mp4") || extension.equals("mov");
+	}
 
 	public static List<UUID> getUUIDsFromPaths(@NonNull List<Pair<Path, String>> paths) {
 		//Grab the UUIDs of all the files in the new list
