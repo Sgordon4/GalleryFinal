@@ -30,6 +30,11 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/export"
+        android:title="Export"
+        app:showAsAction="ifRoom"/>
+
+    <item
         android:id="@+id/select_all"
         android:title="Select All"
         android:icon="@drawable/icon_select_all"

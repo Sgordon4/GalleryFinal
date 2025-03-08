@@ -60,7 +60,7 @@ public class DirUtilities {
 	}
 
 	//Only use with directory links, not normal links
-	public static UUID readDirLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+	private static UUID readDirLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		Uri uri = HybridAPI.getInstance().getFileContent(linkUID).first;
 
 		try (InputStream inputStream = new URL(uri.toString()).openStream();

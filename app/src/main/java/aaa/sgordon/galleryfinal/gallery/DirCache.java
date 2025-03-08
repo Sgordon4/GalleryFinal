@@ -1,6 +1,5 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -9,13 +8,8 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.ConnectException;
-import java.net.URL;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,16 +26,20 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.LinkUtilities;
 
 
 //WARNING: This object should live as long as the Application is running. Keep in Activity ViewModel.
 public class DirCache {
-	private final static String TAG = "Gal.FileCache";
+	private final static String TAG = "Gal.DirCache";
 	private final HybridAPI hAPI;
 
-	private final Map<UUID, List<Pair<UUID, String>>> directoryCache;
-	private final Map<UUID, UUID> dirLinkCache;
-	private final Map<UUID, Set<UUID>> dependencyCache;
+	private final Map<UUID, List<Pair<UUID, String>>> cDirContents;		//Holds directory contents
+	private final Map<UUID, LinkUtilities.LinkTarget> cLinkTarget;		//Holds link targets
+
+	//Per directory, holds links and link targets. This is for use with the listener to refresh the dir on item change
+	private final Map<UUID, Set<UUID>> cDirChildTargets;
+
 
 	//In our current implementation, files can't change their nature (directory/link).
 	//Therefore, we can append only and not worry about concurrency or conflicting values with these.
@@ -61,9 +59,9 @@ public class DirCache {
 	private DirCache() {
 		this.hAPI = HybridAPI.getInstance();
 
-		this.directoryCache = new HashMap<>();
-		this.dirLinkCache = new HashMap<>();
-		this.dependencyCache = new HashMap<>();
+		this.cDirContents = new HashMap<>();
+		this.cLinkTarget = new HashMap<>();
+		this.cDirChildTargets = new HashMap<>();
 
 		this.isDirCache = new HashSet<>();
 		this.isLinkCache = new HashSet<>();
@@ -73,20 +71,24 @@ public class DirCache {
 
 		//Whenever any file we have cached is changed, update our data
 		fileChangeListener = uuid -> {
-			//Notify any listener for this directory and remove the cache entry
-			if(directoryCache.containsKey(uuid)) {
-				directoryCache.remove(uuid);
-				dependencyCache.remove(uuid);
+			//If we have this directory cached...
+			if(cDirContents.containsKey(uuid)) {
+				//Remove the cached contents
+				cDirContents.remove(uuid);
+				//Since we need to re-cache anyway, remove the list of dependencies
+				cDirChildTargets.remove(uuid);
+
 				updateListeners.notifyDataChanged(uuid);
 			}
-			
-			//Notify any listeners whose directory contains the updated directory/link
-			for(Map.Entry<UUID, Set<UUID>> entry : dependencyCache.entrySet()) {
+
+			//For each cached directory, look at each link it depends on...
+			for(Map.Entry<UUID, Set<UUID>> entry : cDirChildTargets.entrySet()) {
 				UUID dirUID = entry.getKey();
 				Set<UUID> dependencies = entry.getValue();
 
+				//If the dir relies on this file, notify listeners
 				if(dependencies.contains(uuid)) {
-					if(directoryCache.containsKey(dirUID))
+					if(cDirContents.containsKey(dirUID))
 						updateListeners.notifyDataChanged(dirUID);
 				}
 			}
@@ -104,8 +106,8 @@ public class DirCache {
 			public void run() {
 				//Get a random fileUID from our list
 				Random random = new Random();
-				int randomIndex = random.nextInt(directoryCache.size());
-				UUID randomDirUID = (UUID) directoryCache.keySet().toArray()[randomIndex];
+				int randomIndex = random.nextInt(cDirContents.size());
+				UUID randomDirUID = (UUID) cDirContents.keySet().toArray()[randomIndex];
 
 				//randomDirUID = currDirUID;
 
@@ -141,23 +143,49 @@ public class DirCache {
 	}
 	private List<Pair<Path, String>> traverse(UUID dirUID, Set<UUID> visited, Path currPath)
 			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		List<Pair<Path, String>> files = new ArrayList<>();
 
-		List<Pair<UUID, String>> contents;
-		//If we have the directory list cached, just use that
-		if(directoryCache.containsKey(dirUID))
-			contents = directoryCache.get(dirUID);
-		else
-			contents = readDir(dirUID);
-
+		List<Pair<UUID, String>> contents = readDir(dirUID);
 
 		//For each file in the directory...
+		List<Pair<Path, String>> files = new ArrayList<>();
 		for (Pair<UUID, String> entry : contents) {
 			UUID fileUID = entry.first;
 
 			//Add it to the current directory's list of files
 			Path thisFilePath = currPath.resolve(entry.first.toString());
 			files.add(new Pair<>(thisFilePath, entry.second));
+
+
+			try {
+				HFile fileProps = hAPI.getFileProps(fileUID);
+				if (fileProps.islink) isLinkCache.add(fileUID);
+				else if (fileProps.isdir) isDirCache.add(fileUID);
+
+				//If this isn't a link, we don't care
+				if (!fileProps.islink)
+					continue;
+
+				//If this is a link, follow it until a non-link is found (or until the link breaks)
+				Set<UUID> localVisited = new HashSet<>(visited);
+				while (fileProps.islink) {
+					if (!localVisited.add(fileUID))
+						break; // Prevent cycles
+
+					//Follow the link
+					LinkUtilities.LinkTarget target = LinkUtilities.readLink(fileUID);
+					cLinkTarget.put(fileUID, target);
+
+					//If this link is external, we don't care about it
+					if(target instanceof LinkUtilities.ExternalTarget)
+						continue;
+
+
+
+					fileProps = hAPI.getFileProps(fileUID);
+					if(fileProps.isdir) isDirCache.add(fileUID);
+					if(fileProps.islink) isLinkCache.add(fileUID);
+				}
+			}
 
 
 			try {
@@ -178,8 +206,8 @@ public class DirCache {
 					//Update any dependency lists for parent directories
 					for(int i = 0; i < currPath.getNameCount(); i++) {
 						UUID pathItem = UUID.fromString(currPath.getName(i).toString());
-						dependencyCache.putIfAbsent(pathItem, new HashSet<>());
-						dependencyCache.get(pathItem).add(fileUID);
+						cDirChildTargets.putIfAbsent(pathItem, new HashSet<>());
+						cDirChildTargets.get(pathItem).add(fileUID);
 					}
 
 					//Follow the link
@@ -198,8 +226,8 @@ public class DirCache {
 					//Update any dependency lists for parent directories
 					for(int i = 0; i < currPath.getNameCount(); i++) {
 						UUID pathItem = UUID.fromString(currPath.getName(i).toString());
-						dependencyCache.putIfAbsent(pathItem, new HashSet<>());
-						dependencyCache.get(pathItem).add(fileUID);
+						cDirChildTargets.putIfAbsent(pathItem, new HashSet<>());
+						cDirChildTargets.get(pathItem).add(fileUID);
 					}
 
 					files.addAll(traverse(fileUID, localVisited, thisFilePath));
@@ -226,11 +254,11 @@ public class DirCache {
 
 	private List<Pair<UUID, String>> readDir(@NonNull UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//If we have the directory contents cached, just return that
-		if(directoryCache.containsKey(dirUID))
-			return directoryCache.get(dirUID);
+		if(cDirContents.containsKey(dirUID))
+			return cDirContents.get(dirUID);
 
 		List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
-		directoryCache.put(dirUID, dirList);
+		cDirContents.put(dirUID, dirList);
 		return dirList;
 	}
 
@@ -238,11 +266,11 @@ public class DirCache {
 	//Only use with directory links, not normal links
 	private UUID readDirLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//If we have the link destination directory cached, just return that
-		if(dirLinkCache.containsKey(linkUID))
-			return dirLinkCache.get(linkUID);
+		if(cLinkTarget.containsKey(linkUID))
+			return cLinkTarget.get(linkUID);
 
 		UUID linkDestination = DirUtilities.readDirLink(linkUID);
-		dirLinkCache.put(linkUID, linkDestination);
+		cLinkTarget.put(linkUID, linkDestination);
 		return linkDestination;
 	}
 
