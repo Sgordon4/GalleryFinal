@@ -156,6 +156,77 @@ public class DirCache {
 			files.add(new Pair<>(thisFilePath, entry.second));
 
 
+			//For each file
+			//Check if link
+			//Follow link
+			//	Read link
+			//	Follow link
+			//Given link target, check link target type and name
+			//Decide what to do
+
+
+
+			try {
+				HFile fileProps = hAPI.getFileProps(fileUID);
+				if (fileProps.islink) isLinkCache.add(fileUID);
+				else if (fileProps.isdir) isDirCache.add(fileUID);
+
+				//If this isn't a link, we don't care
+				if (!fileProps.islink)
+					continue;
+
+
+				//If this is a link, follow it until a directory is found (or until the link ends)
+				//Since this is a link, follow it until we reach the final target (or until the last link can't find its target)
+				Set<UUID> localVisited = new HashSet<>(visited);
+				while( fileProps.islink ) {
+					if (!localVisited.add(fileUID))
+						break; // Prevent cycles
+
+					//Update any dependency lists for parent directories
+					for(int i = 0; i < currPath.getNameCount(); i++) {
+						UUID pathItem = UUID.fromString(currPath.getName(i).toString());
+						cDirChildTargets.putIfAbsent(pathItem, new HashSet<>());
+						cDirChildTargets.get(pathItem).add(fileUID);
+					}
+
+					//Follow the link
+					fileUID = readDirLink(fileUID);
+					fileProps = hAPI.getFileProps(fileUID);
+					if(fileProps.isdir) isDirCache.add(fileUID);
+					if(fileProps.islink) isLinkCache.add(fileUID);
+				}
+			}
+
+
+
+
+
+
+
+
+
+
+
+			//If the file is in the dircache, we know it's not a link, and we can ignore it
+			if(isDirCache.contains(fileUID))
+				continue;
+			//If the file is in the linkcache, we know it's a link, and we should follow it
+			else if(isLinkCache.contains(fileUID)) {
+				Set<UUID> localVisited = new HashSet<>(visited);
+				files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
+			}
+			else {
+				try {
+					HFile fileProps = hAPI.getFileProps(fileUID);
+					if (fileProps.islink) isLinkCache.add(fileUID);
+					else if (fileProps.isdir) isDirCache.add(fileUID);
+
+				}
+			}
+
+
+
 			try {
 				HFile fileProps = hAPI.getFileProps(fileUID);
 				if (fileProps.islink) isLinkCache.add(fileUID);
@@ -250,6 +321,14 @@ public class DirCache {
 
 		return files;
 	}
+
+
+	private List<Pair<Path, String>> traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+
+	}
+
+
+
 
 
 	private List<Pair<UUID, String>> readDir(@NonNull UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
