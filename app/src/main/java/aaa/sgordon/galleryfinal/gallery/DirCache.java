@@ -174,15 +174,21 @@ public class DirCache {
 
 
 
-			//If the file is in the dircache, we know it's not a link, and we can ignore it
+			//If the file is in the dirCache, we know it's not a link, and we can ignore it
 			if(isDirCache.contains(fileUID))
 				continue;
-			//If the file is in the linkcache, we know it's a link, and we should follow it
-			else if(isLinkCache.contains(fileUID)) {
+
+
+			//If the file is in the linkCache, we know it's a link, and we should follow it
+			LinkUtilities.LinkTarget target;
+			if(isLinkCache.contains(fileUID)) {
 				Set<UUID> localVisited = new HashSet<>(visited);
-				files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
+				target = traverseLink(fileUID, localVisited, thisFilePath);
 			}
+
+
 			//Otherwise, this file has not been cached, and we need to find if it's a link
+			//TODO Probably worth adding a neitherCache
 			else {
 				try {
 					HFile fileProps = hAPI.getFileProps(fileUID);
@@ -194,7 +200,7 @@ public class DirCache {
 						continue;
 
 					Set<UUID> localVisited = new HashSet<>(visited);
-					files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
+					target = traverseLink(fileUID, localVisited, thisFilePath);
 				}
 				catch (FileNotFoundException | ConnectException e) {
 					//If the file isn't found or we just can't reach it, skip it
@@ -205,6 +211,7 @@ public class DirCache {
 					continue;
 				}
 			}
+
 
 
 
@@ -304,7 +311,7 @@ public class DirCache {
 	}
 
 
-	private List<Pair<Path, String>> traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+	private LinkUtilities.LinkTarget traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//Read link contents to get target
 		//Find if item is directory
 		//  If directory, pass to traverse
@@ -314,9 +321,24 @@ public class DirCache {
 		//  If link or normal item, just pass back single item
 		//  If divider, do a sort of traverse
 
-		//Follow the link
-		LinkUtilities.LinkTarget target = LinkUtilities.readLink(linkUID);
-		cLinkTarget.put(linkUID, target);
+		//Read the link contents into a target
+		LinkUtilities.LinkTarget target;
+		if(cLinkTarget.containsKey(linkUID))
+			target = cLinkTarget.get(linkUID);
+		else {
+			target = LinkUtilities.readLink(linkUID);
+			cLinkTarget.put(linkUID, target);
+		}
+
+		//If the target is external, we're done here
+		if(target instanceof LinkUtilities.ExternalTarget)
+			return target;
+
+		//If the target is internal, we need more info
+
+
+
+
 	}
 
 
