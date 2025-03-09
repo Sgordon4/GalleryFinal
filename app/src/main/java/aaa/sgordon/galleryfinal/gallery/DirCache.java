@@ -165,44 +165,10 @@ public class DirCache {
 			//Decide what to do
 
 
-
-			try {
-				HFile fileProps = hAPI.getFileProps(fileUID);
-				if (fileProps.islink) isLinkCache.add(fileUID);
-				else if (fileProps.isdir) isDirCache.add(fileUID);
-
-				//If this isn't a link, we don't care
-				if (!fileProps.islink)
-					continue;
-
-
-				//If this is a link, follow it until a directory is found (or until the link ends)
-				//Since this is a link, follow it until we reach the final target (or until the last link can't find its target)
-				Set<UUID> localVisited = new HashSet<>(visited);
-				while( fileProps.islink ) {
-					if (!localVisited.add(fileUID))
-						break; // Prevent cycles
-
-					//Update any dependency lists for parent directories
-					for(int i = 0; i < currPath.getNameCount(); i++) {
-						UUID pathItem = UUID.fromString(currPath.getName(i).toString());
-						cDirChildTargets.putIfAbsent(pathItem, new HashSet<>());
-						cDirChildTargets.get(pathItem).add(fileUID);
-					}
-
-					//Follow the link
-					fileUID = readDirLink(fileUID);
-					fileProps = hAPI.getFileProps(fileUID);
-					if(fileProps.isdir) isDirCache.add(fileUID);
-					if(fileProps.islink) isLinkCache.add(fileUID);
-				}
-			}
-
-
-
-
-
-
+			//Get file props,
+			// Is link? Send it off
+			//  Get target, return List<UUID>
+			//  Target could be single item, or could be dir or divider
 
 
 
@@ -216,12 +182,27 @@ public class DirCache {
 				Set<UUID> localVisited = new HashSet<>(visited);
 				files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
 			}
+			//Otherwise, this file has not been cached, and we need to find if it's a link
 			else {
 				try {
 					HFile fileProps = hAPI.getFileProps(fileUID);
 					if (fileProps.islink) isLinkCache.add(fileUID);
 					else if (fileProps.isdir) isDirCache.add(fileUID);
 
+					//If this isn't a link, we don't care
+					if (!fileProps.islink)
+						continue;
+
+					Set<UUID> localVisited = new HashSet<>(visited);
+					files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
+				}
+				catch (FileNotFoundException | ConnectException e) {
+					//If the file isn't found or we just can't reach it, skip it
+					continue;
+				}
+				catch (ContentsNotFoundException e) {
+					//If we can't find the link's contents, this is an issue, but skip it
+					continue;
 				}
 			}
 
@@ -324,7 +305,18 @@ public class DirCache {
 
 
 	private List<Pair<Path, String>> traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+		//Read link contents to get target
+		//Find if item is directory
+		//  If directory, pass to traverse
+		//Find if item is link
+		//  If link, pass to traverseLink
+		//If item is not dir or link, pass to normal item handling
+		//  If link or normal item, just pass back single item
+		//  If divider, do a sort of traverse
 
+		//Follow the link
+		LinkUtilities.LinkTarget target = LinkUtilities.readLink(linkUID);
+		cLinkTarget.put(linkUID, target);
 	}
 
 
