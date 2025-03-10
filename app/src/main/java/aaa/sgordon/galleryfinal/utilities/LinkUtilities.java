@@ -63,7 +63,9 @@ public class LinkUtilities {
 			this.parentUID = parentUID;
 			this.fileUID = fileUID;
 		}
+		@NonNull
 		public UUID getParentUID() { return parentUID; }
+		@NonNull
 		public UUID getFileUID() { return fileUID; }
 
 		@NonNull
@@ -82,11 +84,13 @@ public class LinkUtilities {
 
 
 	public static class ExternalTarget implements LinkTarget {
+		@NonNull
 		private final Uri uri;
 
-		public ExternalTarget(Uri uri) {
+		public ExternalTarget(@NonNull Uri uri) {
 			this.uri = uri;
 		}
+		@NonNull
 		public Uri getUri() { return uri; }
 
 		@NonNull

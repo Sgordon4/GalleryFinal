@@ -311,7 +311,8 @@ public class DirCache {
 	}
 
 
-	private LinkUtilities.LinkTarget traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+	@NonNull
+	private List<Pair<Path, String>> traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//Read link contents to get target
 		//Find if item is directory
 		//  If directory, pass to traverse
@@ -320,6 +321,12 @@ public class DirCache {
 		//If item is not dir or link, pass to normal item handling
 		//  If link or normal item, just pass back single item
 		//  If divider, do a sort of traverse
+
+
+		//If the link is a single item (external, single image), we are done here. Do nothing.
+		//If the link is a directory, call traverse and add an end
+		//If the link is a divider, grab the correct subset of files and traverse on that
+
 
 		//Read the link contents into a target
 		LinkUtilities.LinkTarget target;
@@ -330,11 +337,22 @@ public class DirCache {
 			cLinkTarget.put(linkUID, target);
 		}
 
+
 		//If the target is external, we're done here
 		if(target instanceof LinkUtilities.ExternalTarget)
-			return target;
+			return new ArrayList<>();
 
 		//If the target is internal, we need more info
+		LinkUtilities.InternalTarget inTarget = (LinkUtilities.InternalTarget) target;
+
+		try {
+			HFile fileProps = hAPI.getFileProps(inTarget.getFileUID());
+			if (fileProps.islink) isLinkCache.add(inTarget.getFileUID());
+			else if (fileProps.isdir) isDirCache.add(inTarget.getFileUID());
+
+			
+
+		}
 
 
 
