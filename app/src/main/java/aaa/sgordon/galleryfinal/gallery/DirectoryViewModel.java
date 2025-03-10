@@ -12,13 +12,15 @@ import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
+import aaa.sgordon.galleryfinal.repository.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 
@@ -28,6 +30,8 @@ public class DirectoryViewModel extends ViewModel {
 
 	private final DirCache dirCache;
 	private final DirCache.UpdateListener dirListener;
+	private final LinkCache linkCache;
+	//private final LinkCache.UpdateListener linkListener;
 	private final AttrCache attrCache;
 	private final AttrCache.UpdateListener attrListener;
 
@@ -46,6 +50,9 @@ public class DirectoryViewModel extends ViewModel {
 
 	public DirCache getDirCache() {
 		return dirCache;
+	}
+	public LinkCache getLinkCache() {
+		return linkCache;
 	}
 	public AttrCache getAttrCache() {
 		return attrCache;
@@ -70,6 +77,7 @@ public class DirectoryViewModel extends ViewModel {
 		this.currDirUID = currDirUID;
 
 		this.dirCache = DirCache.getInstance();
+		this.linkCache = LinkCache.getInstance();
 		this.attrCache = AttrCache.getInstance();
 
 		this.filterRegistry = new FilterController.FilterRegistry();
@@ -110,6 +118,17 @@ public class DirectoryViewModel extends ViewModel {
 		};
 		dirCache.addListener(dirListener, currDirUID);
 
+		/*
+		linkListener = uuid -> {
+			//Don't even check if this update affects one of our files, just refresh things idc
+			//90% chance it does anyway
+			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(fileList.getValue());
+			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
+			fileTags.postValue(newTags);
+		};
+		linkCache.addListener(linkListener);
+		 */
+
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
@@ -142,7 +161,7 @@ public class DirectoryViewModel extends ViewModel {
 	private void refreshList() {
 		try {
 			//Grab the current list of all files in this directory from the system
-			List<Pair<Path, String>> newFileList = dirCache.getDirList(currDirUID);
+			List<Pair<Path, String>> newFileList = TraversalHelper.traverseDir(currDirUID);
 
 			//Grab the UUIDs of all the files in the new list
 			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(newFileList);

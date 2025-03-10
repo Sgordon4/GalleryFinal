@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery;
+package aaa.sgordon.galleryfinal.repository.caches;
 
 import androidx.annotation.NonNull;
 
@@ -7,7 +7,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,7 +42,6 @@ public class AttrCache {
 
 		//Whenever any file we have cached is changed, update our data
 		fileChangeListener = uuid -> {
-
 			if(attrCache.containsKey(uuid)) {
 				attrCache.remove(uuid);
 				updateListeners.notifyDataChanged(uuid);

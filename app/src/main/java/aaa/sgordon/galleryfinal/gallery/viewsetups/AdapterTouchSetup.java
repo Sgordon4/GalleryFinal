@@ -37,11 +37,13 @@ public class AdapterTouchSetup {
 			}
 			@Override
 			public boolean isDir(UUID fileUID) {
-				return dirViewModel.getDirCache().isDir(fileUID);
+				//This is counting on any file we touch in traversal to be manually added to the set in dirCache
+				return dirViewModel.getDirCache().isMarkedAsDir(fileUID);
 			}
 			@Override
 			public boolean isLink(UUID fileUID) {
-				return dirViewModel.getDirCache().isLink(fileUID);
+				//This is counting on any file we touch in traversal to be manually added to the set in linkCache
+				return dirViewModel.getLinkCache().isMarkedAsLink(fileUID);
 			}
 
 			UUID fileUID = null;

@@ -34,6 +34,7 @@ import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
@@ -189,7 +190,8 @@ public class EditItemModal extends DialogFragment {
 			if(!Objects.equals(props.fileName, newFilename)) {
 				try {
 					//DirUID could be a link to a directory, we need the directory itself
-					UUID dirUID = dirFragment.dirViewModel.getDirCache().resolveDirUID(props.dirUID);
+					//TODO Pretty sure this will break
+					UUID dirUID = LinkCache.getInstance().resolvePotentialLink(props.dirUID);
 					if(dirUID == null) {
 						Toast.makeText(getContext(), "Cannot rename, broken link!", Toast.LENGTH_SHORT).show();
 						return;
@@ -198,7 +200,7 @@ public class EditItemModal extends DialogFragment {
 					DirUtilities.renameFile(props.fileUID, dirUID, newFilename);
 				} catch (ContentsNotFoundException e) {
 					throw new RuntimeException(e);
-				} catch (FileNotFoundException | NotDirectoryException e) {
+				} catch (FileNotFoundException e) {
 					Toast.makeText(getContext(), "Cannot rename, file not found!", Toast.LENGTH_SHORT).show();
 					return;
 				} catch (ConnectException e) {

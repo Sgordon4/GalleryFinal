@@ -21,6 +21,7 @@ import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class ReorderSetup {
@@ -49,9 +50,9 @@ public class ReorderSetup {
 
 
 				try {
+					//TODO Pretty sure this will break
 					UUID destinationUID = UUID.fromString(destination.getFileName().toString());
-					destinationUID = dirViewModel.getDirCache().resolveDirUID(destinationUID);
-					if(destinationUID == null) throw new RuntimeException();
+					destinationUID = LinkCache.getInstance().resolvePotentialLink(destinationUID);
 
 
 					UUID nextItemUID = null;

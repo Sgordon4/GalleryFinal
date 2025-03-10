@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
+
 public class FilterController {
 	private final AttrCache attrCache;
 	public final FilterRegistry registry;

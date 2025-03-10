@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.gallery;
 import android.net.Uri;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +26,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.repository.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
@@ -59,8 +60,9 @@ public class DirUtilities {
 		return dirList;
 	}
 
+	/*
 	//Only use with directory links, not normal links
-	private static UUID readDirLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+	public static UUID readDirLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		Uri uri = HybridAPI.getInstance().getFileContent(linkUID).first;
 
 		try (InputStream inputStream = new URL(uri.toString()).openStream();
@@ -70,6 +72,7 @@ public class DirUtilities {
 		}
 		catch (IOException e) { throw new RuntimeException(e); }
 	}
+	 */
 
 
 
@@ -117,8 +120,8 @@ public class DirUtilities {
 			return false;
 		}
 
-		DirCache dirCache = DirCache.getInstance();
-		UUID destinationDirUID = dirCache.resolveDirUID(destinationUID);
+		LinkCache linkCache = LinkCache.getInstance();
+		UUID destinationDirUID = linkCache.resolvePotentialLink(destinationUID);
 
 
 
@@ -138,11 +141,8 @@ public class DirUtilities {
 			}
 
 			//In case this is a link to a directory, get the actual directory UID it points to
-			parentUID = dirCache.resolveDirUID(parentUID);
-			if(parentUID == null) {
-				Log.wtf(TAG, "When moving, parent resolution returned null! Path='"+itemToMove.first+"'");
-				continue;
-			}
+			//TODO Pretty sure this will break
+			parentUID = linkCache.resolvePotentialLink(parentUID);
 
 			dirMap.putIfAbsent(parentUID, new ArrayList<>());
 			dirMap.get(parentUID).add(fileUID);
