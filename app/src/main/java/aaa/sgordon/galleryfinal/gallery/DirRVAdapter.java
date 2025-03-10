@@ -129,6 +129,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		}
 
 
+		if(item.second.equals("Root link to link to sideDir"))
+			System.out.println("AAAAAAAAAAAAAAAAAAAAAAA");
+
 		holder.bind(fileUID, level + list.get(position).second);
 
 
@@ -147,6 +150,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public int getItemViewType(int position) {
 		Pair<Path, String> item = list.get(position);
 
+		if(item.second.equals("Root link to link to sideDir"))
+			System.out.println("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+
 		boolean isEnd = false;
 		String UUIDString = item.first.getFileName().toString();
 		if(UUIDString.equals("END")) {
@@ -159,6 +165,17 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		boolean isLink = touchCallback.isLink(fileUID);
 
 
+		if(isDir)
+			return 0;			//Directory
+
+		if(isLink) {
+			if(item.first.getFileName().toString().equals("END"))
+				return 2;		//End of link to directory
+			else
+				return 1;		//Link to directory
+		}
+
+		/*
 		if(isDir) {
 			if(!isLink)
 				return 0;			//Directory
@@ -169,6 +186,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 					return 2;		//End of link to directory
 			}
 		}
+		 */
 
 		//Get the filename extension, maybe we need fileNameUtils for this idk
 		String extension = FilenameUtils.getExtension(item.second);

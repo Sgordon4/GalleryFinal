@@ -91,9 +91,10 @@ public class LinkCache {
 
 			//If the uri scheme starts with "gallery", it's an internal link
 			if ("gallery".equals(linkUri.getScheme())) {
-				List<String> pathSegments = uri.getPathSegments();
-				UUID dirUID = UUID.fromString(pathSegments.get(0));
-				UUID fileUID = UUID.fromString(pathSegments.get(1));
+				System.out.println("Uri: "+linkUri);
+				String[] uuidParts = linkUri.getPath().split("/");
+				UUID dirUID = UUID.fromString(uuidParts[1]);
+				UUID fileUID = UUID.fromString(uuidParts[2]);
 
 				return new InternalTarget(dirUID, fileUID);
 			}

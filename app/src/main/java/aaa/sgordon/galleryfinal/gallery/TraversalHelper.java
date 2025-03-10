@@ -11,6 +11,8 @@ import java.net.ConnectException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,8 +36,9 @@ public class TraversalHelper {
 		List<Pair<UUID, String>> contents = dirCache.getDirContents(dirUID);
 		dirCache.markAsDir(dirUID);
 
-		return traverseContents(contents, new HashSet<>(), Paths.get(dirUID.toString()));
+		return traverseContents(contents, Collections.singleton(dirUID), Paths.get(dirUID.toString()));
 	}
+
 
 
 	private static List<Pair<Path, String>> traverseContents(List<Pair<UUID, String>> contents, Set<UUID> visited, Path currPath) {
@@ -75,39 +78,6 @@ public class TraversalHelper {
 	}
 
 
-	//When displaying links to dividers, we want to show all items after the divider up until the next divider (or dir end)
-	private static List<Pair<UUID, String>> sublistDividerItems(List<Pair<UUID, String>> parentContents, UUID dividerUID)
-			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-
-		//Find the index of the divider within the parent directory contents
-		int dividerIndex = -1;
-		for (int i = 0; i < parentContents.size(); i++) {
-			if (parentContents.get(i).first.equals(dividerUID)) {
-				dividerIndex = i;
-				break;
-			}
-		}
-
-		//If no divider is found, the link is broken. We should return an empty list.
-		//However, This should never happen, since we check this in traverseLink before calling this method.
-		if (dividerIndex == -1) throw new RuntimeException();
-
-
-		//Find the next divider after the given dividerUID, or the end of the list
-		int nextDividerIndex = dividerIndex + 1;
-		while (nextDividerIndex < parentContents.size()) {
-			if(!FilenameUtils.getExtension( parentContents.get(nextDividerIndex).second ).equals("div"))
-				break;
-
-			nextDividerIndex++;
-		}
-
-
-		//Return the items between the given divider and the next divider (or end of list)
-		return parentContents.subList(dividerIndex + 1, nextDividerIndex);
-	}
-
-
 
 	//If the link is a directory, call traverse and add an end
 	//If the link is a divider, grab the correct subset of files and traverse on that
@@ -142,6 +112,9 @@ public class TraversalHelper {
 			}
 			//If the link is a directory, traverse it and append a link end
 			else if(fileProps.isdir) {
+				if(!visited.add(target.getFileUID()))	//Prevent cycles
+					return new ArrayList<>();
+
 				//Traverse the directory
 				List<Pair<UUID, String>> contents = dirCache.getDirContents(target.getFileUID());
 				List<Pair<Path, String>> files = traverseContents(contents, localVisited, currPath);
@@ -158,6 +131,9 @@ public class TraversalHelper {
 				List<Pair<UUID, String>> targetParentContents = dirCache.getDirContents(target.getParentUID());
 				Optional<Pair<UUID, String>> targetItem = targetParentContents.stream()
 						.filter(pair -> pair.first.equals( target.getFileUID() )).findFirst();
+
+				if(!visited.add(target.getFileUID()))	//Prevent cycles
+					return new ArrayList<>();
 
 				//If the target is no longer in the parent directory, the link is broken and we're done here
 				if(!targetItem.isPresent()) return new ArrayList<>();
@@ -187,5 +163,39 @@ public class TraversalHelper {
 			//If we can't find the link's contents, this is an issue, but skip it
 			return new ArrayList<>();
 		}
+	}
+
+
+
+	//When displaying links to dividers, we want to show all items after the divider up until the next divider (or dir end)
+	private static List<Pair<UUID, String>> sublistDividerItems(List<Pair<UUID, String>> parentContents, UUID dividerUID)
+			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+
+		//Find the index of the divider within the parent directory contents
+		int dividerIndex = -1;
+		for (int i = 0; i < parentContents.size(); i++) {
+			if (parentContents.get(i).first.equals(dividerUID)) {
+				dividerIndex = i;
+				break;
+			}
+		}
+
+		//If no divider is found, the link is broken. We should return an empty list.
+		//However, This should never happen, since we check this in traverseLink before calling this method.
+		if (dividerIndex == -1) throw new RuntimeException();
+
+
+		//Find the next divider after the given dividerUID, or the end of the list
+		int nextDividerIndex = dividerIndex + 1;
+		while (nextDividerIndex < parentContents.size()) {
+			if(!FilenameUtils.getExtension( parentContents.get(nextDividerIndex).second ).equals("div"))
+				break;
+
+			nextDividerIndex++;
+		}
+
+
+		//Return the items between the given divider and the next divider (or end of list)
+		return parentContents.subList(dividerIndex + 1, nextDividerIndex);
 	}
 }

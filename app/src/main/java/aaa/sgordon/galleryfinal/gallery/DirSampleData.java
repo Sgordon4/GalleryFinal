@@ -263,20 +263,25 @@ public class DirSampleData {
 		//Link r_l1 to r_d1
 		try {
 			hapi.lockLocal(r_l1.first);
-			hapi.writeFile(r_l1.first, r_d1.first.toString().getBytes(), HFile.defaultChecksum);
+			Uri target = new Uri.Builder().scheme("gallery").appendPath(root.toString()).appendPath(r_d1.first.toString()).build();
+			hapi.writeFile(r_l1.first, target.toString().getBytes(), HFile.defaultChecksum);
 		} finally { hapi.unlockLocal(r_l1.first); }
 
 		//Link r_l2 to r_l3
 		try {
 			hapi.lockLocal(r_l2.first);
-			hapi.writeFile(r_l2.first, r_l3.first.toString().getBytes(), HFile.defaultChecksum);
+			Uri target = new Uri.Builder().scheme("gallery").appendPath(root.toString()).appendPath(r_l3.first.toString()).build();
+			hapi.writeFile(r_l2.first, target.toString().getBytes(), HFile.defaultChecksum);
 		} finally { hapi.unlockLocal(r_l2.first); }
 
 		//Link r_l3 to sideDir
 		try {
 			hapi.lockLocal(r_l3.first);
-			hapi.writeFile(r_l3.first, sideDir.first.toString().getBytes(), HFile.defaultChecksum);
+			Uri target = new Uri.Builder().scheme("gallery").appendPath(root.toString()).appendPath(sideDir.first.toString()).build();
+			hapi.writeFile(r_l3.first, target.toString().getBytes(), HFile.defaultChecksum);
 		} finally { hapi.unlockLocal(r_l3.first); }
+
+
 
 		//Write the list to the root directory
 		List<String> rootLines = rootList.stream().map(pair -> pair.first+" "+pair.second)
