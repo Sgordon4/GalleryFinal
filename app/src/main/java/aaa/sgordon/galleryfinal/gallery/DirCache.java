@@ -8,6 +8,8 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -137,15 +140,38 @@ public class DirCache {
 
 
 
+
+
+
+
+
+
+
+
+	//For each file
+	//Check if link
+	//Follow link
+	//	Read link
+	//	Follow link
+	//Given link target, check link target type and name
+	//Decide what to do
+
+
+	//Get file props,
+	// Is link? Send it off
+	//  Get target, return List<UUID>
+	//  Target could be single item, or could be dir or divider
+
+
+
+
 	//Recursively read directory contents, drilling down only through links to directories
 	public List<Pair<Path, String>> getDirList(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		return traverse(dirUID, new HashSet<>(), Paths.get(dirUID.toString()));
-	}
-	private List<Pair<Path, String>> traverse(UUID dirUID, Set<UUID> visited, Path currPath)
-			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-
 		List<Pair<UUID, String>> contents = readDir(dirUID);
+		return traverseContents(contents, new HashSet<>(), Paths.get(dirUID.toString()));
+	}
 
+	private List<Pair<Path, String>> traverseContents(List<Pair<UUID, String>> contents, Set<UUID> visited, Path currPath) {
 		//For each file in the directory...
 		List<Pair<Path, String>> files = new ArrayList<>();
 		for (Pair<UUID, String> entry : contents) {
@@ -156,146 +182,15 @@ public class DirCache {
 			files.add(new Pair<>(thisFilePath, entry.second));
 
 
-			//For each file
-			//Check if link
-			//Follow link
-			//	Read link
-			//	Follow link
-			//Given link target, check link target type and name
-			//Decide what to do
-
-
-			//Get file props,
-			// Is link? Send it off
-			//  Get target, return List<UUID>
-			//  Target could be single item, or could be dir or divider
-
-
-
-
-
-			//If the file is in the dirCache, we know it's not a link, and we can ignore it
-			if(isDirCache.contains(fileUID))
-				continue;
-
-
-			//If the file is in the linkCache, we know it's a link, and we should follow it
-			LinkUtilities.LinkTarget target;
-			if(isLinkCache.contains(fileUID)) {
-				Set<UUID> localVisited = new HashSet<>(visited);
-				target = traverseLink(fileUID, localVisited, thisFilePath);
-			}
-
-
-			//Otherwise, this file has not been cached, and we need to find if it's a link
-			//TODO Probably worth adding a neitherCache
-			else {
-				try {
-					HFile fileProps = hAPI.getFileProps(fileUID);
-					if (fileProps.islink) isLinkCache.add(fileUID);
-					else if (fileProps.isdir) isDirCache.add(fileUID);
-
-					//If this isn't a link, we don't care
-					if (!fileProps.islink)
-						continue;
-
-					Set<UUID> localVisited = new HashSet<>(visited);
-					target = traverseLink(fileUID, localVisited, thisFilePath);
-				}
-				catch (FileNotFoundException | ConnectException e) {
-					//If the file isn't found or we just can't reach it, skip it
-					continue;
-				}
-				catch (ContentsNotFoundException e) {
-					//If we can't find the link's contents, this is an issue, but skip it
-					continue;
-				}
-			}
-
-
-
-
 			try {
 				HFile fileProps = hAPI.getFileProps(fileUID);
-				if (fileProps.islink) isLinkCache.add(fileUID);
-				else if (fileProps.isdir) isDirCache.add(fileUID);
 
 				//If this isn't a link, we don't care
 				if (!fileProps.islink)
 					continue;
 
-				//If this is a link, follow it until a non-link is found (or until the link breaks)
 				Set<UUID> localVisited = new HashSet<>(visited);
-				while (fileProps.islink) {
-					if (!localVisited.add(fileUID))
-						break; // Prevent cycles
-
-					//Follow the link
-					LinkUtilities.LinkTarget target = LinkUtilities.readLink(fileUID);
-					cLinkTarget.put(fileUID, target);
-
-					//If this link is external, we don't care about it
-					if(target instanceof LinkUtilities.ExternalTarget)
-						continue;
-
-
-
-					fileProps = hAPI.getFileProps(fileUID);
-					if(fileProps.isdir) isDirCache.add(fileUID);
-					if(fileProps.islink) isLinkCache.add(fileUID);
-				}
-			}
-
-
-			try {
-				HFile fileProps = hAPI.getFileProps(fileUID);
-				if(fileProps.isdir) isDirCache.add(fileUID);
-				if(fileProps.islink) isLinkCache.add(fileUID);
-
-				//If this isn't a link to a directory, we don't care
-				if(!(fileProps.isdir && fileProps.islink))
-					continue;
-
-				//If this is a link, follow it until a directory is found (or until the link ends)
-				Set<UUID> localVisited = new HashSet<>(visited);
-				while( fileProps.islink ) {
-					if (!localVisited.add(fileUID))
-						break; // Prevent cycles
-
-					//Update any dependency lists for parent directories
-					for(int i = 0; i < currPath.getNameCount(); i++) {
-						UUID pathItem = UUID.fromString(currPath.getName(i).toString());
-						cDirChildTargets.putIfAbsent(pathItem, new HashSet<>());
-						cDirChildTargets.get(pathItem).add(fileUID);
-					}
-
-					//Follow the link
-					fileUID = readDirLink(fileUID);
-					fileProps = hAPI.getFileProps(fileUID);
-					if(fileProps.isdir) isDirCache.add(fileUID);
-					if(fileProps.islink) isLinkCache.add(fileUID);
-				}
-
-
-				//If we reached a directory and this isn't a broken link, traverse it
-				if(fileProps.isdir && !fileProps.islink) {
-					if (!localVisited.add(fileUID))
-						continue; // Prevent cycles
-
-					//Update any dependency lists for parent directories
-					for(int i = 0; i < currPath.getNameCount(); i++) {
-						UUID pathItem = UUID.fromString(currPath.getName(i).toString());
-						cDirChildTargets.putIfAbsent(pathItem, new HashSet<>());
-						cDirChildTargets.get(pathItem).add(fileUID);
-					}
-
-					files.addAll(traverse(fileUID, localVisited, thisFilePath));
-
-					//Ad a bookend for the link
-					Path linkEnd = thisFilePath.resolve("END");
-					//files.add(new Pair<>(linkEnd, entry.second+" END"));
-					files.add(new Pair<>(linkEnd, "END"));
-				}
+				files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
 			}
 			catch (FileNotFoundException | ConnectException e) {
 				//If the file isn't found or we just can't reach it, skip it
@@ -311,53 +206,145 @@ public class DirCache {
 	}
 
 
+	//When displaying links to dividers, we want to show all items after the divider up until the next divider (or dir end)
+	private List<Pair<UUID, String>> sublistDividerItems(List<Pair<UUID, String>> parentContents, UUID dividerUID)
+			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+
+		//Find the index of the divider within the parent directory contents
+		int dividerIndex = -1;
+		for (int i = 0; i < parentContents.size(); i++) {
+			if (parentContents.get(i).first.equals(dividerUID)) {
+				dividerIndex = i;
+				break;
+			}
+		}
+
+		//If no divider is found, the link is broken. We should return an empty list.
+		//However, This should never happen, since we check this in traverseLink before calling this method.
+		if (dividerIndex == -1) throw new RuntimeException();
+
+
+		//Find the next divider after the given dividerUID, or the end of the list
+		int nextDividerIndex = dividerIndex + 1;
+		while (nextDividerIndex < parentContents.size()) {
+			if(!FilenameUtils.getExtension( parentContents.get(nextDividerIndex).second ).equals("div"))
+				break;
+
+			nextDividerIndex++;
+		}
+
+
+		//Return the items between the given divider and the next divider (or end of list)
+		return parentContents.subList(dividerIndex + 1, nextDividerIndex);
+	}
+
+
+
+
+
+
+	//Read link contents to get target
+	//Find if item is directory
+	//  If directory, pass to traverse
+	//Find if item is link
+	//  If link, pass to traverseLink
+	//If item is not dir or link, pass to normal item handling
+	//  If link or normal item, just pass back single item
+	//  If divider, do a sort of traverse
+
+
+	//If the link is a directory, call traverse and add an end
+	//If the link is a divider, grab the correct subset of files and traverse on that
+	//If the link is a single item (external, single image), we are done here. Do nothing.
+
+
+
 	@NonNull
 	private List<Pair<Path, String>> traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		//Read link contents to get target
-		//Find if item is directory
-		//  If directory, pass to traverse
-		//Find if item is link
-		//  If link, pass to traverseLink
-		//If item is not dir or link, pass to normal item handling
-		//  If link or normal item, just pass back single item
-		//  If divider, do a sort of traverse
-
-
-		//If the link is a single item (external, single image), we are done here. Do nothing.
-		//If the link is a directory, call traverse and add an end
-		//If the link is a divider, grab the correct subset of files and traverse on that
+		if(!visited.add(linkUID))	//Prevent cycles
+			return new ArrayList<>();
 
 
 		//Read the link contents into a target
-		LinkUtilities.LinkTarget target;
-		if(cLinkTarget.containsKey(linkUID))
-			target = cLinkTarget.get(linkUID);
-		else {
-			target = LinkUtilities.readLink(linkUID);
-			cLinkTarget.put(linkUID, target);
-		}
-
+		LinkUtilities.LinkTarget linkTarget = LinkUtilities.readLink(linkUID);
 
 		//If the target is external, we're done here
-		if(target instanceof LinkUtilities.ExternalTarget)
+		if(linkTarget instanceof LinkUtilities.ExternalTarget)
 			return new ArrayList<>();
 
+
 		//If the target is internal, we need more info
-		LinkUtilities.InternalTarget inTarget = (LinkUtilities.InternalTarget) target;
+		LinkUtilities.InternalTarget target = (LinkUtilities.InternalTarget) linkTarget;
+		Set<UUID> localVisited = new HashSet<>(visited);
 
 		try {
-			HFile fileProps = hAPI.getFileProps(inTarget.getFileUID());
-			if (fileProps.islink) isLinkCache.add(inTarget.getFileUID());
-			else if (fileProps.isdir) isDirCache.add(inTarget.getFileUID());
+			HFile fileProps = hAPI.getFileProps(target.getFileUID());
 
-			
+			//If the link target is another link, continue traversing down the tunnel
+			if(fileProps.islink) {
+				return traverseLink(target.getFileUID(), localVisited, currPath);
+			}
+			//If the link is a directory, traverse it and append a link end
+			else if(fileProps.isdir) {
+				//Traverse the directory
+				List<Pair<UUID, String>> contents = readDir(target.getFileUID());
+				List<Pair<Path, String>> files = traverseContents(contents, localVisited, currPath);
 
+				//Ad a bookend for the link
+				Path linkEnd = currPath.resolve("END");
+				files.add(new Pair<>(linkEnd, "END"));
+
+				return files;
+			}
+			//If the link target is neither a link or a dir, we need to check if it's a 'divider' (by file extension)
+			else {
+				//Find the first item in the target's parent directory that matches the target UUID
+				List<Pair<UUID, String>> targetParentContents = readDir(target.getParentUID());
+				Optional<Pair<UUID, String>> targetItem = targetParentContents.stream()
+						.filter(pair -> pair.first.equals( target.getFileUID() )).findFirst();
+
+				//If the target is no longer in the parent directory, the link is broken and we're done here
+				if(!targetItem.isPresent()) return new ArrayList<>();
+
+				//If the target does not refer to a divider item, we're done here
+				String targetName = targetItem.get().second;
+				if(!FilenameUtils.getExtension(targetName).equals("div"))
+					return new ArrayList<>();
+
+
+				//Since the target is a divider item, we need to traverse only the "divider's items"
+				List<Pair<UUID, String>> dividerItems = sublistDividerItems(targetParentContents, target.getFileUID());
+				return traverseContents(dividerItems, localVisited, currPath);
+			}
 		}
-
-
-
-
+		catch (FileNotFoundException | ConnectException e) {
+			//If the file isn't found or we just can't reach it, skip it
+			return new ArrayList<>();
+		}
+		catch (ContentsNotFoundException e) {
+			//If we can't find the link's contents, this is an issue, but skip it
+			return new ArrayList<>();
+		}
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
