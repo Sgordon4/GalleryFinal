@@ -89,6 +89,13 @@ public class TraversalHelper {
 			return new ArrayList<>();
 
 
+		//Update any dependency lists for parent directories
+		for(int i = 0; i < currPath.getNameCount(); i++) {
+			UUID pathItem = UUID.fromString(currPath.getName(i).toString());
+			dirCache.subLinks.putIfAbsent(pathItem, new HashSet<>());
+			dirCache.subLinks.get(pathItem).add(linkUID);
+		}
+
 		//Read the link contents into a target
 		LinkCache.LinkTarget linkTarget = LinkCache.getInstance().getLinkTarget(linkUID);
 
@@ -105,6 +112,14 @@ public class TraversalHelper {
 			HFile fileProps = hAPI.getFileProps(target.getFileUID());
 			if(fileProps.islink) linkCache.markAsLink(linkUID);
 			else if(fileProps.isdir) dirCache.markAsDir(linkUID);
+
+			//Update any dependency lists for parent directories
+			for(int i = 0; i < currPath.getNameCount(); i++) {
+				UUID pathItem = UUID.fromString(currPath.getName(i).toString());
+				dirCache.subLinks.putIfAbsent(pathItem, new HashSet<>());
+				dirCache.subLinks.get(pathItem).add(target.getFileUID());
+			}
+
 
 			//If the link target is another link, continue traversing down the tunnel
 			if(fileProps.islink) {

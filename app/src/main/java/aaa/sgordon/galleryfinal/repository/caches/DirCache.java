@@ -33,7 +33,7 @@ public class DirCache {
 	private final Map<UUID, List<Pair<UUID, String>>> dirContents;
 	private final Set<UUID> isDir;
 	//Per directory, holds subordinate links and link targets the dir depends on. This is for use with the listener to refresh the dir on subordinate item updates
-	private final Map<UUID, Set<UUID>> subLinks;
+	public final Map<UUID, Set<UUID>> subLinks;
 
 
 	public static DirCache getInstance() {
