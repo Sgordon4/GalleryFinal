@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/take_photo"
+        android:icon="@drawable/icon_camera_outline"
+        android:title="Take Photo" />
+    <item
+        android:id="@+id/import_image"
+        android:icon="@drawable/icon_image_outline"
+        android:title="Import Photos"/>
+    <item
+        android:id="@+id/new_item"
+        android:icon="@drawable/icon_plus_box_multiple"
+        android:title="New Item" />
+</menu>

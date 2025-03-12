@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.leinardi.android.speeddial.SpeedDialActionItem;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.UUID;
@@ -264,6 +265,24 @@ public class DirFragment extends Fragment {
 		// in any of the child frags those things will show up in the previous frags too.
 		//This is NOT a bug, and is actually the intended use case lmao. Pretty neat that it works though.
 		//binding.buttonDrilldown.setVisibility(View.GONE);
+
+
+		binding.fab.inflate(R.menu.gallery_menu_fab);
+
+		binding.fab.setOnActionSelectedListener(actionItem -> {
+			if (actionItem.getId() == R.id.new_item) {
+				System.out.println("Clicked new item");
+			}
+			else if (actionItem.getId() == R.id.import_image) {
+				System.out.println("Clicked import image");
+			}
+			else if (actionItem.getId() == R.id.take_photo) {
+				System.out.println("Clicked take photo");
+			}
+			binding.fab.close();
+			return true;
+		});
+
 
 
 		//Show/Hide the fab when scrolling:

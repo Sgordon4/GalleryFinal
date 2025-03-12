@@ -23,7 +23,7 @@ import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.utilities.Utilities;
+import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 public class DirectoryViewModel extends ViewModel {
 	private final static String TAG = "Gal.DirVM";

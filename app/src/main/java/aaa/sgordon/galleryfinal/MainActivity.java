@@ -2,7 +2,6 @@ package aaa.sgordon.galleryfinal;
 
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Pair;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,30 +10,13 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
-import androidx.navigation.NavDirections;
-import androidx.navigation.NavGraph;
-import androidx.navigation.NavOptions;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.room.Room;
 
-import com.google.android.material.appbar.AppBarLayout;
-
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
-import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
-import aaa.sgordon.galleryfinal.gallery.DirSampleData;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
-import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
-import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
+import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
 //((level:debug & tag:Hyb) | (tag:System | is:stacktrace )) & package:mine & -line:ClassLoaderContext & name:hybridRepo

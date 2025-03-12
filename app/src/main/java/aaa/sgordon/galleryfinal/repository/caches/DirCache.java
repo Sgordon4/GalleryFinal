@@ -17,8 +17,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.DirSampleData;
-import aaa.sgordon.galleryfinal.gallery.DirUtilities;
+import aaa.sgordon.galleryfinal.utilities.DirSampleData;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
