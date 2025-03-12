@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	private final RecyclerView recyclerView;
@@ -56,7 +57,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
 		//Disallow link ends to be dragged
 		int adapterPos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
-		if(adapterPos == -1 || adapter.list.get(adapterPos).first.getFileName().toString().equals("END"))
+		if(adapterPos == -1 || LinkCache.isLinkEnd(adapter.list.get(adapterPos).first))
 			return makeMovementFlags(0, 0);
 
 		int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;

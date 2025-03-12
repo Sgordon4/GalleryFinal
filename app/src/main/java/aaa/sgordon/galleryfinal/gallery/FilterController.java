@@ -20,6 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class FilterController {
 	private final AttrCache attrCache;
@@ -106,11 +107,12 @@ public class FilterController {
 			//If we're filtering for tags, make sure each item has all filtered tags
 			//Get the UUID of the file from the path
 			Path path = pathStringPair.first;
-			String UUIDString = path.getFileName().toString();
-			if(UUIDString.equals("END"))
+
+			if(LinkCache.isLinkEnd(path))
 				return false;	//Exclude ends, since we can't reorder
-			//	UUIDString = path.getParent().getFileName().toString();
-			UUID thisFileUID = UUID.fromString(UUIDString);
+
+			Path trimmedPath = LinkCache.trimLinkPath(path);
+			UUID thisFileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 			try {
 				//Get the tags for the file. Since we have tags, if they have no tags filter them out

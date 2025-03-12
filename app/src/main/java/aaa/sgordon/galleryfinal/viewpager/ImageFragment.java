@@ -25,6 +25,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
@@ -36,11 +37,9 @@ public class ImageFragment extends Fragment {
 	public ImageFragment(Pair<Path, String> item) {
 		this.item = item;
 
-		String UUIDString = item.first.getFileName().toString();
-		if(UUIDString.equals("END"))
-			UUIDString = item.first.getParent().getFileName().toString();
+		Path trimmedPath = LinkCache.trimLinkPath(item.first);
+		this.fileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
-		this.fileUID = UUID.fromString(UUIDString);
 	}
 
 	@Override

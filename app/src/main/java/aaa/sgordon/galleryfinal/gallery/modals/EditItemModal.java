@@ -224,14 +224,12 @@ public class EditItemModal extends DialogFragment {
 		String fileName = null;
 		UUID dirUID = null;
 		for(Pair<Path, String> item : adapterList) {
-			Path UUIDPath = item.first;
-			if(UUIDPath.getFileName().toString().equals("END"))
-				UUIDPath = UUIDPath.getParent();
-			UUID itemUID = UUID.fromString(UUIDPath.getFileName().toString());
+			Path trimmedPath = LinkCache.trimLinkPath(item.first);
+			UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 			if(itemUID.equals(fileUID)) {
 				fileName = item.second;
-				dirUID = UUID.fromString(UUIDPath.getParent().getFileName().toString());
+				dirUID = UUID.fromString(trimmedPath.getParent().getFileName().toString());
 				break;
 			}
 		}

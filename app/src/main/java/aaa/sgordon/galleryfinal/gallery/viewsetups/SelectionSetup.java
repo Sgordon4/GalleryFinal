@@ -35,6 +35,7 @@ import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
@@ -92,11 +93,8 @@ public class SelectionSetup {
 
 			@Override
 			public UUID getUUIDAtPos(int pos) {
-				String UUIDString = adapter.list.get(pos).first.getFileName().toString();
-				if(UUIDString.equals("END"))
-					UUIDString = adapter.list.get(pos).first.getParent().getFileName().toString();
-
-				return UUID.fromString(UUIDString);
+				Path trimmedPath = LinkCache.trimLinkPath(adapter.list.get(pos).first);
+				return UUID.fromString(trimmedPath.getFileName().toString());
 			}
 		};
 	}
@@ -117,10 +115,8 @@ public class SelectionSetup {
 				System.out.println("Select all!");
 				Set<UUID> toSelect = new HashSet<>();
 				for(Pair<Path, String> item : adapter.list) {
-					String UUIDString = item.first.getFileName().toString();
-					if(UUIDString.equals("END"))
-						UUIDString = item.first.getParent().getFileName().toString();
-					UUID itemUID = UUID.fromString(UUIDString);
+					Path trimmedPath = LinkCache.trimLinkPath(item.first);
+					UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 					toSelect.add(itemUID);
 				}
@@ -195,10 +191,8 @@ public class SelectionSetup {
 		//Grab all UUIDs from the full list
 		Set<UUID> inAdapter = new HashSet<>();
 		for(Pair<Path, String> item : dirViewModel.fileList.getValue()) {
-			String UUIDString = item.first.getFileName().toString();
-			if(UUIDString.equals("END"))
-				UUIDString = item.first.getParent().getFileName().toString();
-			UUID itemUID = UUID.fromString(UUIDString);
+			Path trimmedPath = LinkCache.trimLinkPath(item.first);
+			UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 			inAdapter.add(itemUID);
 		}
@@ -206,10 +200,8 @@ public class SelectionSetup {
 		//Grab all UUIDs from the new list
 		Set<UUID> inNewList = new HashSet<>();
 		for(Pair<Path, String> item : newList) {
-			String UUIDString = item.first.getFileName().toString();
-			if(UUIDString.equals("END"))
-				UUIDString = item.first.getParent().getFileName().toString();
-			UUID itemUID = UUID.fromString(UUIDString);
+			Path trimmedPath = LinkCache.trimLinkPath(item.first);
+			UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 			inNewList.add(itemUID);
 		}

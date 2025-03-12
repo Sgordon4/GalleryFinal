@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerVideoBinding;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import pl.droidsonroids.gif.GifImageView;
@@ -36,11 +37,8 @@ public class VideoFragment extends Fragment {
 	public VideoFragment(Pair<Path, String> item) {
 		this.item = item;
 
-		String UUIDString = item.first.getFileName().toString();
-		if(UUIDString.equals("END"))
-			UUIDString = item.first.getParent().getFileName().toString();
-
-		this.fileUID = UUID.fromString(UUIDString);
+		Path trimmedPath = LinkCache.trimLinkPath(item.first);
+		this.fileUID = UUID.fromString(trimmedPath.getFileName().toString());
 	}
 
 	@Override

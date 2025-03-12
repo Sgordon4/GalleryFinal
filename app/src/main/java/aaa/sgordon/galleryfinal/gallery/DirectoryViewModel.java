@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
@@ -132,7 +133,8 @@ public class DirectoryViewModel extends ViewModel {
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
-			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(fileList.getValue());
+			List<Pair<Path, String>> items = excludeLinkEnds(fileList.getValue());
+			List<UUID> fileUIDs = getUUIDsFromPaths(items);
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 			fileTags.postValue(newTags);
 		};
@@ -163,12 +165,17 @@ public class DirectoryViewModel extends ViewModel {
 			//Grab the current list of all files in this directory from the system
 			List<Pair<Path, String>> newFileList = TraversalHelper.traverseDir(currDirUID);
 
-			//Grab the UUIDs of all the files in the new list
-			List<UUID> fileUIDs = Utilities.getUUIDsFromPaths(newFileList);
+			//Grab the UUIDs of all the files in the new list for use with tagging
+			//Don't include link ends, we only consider their parents
+			List<UUID> fileUIDs = getUUIDsFromPaths( excludeLinkEnds(newFileList) );
 
-			//Grab all tags for each file
+			//Grab all tags for each fileUID
 			//TODO Expand this to include a list of files per tag
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
+
+			System.out.println("NewFiles: ");
+			for(Pair<Path, String> item : newFileList)
+				System.out.println(item);
 
 			fileList.postValue(newFileList);
 			fileTags.postValue(newTags);
@@ -177,6 +184,17 @@ public class DirectoryViewModel extends ViewModel {
 			//TODO Actually handle the error. Dir should be on local, but jic
 			throw new RuntimeException(e);
 		}
+	}
+
+
+	private List<Pair<Path, String>> excludeLinkEnds(List<Pair<Path, String>> fileList) {
+		return fileList.stream().filter(item -> !LinkCache.isLinkEnd(item.first)).collect(Collectors.toList());
+	}
+	private List<UUID> getUUIDsFromPaths(List<Pair<Path, String>> fileList) {
+		return fileList.stream().map(item -> {
+			Path trimmedPath = LinkCache.trimLinkPath(item.first);
+			return UUID.fromString(trimmedPath.getFileName().toString());
+		}).collect(Collectors.toList());
 	}
 
 

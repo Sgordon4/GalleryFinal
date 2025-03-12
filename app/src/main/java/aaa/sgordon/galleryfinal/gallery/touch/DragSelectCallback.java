@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class DragSelectCallback extends ItemTouchHelper.Callback {
 	RecyclerView recyclerView;
@@ -162,10 +163,8 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		// Select range between 'from' and 'to'
 		for (int i = from; i <= to; i++) {
 			Path path = adapter.list.get(i).first;
-			String UUIDString = path.getFileName().toString();
-			if(UUIDString.equals("END"))
-				UUIDString = path.getParent().getFileName().toString();
-			UUID thisFileUID = UUID.fromString(UUIDString);
+			Path trimmedPath = LinkCache.trimLinkPath(path);
+			UUID thisFileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 			selectionController.selectItem(thisFileUID);
 			justSelected.add(thisFileUID);
@@ -177,10 +176,8 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		for (int i = lastFrom; i <= lastTo; i++) {
 			if (i < from || i > to) {
 				Path path = adapter.list.get(i).first;
-				String UUIDString = path.getFileName().toString();
-				if(UUIDString.equals("END"))
-					UUIDString = path.getParent().getFileName().toString();
-				UUID thisFileUID = UUID.fromString(UUIDString);
+				Path trimmedPath = LinkCache.trimLinkPath(path);
+				UUID thisFileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 				//Don't deselect an item that was just selected in case there are duplicates (from links)
 				if(!justSelected.contains(thisFileUID))

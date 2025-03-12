@@ -29,6 +29,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public List<Pair<Path, String>> list;
@@ -108,12 +109,8 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
 			holder.itemView.findViewById(R.id.media).setTransitionName(item.first.toString());
 
-
-		String UUIDString = list.get(position).first.getFileName().toString();
-		if(UUIDString.equals("END"))
-			UUIDString = list.get(position).first.getParent().getFileName().toString();
-		UUID fileUID = UUID.fromString(UUIDString);
-
+		Path trimmedPath = LinkCache.trimLinkPath(list.get(position).first);
+		UUID fileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 		String level = "";
 		if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
@@ -121,7 +118,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			int depth = item.first.getNameCount()-1;
 			level = "│   ".repeat(Math.max(0, depth-1));
 			if(depth > 0) {
-				if(Objects.equals(item.first.getFileName().toString(), "END"))
+				if(LinkCache.isLinkEnd(item.first))
 					level += "└─ ";
 				else
 					level += "├─ ";
@@ -147,13 +144,11 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public int getItemViewType(int position) {
 		Pair<Path, String> item = list.get(position);
 
-		boolean isEnd = false;
-		String UUIDString = item.first.getFileName().toString();
-		if(UUIDString.equals("END")) {
-			isEnd = true;
-			UUIDString = item.first.getParent().getFileName().toString();
-		}
-		UUID fileUID = UUID.fromString(UUIDString);
+
+		Path trimmedPath = LinkCache.trimLinkPath(item.first);
+		UUID fileUID = UUID.fromString(trimmedPath.getFileName().toString());
+
+		boolean isEnd = item.first.getFileName().toString().equals(LinkCache.linkEnd);
 
 		boolean isDir = touchCallback.isDir(fileUID);
 		boolean isLink = touchCallback.isLink(fileUID);

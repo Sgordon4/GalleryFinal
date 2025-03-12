@@ -37,10 +37,8 @@ public class ReorderSetup {
 				List<Pair<Path, String>> currList = dirViewModel.getFilterRegistry().filteredList.getValue();
 				for(int i = 0; i < currList.size(); i++) {
 					//Get the UUID of this item
-					String UUIDString = currList.get(i).first.getFileName().toString();
-					if(UUIDString.equals("END"))
-						UUIDString = currList.get(i).first.getParent().getFileName().toString();
-					UUID itemUID = UUID.fromString(UUIDString);
+					Path trimmedPath = LinkCache.trimLinkPath(currList.get(i).first);
+					UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 					if(selectedItems.contains(itemUID)) {
 						toMove.add(currList.get(i));
@@ -56,7 +54,7 @@ public class ReorderSetup {
 
 
 					UUID nextItemUID = null;
-					if(nextItem != null && !nextItem.getFileName().toString().equals("END"))
+					if(nextItem != null && !LinkCache.isLinkEnd(nextItem))
 						nextItemUID = UUID.fromString(nextItem.getFileName().toString());
 
 

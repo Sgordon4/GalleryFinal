@@ -22,19 +22,6 @@ public class Utilities {
 				extension.equals("gif") || extension.equals("mp4") || extension.equals("mov");
 	}
 
-	public static List<UUID> getUUIDsFromPaths(@NonNull List<Pair<Path, String>> paths) {
-		//Grab the UUIDs of all the files in the new list
-		List<UUID> fileUIDs = new ArrayList<>();
-		for(Pair<Path, String> file : paths) {
-			String UUIDString = file.first.getFileName().toString();
-			if(UUIDString.equals("END"))	//Don't consider ends, we already considered their parent
-				continue;
-			UUID thisFileUID = UUID.fromString(UUIDString);
-			fileUIDs.add(thisFileUID);
-		}
-		return fileUIDs;
-	}
-
 	public static String computeChecksum(@NonNull byte[] data) {
 		try {
 			byte[] hash = MessageDigest.getInstance("SHA-256").digest(data);

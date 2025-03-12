@@ -11,9 +11,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -34,11 +34,14 @@ public class LinkCache {
 	private final Set<UUID> isLink;
 
 
-	public final static String linkEnd = "LINK_END";
-	public final static String linkDirectory = "LINK_DIRECTORY";
-	public final static String linkDivider = "LINK_DIVIDER";
-	public final static String linkSingle = "LINK_SINGLE";
-	public final static String linkExternal = "LINK_EXTERNAL";
+	public final static String linkPrefix = "LINK_";
+	public final static String linkEnd = linkPrefix+"END";
+	public final static String linkDirectory = linkPrefix+"DIRECTORY";
+	public final static String linkDivider = linkPrefix+"DIVIDER";
+	public final static String linkSingle = linkPrefix+"SINGLE";
+	public final static String linkExternal = linkPrefix+"EXTERNAL";
+	public final static String linkBroken = linkPrefix+"BROKEN";
+	public final static String linkCycle = linkPrefix+"CYCLE";
 
 
 
@@ -77,6 +80,21 @@ public class LinkCache {
 
 
 
+	//If this path is a link, or link related, it may have a link suffix attached
+	public static Path trimLinkPath(@NonNull Path path) {
+		String name = path.getFileName().toString();
+		if(name.startsWith(linkPrefix)) {
+			return path.getParent();
+		}
+		return path;
+	}
+	public static boolean isLinkEnd(@NonNull Path path) {
+		String name = path.getFileName().toString();
+		return name.equals(linkEnd);
+	}
+
+
+
 	public LinkTarget getLinkTarget(UUID fileUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//If we have the target cached, just use that
 		if(linkTargets.containsKey(fileUID))
@@ -98,8 +116,8 @@ public class LinkCache {
 			Uri linkUri = Uri.parse(firstLine);
 
 			//If the uri scheme starts with "gallery", it's an internal link
+			//TODO We're currently doing "gallery:/" instead of "gallery://"
 			if ("gallery".equals(linkUri.getScheme())) {
-				System.out.println("Uri: "+linkUri);
 				String[] uuidParts = linkUri.getPath().split("/");
 				UUID dirUID = UUID.fromString(uuidParts[1]);
 				UUID fileUID = UUID.fromString(uuidParts[2]);
