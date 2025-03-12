@@ -1,8 +1,11 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
@@ -13,6 +16,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -25,25 +30,28 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.leinardi.android.speeddial.SpeedDialActionItem;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
-import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
-import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 
 public class DirFragment extends Fragment {
 	public FragmentDirectoryBinding binding;
 	public DirectoryViewModel dirViewModel;
+
+	ActivityResultLauncher<Intent> filePickerLauncher;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,6 +65,11 @@ public class DirFragment extends Fragment {
 		dirViewModel = new ViewModelProvider(getParentFragment(),
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
+
+		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			if (result.getResultCode() == Activity.RESULT_OK)
+				importFiles(result.getData());
+		});
 	}
 
 	@Override
@@ -275,6 +288,15 @@ public class DirFragment extends Fragment {
 			}
 			else if (actionItem.getId() == R.id.import_image) {
 				System.out.println("Clicked import image");
+
+				//Launch the file picker intent
+				Intent filePicker = new Intent(Intent.ACTION_GET_CONTENT);
+				//filePicker.setType("image/*");
+				filePicker.setType("*/*");
+				filePicker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+				filePicker = Intent.createChooser(filePicker, "Select Items to Import");
+
+				filePickerLauncher.launch(filePicker);
 			}
 			else if (actionItem.getId() == R.id.take_photo) {
 				System.out.println("Clicked take photo");
@@ -295,6 +317,27 @@ public class DirFragment extends Fragment {
 			}
 		});
 	}
+
+
+	private void importFiles(Intent data) {
+		List<Uri> urisToImport = new ArrayList<>();
+
+		//Grab all the selected Uris
+		//If clipData is null, we're importing only one file
+		//Otherwise, we're importing multiple files. Don't know why they need to be different...
+		if(data.getClipData() == null)
+			urisToImport.add(data.getData());
+		else {
+			for(int i = 0; i < data.getClipData().getItemCount(); i++)
+				urisToImport.add(data.getClipData().getItemAt(i).getUri());
+		}
+
+
+
+
+	}
+
+
 
 	@Override
 	public void onResume() {
