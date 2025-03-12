@@ -49,6 +49,7 @@ public class TraversalHelper {
 
 			//Add it to the current directory's list of files
 			Path thisFilePath = currPath.resolve(entry.first.toString());
+			Pair<Path, String> thisItem = new Pair<>(thisFilePath, entry.second);
 
 
 
@@ -59,21 +60,21 @@ public class TraversalHelper {
 
 				//If this isn't a link, we don't need to do anything special
 				if (!fileProps.islink) {
-					files.add(new Pair<>(thisFilePath, entry.second));
+					files.add(thisItem);
 					continue;
 				}
 
 				Set<UUID> localVisited = new HashSet<>(visited);
-				files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
+				files.addAll(traverseLink(fileUID, thisItem, localVisited, thisFilePath));
 			}
 			catch (FileNotFoundException | ConnectException e) {
 				//If the file isn't found or we just can't reach it, treat it like a normal file
-				files.add(new Pair<>(thisFilePath, entry.second));
+				files.add(thisItem);
 				continue;
 			}
 			catch (ContentsNotFoundException e) {
 				//If we can't find the link's contents, this is an issue, but treat it like a normal file
-				files.add(new Pair<>(thisFilePath, entry.second));
+				files.add(thisItem);
 				continue;
 			}
 		}
@@ -88,9 +89,12 @@ public class TraversalHelper {
 	//If the link is a single item (external, single image), we are done here. Do nothing.
 
 	@NonNull
-	private static List<Pair<Path, String>> traverseLink(UUID linkUID, Set<UUID> visited, Path currPath) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		if(!visited.add(linkUID))	//Prevent cycles
-			return new ArrayList<>();
+	private static List<Pair<Path, String>> traverseLink(UUID linkUID, Pair<Path, String> topLink, Set<UUID> visited, Path currPath)
+			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+		if(!visited.add(linkUID)) {    //Prevent cycles
+			Path brokenPath = Paths.get(linkUID.toString(), LinkCache.linkSingle);
+			return List.of(new Pair<>(brokenPath, topLink.second));
+		}
 
 
 		//Update any dependency lists for parent directories
@@ -103,11 +107,10 @@ public class TraversalHelper {
 		//Read the link contents into a target
 		LinkCache.LinkTarget linkTarget = LinkCache.getInstance().getLinkTarget(linkUID);
 
-		//If the target is external, we're done here
+		//If the target is external, mark this as an external link and return
 		if(linkTarget instanceof LinkCache.ExternalTarget) {
-			return new List.of(new Pair<Path, String>(currPath, LinkCache.linkExternal))
-			files.add(new Pair<>(thisFilePath, entry.second));
-			return new ArrayList<>();
+			Path externalPath = Paths.get(linkUID.toString(), LinkCache.linkExternal);
+			return List.of(new Pair<>(externalPath, topLink.second));
 		}
 
 
@@ -130,16 +133,21 @@ public class TraversalHelper {
 
 			//If the link target is another link, continue traversing down the tunnel
 			if(fileProps.islink) {
-				return traverseLink(target.getFileUID(), localVisited, currPath);
+				return traverseLink(target.getFileUID(), topLink, localVisited, currPath);
 			}
 			//If the link is a directory, traverse it and append a link end
 			else if(fileProps.isdir) {
 				if(!visited.add(target.getFileUID()))	//Prevent cycles
 					return new ArrayList<>();
 
+
+				List<Pair<Path, String>> files = new ArrayList<>();
+				Path dirPath = Paths.get(linkUID.toString(), LinkCache.linkDirectory);
+				files.add(new Pair<>(dirPath, topLink.second));
+
 				//Traverse the directory
 				List<Pair<UUID, String>> contents = dirCache.getDirContents(target.getFileUID());
-				List<Pair<Path, String>> files = traverseContents(contents, localVisited, currPath);
+				files.addAll(traverseContents(contents, localVisited, currPath));
 
 				//Ad a bookend for the link
 				Path linkEnd = currPath.resolve(LinkCache.linkEnd);
@@ -154,21 +162,32 @@ public class TraversalHelper {
 				Optional<Pair<UUID, String>> targetItem = targetParentContents.stream()
 						.filter(pair -> pair.first.equals( target.getFileUID() )).findFirst();
 
-				if(!visited.add(target.getFileUID()))	//Prevent cycles
-					return new ArrayList<>();
+				if(!visited.add(target.getFileUID())) {    //Prevent cycles
+					Path brokenPath = Paths.get(linkUID.toString(), LinkCache.linkSingle);
+					return List.of(new Pair<>(brokenPath, topLink.second));
+				}
 
 				//If the target is no longer in the parent directory, the link is broken and we're done here
-				if(!targetItem.isPresent()) return new ArrayList<>();
+				if(!targetItem.isPresent()) {
+					Path brokenPath = Paths.get(linkUID.toString(), LinkCache.linkSingle);
+					return List.of(new Pair<>(brokenPath, topLink.second));
+				}
 
 				//If the target does not refer to a divider item, we're done here
 				String targetName = targetItem.get().second;
-				if(!FilenameUtils.getExtension(targetName).equals("div"))
-					return new ArrayList<>();
+				if(!FilenameUtils.getExtension(targetName).equals("div")) {
+					Path brokenPath = Paths.get(linkUID.toString(), LinkCache.linkSingle);
+					return List.of(new Pair<>(brokenPath, topLink.second));
+				}
 
+
+				List<Pair<Path, String>> files = new ArrayList<>();
+				Path divPath = Paths.get(linkUID.toString(), LinkCache.linkDivider);
+				files.add(new Pair<>(divPath, topLink.second));
 
 				//Since the target is a divider item, we need to traverse only the "divider's items"
 				List<Pair<UUID, String>> dividerItems = sublistDividerItems(targetParentContents, target.getFileUID());
-				List<Pair<Path, String>> files =  traverseContents(dividerItems, localVisited, currPath);
+				files.addAll(traverseContents(dividerItems, localVisited, currPath));
 
 				//Ad a bookend for the link
 				Path linkEnd = currPath.resolve(LinkCache.linkEnd);
