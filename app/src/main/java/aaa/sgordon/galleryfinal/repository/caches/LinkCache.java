@@ -34,6 +34,14 @@ public class LinkCache {
 	private final Set<UUID> isLink;
 
 
+	public final static String linkEnd = "LINK_END";
+	public final static String linkDirectory = "LINK_DIRECTORY";
+	public final static String linkDivider = "LINK_DIVIDER";
+	public final static String linkSingle = "LINK_SINGLE";
+	public final static String linkExternal = "LINK_EXTERNAL";
+
+
+
 	public static LinkCache getInstance() {
 		return SingletonHelper.INSTANCE;
 	}

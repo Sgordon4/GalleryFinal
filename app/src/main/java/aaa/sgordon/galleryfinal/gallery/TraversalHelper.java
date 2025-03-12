@@ -49,7 +49,7 @@ public class TraversalHelper {
 
 			//Add it to the current directory's list of files
 			Path thisFilePath = currPath.resolve(entry.first.toString());
-			files.add(new Pair<>(thisFilePath, entry.second));
+
 
 
 			try {
@@ -57,19 +57,23 @@ public class TraversalHelper {
 				if(fileProps.islink) linkCache.markAsLink(fileUID);
 				else if(fileProps.isdir) dirCache.markAsDir(fileUID);
 
-				//If this isn't a link, we don't care
-				if (!fileProps.islink)
+				//If this isn't a link, we don't need to do anything special
+				if (!fileProps.islink) {
+					files.add(new Pair<>(thisFilePath, entry.second));
 					continue;
+				}
 
 				Set<UUID> localVisited = new HashSet<>(visited);
 				files.addAll(traverseLink(fileUID, localVisited, thisFilePath));
 			}
 			catch (FileNotFoundException | ConnectException e) {
-				//If the file isn't found or we just can't reach it, skip it
+				//If the file isn't found or we just can't reach it, treat it like a normal file
+				files.add(new Pair<>(thisFilePath, entry.second));
 				continue;
 			}
 			catch (ContentsNotFoundException e) {
-				//If we can't find the link's contents, this is an issue, but skip it
+				//If we can't find the link's contents, this is an issue, but treat it like a normal file
+				files.add(new Pair<>(thisFilePath, entry.second));
 				continue;
 			}
 		}
@@ -100,8 +104,11 @@ public class TraversalHelper {
 		LinkCache.LinkTarget linkTarget = LinkCache.getInstance().getLinkTarget(linkUID);
 
 		//If the target is external, we're done here
-		if(linkTarget instanceof LinkCache.ExternalTarget)
+		if(linkTarget instanceof LinkCache.ExternalTarget) {
+			return new List.of(new Pair<Path, String>(currPath, LinkCache.linkExternal))
+			files.add(new Pair<>(thisFilePath, entry.second));
 			return new ArrayList<>();
+		}
 
 
 		//If the target is internal, we need more info
@@ -135,8 +142,8 @@ public class TraversalHelper {
 				List<Pair<Path, String>> files = traverseContents(contents, localVisited, currPath);
 
 				//Ad a bookend for the link
-				Path linkEnd = currPath.resolve("END");
-				files.add(new Pair<>(linkEnd, "END"));
+				Path linkEnd = currPath.resolve(LinkCache.linkEnd);
+				files.add(new Pair<>(linkEnd, LinkCache.linkEnd));
 
 				return files;
 			}
@@ -164,8 +171,8 @@ public class TraversalHelper {
 				List<Pair<Path, String>> files =  traverseContents(dividerItems, localVisited, currPath);
 
 				//Ad a bookend for the link
-				Path linkEnd = currPath.resolve("END");
-				files.add(new Pair<>(linkEnd, "END"));
+				Path linkEnd = currPath.resolve(LinkCache.linkEnd);
+				files.add(new Pair<>(linkEnd, LinkCache.linkEnd));
 
 				return files;
 			}
