@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerBinding;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
+import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 //https://github.com/android/animation-samples/tree/main/GridToPager
 
@@ -84,12 +86,10 @@ public class ViewPagerFragment extends Fragment {
 
 	}
 
-	private void updateList(List<Pair<Path, String>> newList) {
+	private void updateList(List<TraversalHelper.ListItem> newList) {
 		//The ViewPager should only display media items
-		List<Pair<Path, String>> mediaOnly = newList.stream().filter(pathStringPair -> {
-			String extension = FilenameUtils.getExtension(pathStringPair.second);
-			return extension.equals("jpg") || extension.equals("png") || extension.equals("gif") || extension.equals("mp4");
-		}).collect(Collectors.toList());
+		List<TraversalHelper.ListItem> mediaOnly = newList.stream()
+				.filter(item -> Utilities.isFileMedia(item.name)).collect(Collectors.toList());
 
 		//TODO If there are 0 items (all removed), leave
 

@@ -25,21 +25,19 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageFragment extends Fragment {
 	private FragmentViewpagerImageBinding binding;
-	private final Pair<Path, String> item;
+	private final TraversalHelper.ListItem item;
 	private final UUID fileUID;
 
-	public ImageFragment(Pair<Path, String> item) {
+	public ImageFragment(TraversalHelper.ListItem item) {
 		this.item = item;
-
-		Path trimmedPath = LinkCache.trimLinkPath(item.first);
-		this.fileUID = UUID.fromString(trimmedPath.getFileName().toString());
-
+		this.fileUID = item.fileUID;
 	}
 
 	@Override
@@ -59,7 +57,7 @@ public class ImageFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 
 		ImageView media = binding.media;
-		media.setTransitionName(item.first.toString());
+		media.setTransitionName(item.filePath.toString());
 
 
 		Thread thread = new Thread(() -> {

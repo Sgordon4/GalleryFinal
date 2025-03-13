@@ -58,7 +58,7 @@ public class FilterSetup {
 		});
 
 		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 ->
-				fControl.onActiveQueryChanged( binding.galleryAppbar.filterBar.search.getText().toString() , dirViewModel.fileList.getValue()));
+				fControl.onActiveQueryChanged( binding.galleryAppbar.filterBar.search.getText().toString(), dirViewModel.fileList.getValue()));
 
 		binding.galleryAppbar.filterBar.searchClear.setOnClickListener(view2 ->
 				binding.galleryAppbar.filterBar.search.setText(""));

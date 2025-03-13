@@ -101,10 +101,10 @@ public class MoveCopyFullscreen extends DialogFragment {
 	}
 
 	@NonNull
-	private List<Pair<Path, String>> traverseDir(UUID dirUID) {
+	private List<TraversalHelper.ListItem> traverseDir(UUID dirUID) {
 		try {
 			//Grab the current list of all files in this directory from the system
-			List<Pair<Path, String>> newFileList = TraversalHelper.traverseDir(dirUID);
+			List<TraversalHelper.ListItem> newFileList = TraversalHelper.traverseDir(dirUID);
 
 			//Filter out anything that isn't a directory, a link to a directory/divider, or a linkEnd
 		}
@@ -112,17 +112,19 @@ public class MoveCopyFullscreen extends DialogFragment {
 			//TODO Actually handle the error. Dir should be on local, but jic
 			throw new RuntimeException(e);
 		}
+
+		return new ArrayList<>();
 	}
 
 
 	private static class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
-		public List<Pair<Path, String>> list;
+		public List<TraversalHelper.ListItem> list;
 
 		public MCAdapter() {
 			list = new ArrayList<>();
 		}
 
-		public void setList(List<Pair<Path, String>> newList) {
+		public void setList(List<TraversalHelper.ListItem> newList) {
 			//Calculate the differences between the current list and the new one
 			DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
 				@Override
@@ -136,11 +138,11 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 				@Override
 				public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-					return list.get(oldItemPosition).first.equals(newList.get(newItemPosition).first);
+					return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
 				}
 				@Override
 				public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-					return list.get(oldItemPosition).second.equals(newList.get(newItemPosition).second);
+					return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name);
 				}
 
 				//TODO Override getChangePayload if we end up using ItemAnimator
@@ -167,7 +169,8 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 		@Override
 		public int getItemViewType(int position) {
-			Pair<Path, String> item = list.get(position);
+			TraversalHelper.ListItem item = list.get(position);
+			return -1;
 		}
 
 		@Override

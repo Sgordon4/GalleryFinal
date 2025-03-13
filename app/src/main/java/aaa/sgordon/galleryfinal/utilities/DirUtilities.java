@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -110,7 +111,7 @@ public class DirUtilities {
 
 
 	//TODO Cut this up into pieces (this is my last resort)
-	public static boolean moveFiles(@NonNull List<Pair<Path, String>> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
+	public static boolean moveFiles(@NonNull List<TraversalHelper.ListItem> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException, NotDirectoryException {
 		//System.out.println("Moving files!");
 
@@ -127,11 +128,11 @@ public class DirUtilities {
 		//Group each file by its parent directory so we know where to remove them from
 		//Exclude links being moved inside themselves
 		Map<UUID, List<UUID>> dirMap = new HashMap<>();
-		Iterator<Pair<Path, String>> iterator = toMove.iterator();
+		Iterator<TraversalHelper.ListItem> iterator = toMove.iterator();
 		while (iterator.hasNext()) {
-			Pair<Path, String> itemToMove = iterator.next();
-			UUID parentUID = UUID.fromString(itemToMove.first.getParent().getFileName().toString());
-			UUID fileUID = UUID.fromString(itemToMove.first.getFileName().toString());
+			TraversalHelper.ListItem itemToMove = iterator.next();
+			UUID parentUID = UUID.fromString(itemToMove.filePath.getParent().getFileName().toString());
+			UUID fileUID = itemToMove.fileUID;
 
 			if(destinationUID.equals(fileUID)) {
 				Log.d(TAG, "Not allowed to move links inside themselves");
@@ -176,8 +177,8 @@ public class DirUtilities {
 
 
 			//Convert the list types to match, grabbing the fileUID out of the path
-			List<Pair<UUID, String>> moveOrdering = toMove.stream().map(pair ->
-							new Pair<>(UUID.fromString(pair.first.getFileName().toString()), pair.second))
+			List<Pair<UUID, String>> moveOrdering = toMove.stream()
+					.map(item -> new Pair<>(item.fileUID, item.name))
 					.collect(Collectors.toList());
 
 			//Insert the moved files at the correct position, making sure to reposition files already in the directory

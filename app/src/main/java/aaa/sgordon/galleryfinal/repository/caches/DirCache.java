@@ -31,7 +31,6 @@ public class DirCache {
 	private final UpdateListeners updateListeners;
 
 	private final Map<UUID, List<Pair<UUID, String>>> dirContents;
-	private final Set<UUID> isDir;
 	//Per directory, holds subordinate links and link targets the dir depends on. This is for use with the listener to refresh the dir on subordinate item updates
 	public final Map<UUID, Set<UUID>> subLinks;
 
@@ -46,7 +45,6 @@ public class DirCache {
 		this.hAPI = HybridAPI.getInstance();
 
 		this.dirContents = new HashMap<>();
-		this.isDir = new HashSet<>();
 		this.subLinks = new HashMap<>();
 
 		this.updateListeners = new UpdateListeners();
@@ -102,17 +100,6 @@ public class DirCache {
 			}
 		};
 		//handler.postDelayed(runnable, 3000);
-	}
-
-
-	//If a file isn't in this set, that doesn't necessarily mean it isn't a directory. It could have just not been manually added when we touched it
-	public boolean isMarkedAsDir(UUID fileUID) {
-		return isDir.contains(fileUID);
-	}
-
-	//In our current implementation, files cannot change their nature. Once a directory, always a directory
-	public void markAsDir(UUID dirUID) {
-		isDir.add(dirUID);
 	}
 
 

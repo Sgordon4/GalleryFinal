@@ -32,7 +32,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
-	public List<Pair<Path, String>> list;
+	public List<TraversalHelper.ListItem> list;
 	public RecyclerView.LayoutManager layoutManager;
 	private AdapterCallbacks touchCallback;
 
@@ -68,7 +68,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public int getItemCount() {
 		return list.size();
 	}
-	public void setList(List<Pair<Path, String>> newList) {
+	public void setList(List<TraversalHelper.ListItem> newList) {
 		//Calculate the differences between the current list and the new one
 		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
 			@Override
@@ -82,11 +82,11 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 			@Override
 			public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).first.equals(newList.get(newItemPosition).first);
+				return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).second.equals(newList.get(newItemPosition).second);
+				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name);
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator
@@ -103,21 +103,20 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 	@Override
 	public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
-		Pair<Path, String> item = list.get(position);
+		TraversalHelper.ListItem item = list.get(position);
 
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
-			holder.itemView.findViewById(R.id.media).setTransitionName(item.first.toString());
+			holder.itemView.findViewById(R.id.media).setTransitionName(item.fileUID.toString());
 
-		Path trimmedPath = LinkCache.trimLinkPath(list.get(position).first);
-		UUID fileUID = UUID.fromString(trimmedPath.getFileName().toString());
+		UUID fileUID = item.fileUID;
 
 		String level = "";
 		if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
 			//Put in some fancy printing to show the directory structure
-			int depth = item.first.getNameCount()-1;
+			int depth = item.filePath.getNameCount()-1;
 			level = "│   ".repeat(Math.max(0, depth-1));
 			if(depth > 0) {
-				if(LinkCache.isLinkEnd(item.first))
+				if(item.type.equals(TraversalHelper.ListItemType.LINKEND))
 					level += "└─ ";
 				else
 					level += "├─ ";
@@ -125,7 +124,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		}
 
 
-		holder.bind(fileUID, level + list.get(position).second);
+		holder.bind(fileUID, level + list.get(position).name);
 
 
 		holder.itemView.setSelected( touchCallback.isItemSelected(fileUID) );
@@ -141,16 +140,13 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 	@Override
 	public int getItemViewType(int position) {
-		Pair<Path, String> item = list.get(position);
+		TraversalHelper.ListItem item = list.get(position);
+		UUID fileUID = item.fileUID;
 
+		boolean isEnd = item.type.equals(TraversalHelper.ListItemType.LINKEND);
 
-		Path trimmedPath = LinkCache.trimLinkPath(item.first);
-		UUID fileUID = UUID.fromString(trimmedPath.getFileName().toString());
-
-		boolean isEnd = LinkCache.isLinkEnd(item.first);
-
-		boolean isDir = touchCallback.isDir(fileUID);
-		boolean isLink = touchCallback.isLink(fileUID);
+		boolean isDir = item.isDir;
+		boolean isLink = item.isLink;
 
 
 		if(isLink) {
@@ -177,7 +173,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		 */
 
 		//Get the filename extension, maybe we need fileNameUtils for this idk
-		String extension = FilenameUtils.getExtension(item.second);
+		String extension = FilenameUtils.getExtension(item.name);
 		switch (extension) {
 			case "div":
 				return 3;	//Divider
@@ -229,7 +225,5 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public interface AdapterCallbacks {
 		boolean isItemSelected(UUID fileUID);
 		boolean onHolderMotionEvent(UUID fileUID, BaseViewHolder holder, MotionEvent event);
-		boolean isDir(UUID fileUID);
-		boolean isLink(UUID fileUID);
 	}
 }

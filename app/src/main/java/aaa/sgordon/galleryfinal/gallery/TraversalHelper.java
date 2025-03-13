@@ -11,7 +11,6 @@ import java.net.ConnectException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -60,14 +59,24 @@ public class TraversalHelper {
 			this.isLink = isLink;
 			this.type = type;
 		}
+
+		@Override
+		public String toString() {
+			return "ListItem{" +
+					"fileUID=" + fileUID +
+					", isDir=" + isDir +
+					", isLink=" + isLink +
+					", type=" + type +
+					", name='" + name + '\'' +
+					", filePath=" + filePath +
+					'}';
+		}
 	}
 
 
 	//Recursively read directory contents, drilling down through any links
 	public static List<ListItem> traverseDir(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		List<Pair<UUID, String>> contents = dirCache.getDirContents(dirUID);
-		dirCache.markAsDir(dirUID);
-
 		return traverseContents(contents, Collections.singleton(dirUID), Paths.get(dirUID.toString()));
 	}
 
@@ -86,21 +95,25 @@ public class TraversalHelper {
 
 			try {
 				HFile fileProps = hAPI.getFileProps(fileUID);
-				if(fileProps.islink) linkCache.markAsLink(fileUID);
-				else if(fileProps.isdir) dirCache.markAsDir(fileUID);
 
 				//If this isn't a link, we don't need to do anything special
 				if (!fileProps.islink) {
-					files.add(new ListItem(thisFilePath, fileUID, entry.second, fileProps.isdir, fileProps.islink,
-							ListItemType.NORMAL));
+					if(fileProps.isdir)
+						files.add(new ListItem(thisFilePath, fileUID, entry.second, true, false,
+								ListItemType.DIRECTORY));
+					else
+						files.add(new ListItem(thisFilePath, fileUID, entry.second, false, false,
+								ListItemType.NORMAL));
 					continue;
 				}
 
 
 				Set<UUID> localVisited = new HashSet<>(visited);
-				if(!localVisited.add(fileUID))	//Prevent cycles
-					return List.of(new ListItem(currPath, fileUID, entry.second, false, true,
+				if(!localVisited.add(fileUID)) {    //Prevent cycles
+					files.add(new ListItem(currPath, fileUID, entry.second, false, true,
 							ListItemType.LINKCYCLE));
+					continue;
+				}
 
 				//Update any dependency lists for parent directories
 				for(int i = 0; i < currPath.getNameCount(); i++) {
@@ -169,8 +182,6 @@ public class TraversalHelper {
 
 		try {
 			HFile fileProps = hAPI.getFileProps(target.getFileUID());
-			if(fileProps.islink) linkCache.markAsLink(target.getFileUID());
-			else if(fileProps.isdir) dirCache.markAsDir(target.getFileUID());
 
 			//If the link target is another link, continue traversing down the tunnel
 			if(fileProps.islink) {

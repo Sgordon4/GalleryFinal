@@ -18,16 +18,17 @@ import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
-	public List<Pair<Path, String>> list;
+	public List<TraversalHelper.ListItem> list;
 
 	public ViewPagerAdapter(@NonNull Fragment fragment) {
 		super(fragment);
 		list = new ArrayList<>();
 	}
 
-	public void setList(List<Pair<Path, String>> newList) {
+	public void setList(List<TraversalHelper.ListItem> newList) {
 		//Calculate the differences between the current list and the new one
 		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
 			@Override
@@ -41,11 +42,11 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
 			@Override
 			public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).first.equals(newList.get(newItemPosition).first);
+				return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).second.equals(newList.get(newItemPosition).second);
+				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name);
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator
@@ -61,7 +62,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@NonNull
 	@Override
 	public Fragment createFragment(int position) {
-		String fileExtension = FilenameUtils.getExtension( list.get(position).second );
+		String fileExtension = FilenameUtils.getExtension( list.get(position).name );
 
 		switch (fileExtension) {
 			case "gif":

@@ -31,7 +31,6 @@ public class LinkCache {
 	private final UpdateListeners updateListeners;
 
 	private final Map<UUID, LinkTarget> linkTargets;
-	private final Set<UUID> isLink;
 
 
 	public final static String linkPrefix = "LINK_";
@@ -56,7 +55,6 @@ public class LinkCache {
 		this.updateListeners = new UpdateListeners();
 
 		this.linkTargets = new HashMap<>();
-		this.isLink = new HashSet<>();
 
 
 		//Whenever any file we have cached is changed, update our data
@@ -70,25 +68,16 @@ public class LinkCache {
 	}
 
 
-	//If a file isn't in this set, that doesn't necessarily mean it isn't a link. It could have just not been manually added when we touched it
-	public boolean isMarkedAsLink(UUID fileUID) {
-		return isLink.contains(fileUID);
-	}
-	public void markAsLink(UUID linkUID) {
-		isLink.add(linkUID);
-	}
-
-
 
 	//If this path is a link, or link related, it may have a link suffix attached
-	public static Path trimLinkPath(@NonNull Path path) {
+	private static Path trimLinkPath(@NonNull Path path) {
 		String name = path.getFileName().toString();
 		if(name.startsWith(linkPrefix)) {
 			return path.getParent();
 		}
 		return path;
 	}
-	public static boolean isLinkEnd(@NonNull Path path) {
+	private static boolean isLinkEnd(@NonNull Path path) {
 		String name = path.getFileName().toString();
 		return name.equals(linkEnd);
 	}

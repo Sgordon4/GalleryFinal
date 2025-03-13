@@ -64,7 +64,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		System.out.println("SELECTED CHANGED");
 		if(viewHolder != null) {
 			int pos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
-			startPath = adapter.list.get(pos).first;
+			startPath = adapter.list.get(pos).filePath;
 			lastPath = startPath;
 		}
 		else {
@@ -145,7 +145,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		int lastPos = -1;
 
 		for(int i = 0; i < adapter.list.size(); i++) {
-			Path path = adapter.list.get(i).first;
+			Path path = adapter.list.get(i).filePath;
 			if(path.equals(startPath))
 				startPos = i;
 			if(path.equals(lastPath))
@@ -162,10 +162,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 
 		// Select range between 'from' and 'to'
 		for (int i = from; i <= to; i++) {
-			Path path = adapter.list.get(i).first;
-			Path trimmedPath = LinkCache.trimLinkPath(path);
-			UUID thisFileUID = UUID.fromString(trimmedPath.getFileName().toString());
-
+			UUID thisFileUID = adapter.list.get(i).fileUID;
 			selectionController.selectItem(thisFileUID);
 			justSelected.add(thisFileUID);
 		}
@@ -175,9 +172,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		int lastTo = Math.max(startPos, lastPos);
 		for (int i = lastFrom; i <= lastTo; i++) {
 			if (i < from || i > to) {
-				Path path = adapter.list.get(i).first;
-				Path trimmedPath = LinkCache.trimLinkPath(path);
-				UUID thisFileUID = UUID.fromString(trimmedPath.getFileName().toString());
+				UUID thisFileUID = adapter.list.get(i).fileUID;
 
 				//Don't deselect an item that was just selected in case there are duplicates (from links)
 				if(!justSelected.contains(thisFileUID))
@@ -185,7 +180,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 			}
 		}
 
-		lastPath = adapter.list.get(pos).first;
+		lastPath = adapter.list.get(pos).filePath;
 	}
 
 

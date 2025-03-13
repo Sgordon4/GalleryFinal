@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerVideoBinding;
+import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -29,16 +30,14 @@ import pl.droidsonroids.gif.GifImageView;
 
 public class VideoFragment extends Fragment {
 	private FragmentViewpagerVideoBinding binding;
-	private final Pair<Path, String> item;
+	private final TraversalHelper.ListItem item;
 	private final UUID fileUID;
 
 	private ExoPlayer player;
 
-	public VideoFragment(Pair<Path, String> item) {
+	public VideoFragment(TraversalHelper.ListItem item) {
 		this.item = item;
-
-		Path trimmedPath = LinkCache.trimLinkPath(item.first);
-		this.fileUID = UUID.fromString(trimmedPath.getFileName().toString());
+		this.fileUID = item.fileUID;
 	}
 
 	@Override
@@ -62,7 +61,7 @@ public class VideoFragment extends Fragment {
 		player = new ExoPlayer.Builder(getContext()).build();
 		playerView.setPlayer(player);
 
-		playerView.setTransitionName(item.first.toString());
+		playerView.setTransitionName(item.filePath.toString());
 
 
 		Thread thread = new Thread(() -> {

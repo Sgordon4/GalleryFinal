@@ -31,9 +31,9 @@ public class FilterController {
 	}
 
 
-	public void onListUpdated(List<Pair<Path, String>> fileList) {
+	public void onListUpdated(List<TraversalHelper.ListItem> fileList) {
 		//Filter the list of files based on the current query
-		List<Pair<Path, String>> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
+		List<TraversalHelper.ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
 		filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
 		registry.filteredList.postValue(filtered);
 	}
@@ -58,18 +58,18 @@ public class FilterController {
 	}
 
 
-	public void onActiveQueryChanged(String newActiveQuery, List<Pair<Path, String>> fullList) {
+	public void onActiveQueryChanged(String newActiveQuery, List<TraversalHelper.ListItem> fullList) {
 		registry.activeQuery.postValue(newActiveQuery);
 
-		List<Pair<Path, String>> filtered = filterListByQuery(newActiveQuery, fullList);
+		List<TraversalHelper.ListItem> filtered = filterListByQuery(newActiveQuery, fullList);
 		filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
 		registry.filteredList.postValue(filtered);
 	}
 
-	public void onActiveTagsChanged(Set<String> newActiveTags, List<Pair<Path, String>> fullList) {
+	public void onActiveTagsChanged(Set<String> newActiveTags, List<TraversalHelper.ListItem> fullList) {
 		registry.activeTags.postValue(newActiveTags);
 
-		List<Pair<Path, String>> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
+		List<TraversalHelper.ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
 		filtered = filterListByTags(newActiveTags, filtered, attrCache);
 		registry.filteredList.postValue(filtered);
 	}
@@ -88,35 +88,30 @@ public class FilterController {
 
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
-	public static List<Pair<Path, String>> filterListByQuery(String filterQuery, List<Pair<Path, String>> list) {
+	public static List<TraversalHelper.ListItem> filterListByQuery(String filterQuery, List<TraversalHelper.ListItem> list) {
 		if(filterQuery.isEmpty())
 			return list;
 
 		return list.stream().filter(pathStringPair -> {
 			//Make sure the fileName contains the query string
-			String fileName = pathStringPair.second;
+			String fileName = pathStringPair.name;
 			return fileName.toLowerCase().contains(filterQuery.toLowerCase());
 		}).collect(Collectors.toList());
 	}
 
-	public static List<Pair<Path, String>> filterListByTags(Set<String> filterTags, List<Pair<Path, String>> list, AttrCache attrCache) {
+	public static List<TraversalHelper.ListItem> filterListByTags(Set<String> filterTags, List<TraversalHelper.ListItem> list, AttrCache attrCache) {
 		if(filterTags.isEmpty())
 			return list;
 
-		return list.stream().filter(pathStringPair -> {
+		return list.stream().filter(item -> {
 			//If we're filtering for tags, make sure each item has all filtered tags
-			//Get the UUID of the file from the path
-			Path path = pathStringPair.first;
 
-			if(LinkCache.isLinkEnd(path))
+			if(item.type.equals(TraversalHelper.ListItemType.LINKEND))
 				return false;	//Exclude ends, since we can't reorder
-
-			Path trimmedPath = LinkCache.trimLinkPath(path);
-			UUID thisFileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
 			try {
 				//Get the tags for the file. Since we have tags, if they have no tags filter them out
-				JsonObject attrs = attrCache.getAttr(thisFileUID);
+				JsonObject attrs = attrCache.getAttr(item.fileUID);
 				if(attrs == null) return false;
 				JsonArray fileTags = attrs.getAsJsonArray("tags");
 				if(fileTags == null)  return false;
@@ -139,7 +134,7 @@ public class FilterController {
 	//---------------------------------------------------------------------------------------------
 
 	public static class FilterRegistry {
-		public final MutableLiveData< List<Pair<Path, String>> > filteredList;
+		public final MutableLiveData< List<TraversalHelper.ListItem> > filteredList;
 
 		public final MutableLiveData< Map<String, Set<UUID>> > filteredTags;
 

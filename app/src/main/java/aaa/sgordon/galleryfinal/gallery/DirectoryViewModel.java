@@ -1,7 +1,5 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.util.Pair;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -9,7 +7,6 @@ import androidx.lifecycle.ViewModelProvider;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +38,7 @@ public class DirectoryViewModel extends ViewModel {
 	private final FilterController.FilterRegistry filterRegistry;
 	private final SelectionController.SelectionRegistry selectionRegistry;
 
-	public final MutableLiveData< List<Pair<Path, String>> > fileList;
+	public final MutableLiveData< List<TraversalHelper.ListItem> > fileList;
 	public final MutableLiveData< Map<String, Set<UUID>> > fileTags;
 
 
@@ -133,7 +130,7 @@ public class DirectoryViewModel extends ViewModel {
 		attrListener = uuid -> {
 			//Don't even check if this update affects one of our files, just refresh things idc
 			//90% chance it does anyway
-			List<Pair<Path, String>> items = excludeLinkEnds(fileList.getValue());
+			List<TraversalHelper.ListItem> items = excludeLinkEnds(fileList.getValue());
 			List<UUID> fileUIDs = getUUIDsFromPaths(items);
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 			fileTags.postValue(newTags);
@@ -163,7 +160,7 @@ public class DirectoryViewModel extends ViewModel {
 	private void refreshList() {
 		try {
 			//Grab the current list of all files in this directory from the system
-			List<Pair<Path, String>> newFileList = TraversalHelper.traverseDir(currDirUID);
+			List<TraversalHelper.ListItem> newFileList = TraversalHelper.traverseDir(currDirUID);
 
 			//Grab the UUIDs of all the files in the new list for use with tagging
 			//Don't include link ends, we only consider their parents
@@ -175,9 +172,9 @@ public class DirectoryViewModel extends ViewModel {
 
 			/*
 			System.out.println("NewFiles: ");
-			for(Pair<Path, String> item : newFileList)
-				System.out.println(item);
-			 */
+			for(TraversalHelper.ListItem item : newFileList)
+				System.out.println(item.filePath);
+			/**/
 
 			fileList.postValue(newFileList);
 			fileTags.postValue(newTags);
@@ -189,14 +186,13 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
-	private List<Pair<Path, String>> excludeLinkEnds(List<Pair<Path, String>> fileList) {
-		return fileList.stream().filter(item -> !LinkCache.isLinkEnd(item.first)).collect(Collectors.toList());
+	private List<TraversalHelper.ListItem> excludeLinkEnds(List<TraversalHelper.ListItem> fileList) {
+		return fileList.stream()
+				.filter(item -> !item.type.equals(TraversalHelper.ListItemType.LINKEND))
+				.collect(Collectors.toList());
 	}
-	private List<UUID> getUUIDsFromPaths(List<Pair<Path, String>> fileList) {
-		return fileList.stream().map(item -> {
-			Path trimmedPath = LinkCache.trimLinkPath(item.first);
-			return UUID.fromString(trimmedPath.getFileName().toString());
-		}).collect(Collectors.toList());
+	private List<UUID> getUUIDsFromPaths(List<TraversalHelper.ListItem> fileList) {
+		return fileList.stream().map(item -> item.fileUID).collect(Collectors.toList());
 	}
 
 

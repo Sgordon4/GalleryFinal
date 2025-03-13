@@ -32,6 +32,7 @@ import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
+import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -93,8 +94,7 @@ public class SelectionSetup {
 
 			@Override
 			public UUID getUUIDAtPos(int pos) {
-				Path trimmedPath = LinkCache.trimLinkPath(adapter.list.get(pos).first);
-				return UUID.fromString(trimmedPath.getFileName().toString());
+				return adapter.list.get(pos).fileUID;
 			}
 		};
 	}
@@ -114,9 +114,8 @@ public class SelectionSetup {
 			if(menuItem.getItemId() == R.id.select_all) {
 				System.out.println("Select all!");
 				Set<UUID> toSelect = new HashSet<>();
-				for(Pair<Path, String> item : adapter.list) {
-					Path trimmedPath = LinkCache.trimLinkPath(item.first);
-					UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
+				for(TraversalHelper.ListItem item : adapter.list) {
+					UUID itemUID = item.fileUID;
 
 					toSelect.add(itemUID);
 				}
@@ -186,24 +185,18 @@ public class SelectionSetup {
 
 	//Unselect any items that are no longer in the list
 	//Note: This is mostly untested
-	public static void deselectAnyRemoved(List<Pair<Path, String>> newList, DirectoryViewModel dirViewModel,
+	public static void deselectAnyRemoved(List<TraversalHelper.ListItem> newList, DirectoryViewModel dirViewModel,
 										  SelectionController.SelectionCallbacks selectionCallbacks) {
 		//Grab all UUIDs from the full list
 		Set<UUID> inAdapter = new HashSet<>();
-		for(Pair<Path, String> item : dirViewModel.fileList.getValue()) {
-			Path trimmedPath = LinkCache.trimLinkPath(item.first);
-			UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
-
-			inAdapter.add(itemUID);
+		for(TraversalHelper.ListItem item : dirViewModel.fileList.getValue()) {
+			inAdapter.add(item.fileUID);
 		}
 
 		//Grab all UUIDs from the new list
 		Set<UUID> inNewList = new HashSet<>();
-		for(Pair<Path, String> item : newList) {
-			Path trimmedPath = LinkCache.trimLinkPath(item.first);
-			UUID itemUID = UUID.fromString(trimmedPath.getFileName().toString());
-
-			inNewList.add(itemUID);
+		for(TraversalHelper.ListItem item : newList) {
+			inNewList.add(item.fileUID);
 		}
 
 		//Directly deselect any missing items (no need to worry about visuals, the items don't exist anymore)
