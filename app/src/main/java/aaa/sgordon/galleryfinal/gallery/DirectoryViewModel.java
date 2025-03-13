@@ -173,9 +173,11 @@ public class DirectoryViewModel extends ViewModel {
 			//TODO Expand this to include a list of files per tag
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 
+			/*
 			System.out.println("NewFiles: ");
 			for(Pair<Path, String> item : newFileList)
 				System.out.println(item);
+			 */
 
 			fileList.postValue(newFileList);
 			fileTags.postValue(newTags);

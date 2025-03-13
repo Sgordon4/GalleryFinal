@@ -1,10 +1,18 @@
 package aaa.sgordon.galleryfinal.utilities;
 
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.BufferedInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 

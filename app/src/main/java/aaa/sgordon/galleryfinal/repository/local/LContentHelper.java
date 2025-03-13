@@ -82,6 +82,9 @@ public class LContentHelper {
 			Files.createFile(destinationFile.toPath());
 		}
 
+		try (InputStream inputStream = context.getContentResolver().openInputStream(uri)) {
+
+		}
 
 		//Write the source data to the destination file
 		try (InputStream in = new URL(source.toString()).openStream();

@@ -20,6 +20,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -33,7 +34,9 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
@@ -67,8 +70,15 @@ public class DirFragment extends Fragment {
 				.get(DirectoryViewModel.class);
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			if (result.getResultCode() == Activity.RESULT_OK)
-				importFiles(result.getData());
+			if (result.getResultCode() == Activity.RESULT_OK) {
+				List<Uri> uris = ImportHelper.getUrisFromIntent(result.getData());
+				Map<Uri, DocumentFile> fileInfo = ImportHelper.getFileInfoForUris(getContext(), uris);
+
+				Thread importThread = new Thread(() -> {
+					ImportHelper.importFiles(getContext(), dirViewModel.getDirUID(), uris, fileInfo);
+				});
+				importThread.start();
+			}
 		});
 	}
 
@@ -319,23 +329,7 @@ public class DirFragment extends Fragment {
 	}
 
 
-	private void importFiles(Intent data) {
-		List<Uri> urisToImport = new ArrayList<>();
 
-		//Grab all the selected Uris
-		//If clipData is null, we're importing only one file
-		//Otherwise, we're importing multiple files. Don't know why they need to be different...
-		if(data.getClipData() == null)
-			urisToImport.add(data.getData());
-		else {
-			for(int i = 0; i < data.getClipData().getItemCount(); i++)
-				urisToImport.add(data.getClipData().getItemAt(i).getUri());
-		}
-
-
-
-
-	}
 
 
 

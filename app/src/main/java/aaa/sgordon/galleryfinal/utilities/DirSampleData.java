@@ -55,7 +55,7 @@ public class DirSampleData {
 		HybridAPI hapi = HybridAPI.getInstance();
 
 		//Fake creating the account
-		UUID currentAccount = UUID.randomUUID();
+		UUID currentAccount = hapi.getCurrentAccount();
 		hapi.setAccount(currentAccount);
 
 		//Create the root directory for the new account
