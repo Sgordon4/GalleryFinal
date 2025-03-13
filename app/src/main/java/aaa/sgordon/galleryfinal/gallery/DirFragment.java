@@ -33,6 +33,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +44,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
+import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -174,6 +177,10 @@ public class DirFragment extends Fragment {
 
 			else if (item.getItemId() == R.id.settings) {
 				System.out.println("Clicked settings");
+
+				//This is for testing, settings should not launch this
+				Path pathFromRootButNotReally = Paths.get(dirViewModel.getDirUID().toString());
+				MoveCopyFullscreen.launch(this, pathFromRootButNotReally);
 			}
 			return false;
 		});

@@ -51,13 +51,12 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				@Override
 				public int getSpanSize(int position) {
 					int viewType = getItemViewType(position);
-					if(viewType == 1 || viewType == 2)
+					if(isFullSpan(viewType))
 						return layoutManager.getSpanCount();
 					return 1;
 				}
 			});
 		}
-
 	}
 	public void setCallbacks(AdapterCallbacks touchCallback) {
 		this.touchCallback = touchCallback;
@@ -106,7 +105,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		TraversalHelper.ListItem item = list.get(position);
 
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
-			holder.itemView.findViewById(R.id.media).setTransitionName(item.fileUID.toString());
+			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
 		UUID fileUID = item.fileUID;
 
@@ -138,6 +137,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	}
 
 
+	private boolean isFullSpan(int viewType) {
+		return viewType == 5 || viewType == 6;
+	}
 	@Override
 	public int getItemViewType(int position) {
 		TraversalHelper.ListItem item = list.get(position);
@@ -149,41 +151,32 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		boolean isLink = item.isLink;
 
 
+
+
+
+
 		if(isLink) {
 			if(isEnd)
-				return 2;		//End of link to directory
+				return 6;		//End of link to directory
 			else
-				return 1;		//Link to directory
+				return 5;		//Link to directory
 		}
 
 		if(isDir)
 			return 0;			//Directory
 
-		/*
-		if(isDir) {
-			if(!isLink)
-				return 0;			//Directory
-			else {
-				if(!isEnd)
-					return 1;		//Link to directory
-				else
-					return 2;		//End of link to directory
-			}
-		}
-		 */
-
 		//Get the filename extension, maybe we need fileNameUtils for this idk
 		String extension = FilenameUtils.getExtension(item.name);
 		switch (extension) {
-			case "div":
-				return 3;	//Divider
 			case "jpg":
 			case "jpeg":
-				return 4;    //Image
+				return 1;    //Image
 			case "gif":
-				return 5;    //Gif
+				return 2;    //Gif
 			case "mp4":
-				return 6;    //Video
+				return 3;    //Video
+			case "div":
+				return 4;	//Divider
 		}
 
 		return -1;					//Unknown
@@ -199,17 +192,17 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		switch(viewType) {
 			case 0: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_vh_directory, parent, false));
 				break;
-			case 1: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
+			case 1: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
 				break;
-			case 2: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
+			case 2: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
 				break;
-			case 3: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
+			case 3: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
 				break;
-			case 4: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
+			case 4: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 				break;
-			case 5: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
+			case 5: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
 				break;
-			case 6: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
+			case 6: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
 				break;
 			case -1:
 			default: holder = new UnknownViewHolder(inflater.inflate(R.layout.dir_vh_unknown, parent, false));
