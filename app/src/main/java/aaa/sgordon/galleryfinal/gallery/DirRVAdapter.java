@@ -97,7 +97,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		list.addAll(newList);
 
 		diffs.dispatchUpdatesTo(this);
-
 	}
 
 
@@ -148,7 +147,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		Path trimmedPath = LinkCache.trimLinkPath(item.first);
 		UUID fileUID = UUID.fromString(trimmedPath.getFileName().toString());
 
-		boolean isEnd = item.first.getFileName().toString().equals(LinkCache.linkEnd);
+		boolean isEnd = LinkCache.isLinkEnd(item.first);
 
 		boolean isDir = touchCallback.isDir(fileUID);
 		boolean isLink = touchCallback.isLink(fileUID);

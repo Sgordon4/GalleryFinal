@@ -31,6 +31,31 @@ public class TraversalHelper {
 	private final static HybridAPI hAPI = HybridAPI.getInstance();
 
 
+	public enum ListItemType {
+		NORMAL,
+		DIRECTORY,
+
+	}
+
+	public class ListItem {
+		public final UUID fileUID;
+		public final String name;
+		public final Path filePath;
+		public final boolean isDir;
+		public final boolean isLink;
+		public final ListItemType type;
+
+		public ListItem(Path filePath, UUID fileUID, String name, boolean isDir, boolean isLink, ListItemType type) {
+			this.fileUID = fileUID;
+			this.name = name;
+			this.filePath = filePath;
+			this.isDir = isDir;
+			this.isLink = isLink;
+			this.type = type;
+		}
+	}
+
+
 	//Recursively read directory contents, drilling down through any links
 	public static List<Pair<Path, String>> traverseDir(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		List<Pair<UUID, String>> contents = dirCache.getDirContents(dirUID);
