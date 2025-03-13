@@ -7,8 +7,15 @@ import android.util.Pair;
 
 import androidx.documentfile.provider.DocumentFile;
 
+import java.io.BufferedInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -75,12 +82,13 @@ public class ImportHelper {
 
 			UUID newUID = hAPI.createFile(accountUID, false, false);
 			try {
+				//Write the uri to the new file in the local repo
 				hAPI.lockLocal(newUID);
 				String checksum = computeChecksum(context, uri);
 				hAPI.writeFile(newUID, uri, checksum, HFile.defaultChecksum);
 
 
-				/*
+				//Add the new file to the designated directory
 				hAPI.lockLocal(directoryUID);
 				HFile dirProps = hAPI.getFileProps(directoryUID);
 
@@ -90,19 +98,22 @@ public class ImportHelper {
 				byte[] newContent = String.join("\n", newLines).getBytes();
 
 				hAPI.writeFile(directoryUID, newContent, dirProps.checksum);
-
-				 */
-
 			}
 			catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 			finally {
-				//hAPI.unlockLocal(directoryUID);
+				hAPI.unlockLocal(directoryUID);
 				hAPI.unlockLocal(newUID);
 			}
+
+			//Now that we've imported the file, delete it from the system
+			//TODO We need android.permission.MANAGE_DOCUMENTS or grantUriPermission()
+			documentFile.delete();
 		}
 	}
+
+
 
 
 	private static String computeChecksum(Context context, Uri uri) {
@@ -121,6 +132,30 @@ public class ImportHelper {
 		}
 		catch (NoSuchAlgorithmException e) { throw new RuntimeException(e); }
 		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+	//Returns filehash
+	private static String importToTempFile(Context context, Path tempFile, Uri uri) throws IOException {
+		if(!tempFile.toFile().exists()) {
+			Files.createDirectories(tempFile.getParent());
+			Files.createFile(tempFile);
+		}
+
+		try (InputStream in = context.getContentResolver().openInputStream(uri);
+			 DigestInputStream dis = new DigestInputStream(in, MessageDigest.getInstance("SHA-256"));
+			 FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
+
+			byte[] dataBuffer = new byte[1024];
+			int bytesRead;
+			while ((bytesRead = dis.read(dataBuffer, 0, 1024)) != -1) {
+				fileOutputStream.write(dataBuffer, 0, bytesRead);
+			}
+
+			return Utilities.bytesToHex( dis.getMessageDigest().digest() );
+		} catch (NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
 	}

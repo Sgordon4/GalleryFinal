@@ -5,6 +5,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,7 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 
@@ -82,12 +84,13 @@ public class LContentHelper {
 			Files.createFile(destinationFile.toPath());
 		}
 
-		try (InputStream inputStream = context.getContentResolver().openInputStream(uri)) {
 
-		}
+
+
 
 		//Write the source data to the destination file
-		try (InputStream in = new URL(source.toString()).openStream();
+		try (InputStream in = MyApplication.getAppContext().getContentResolver().openInputStream(source);
+		//try (InputStream in = new URL(source.toString()).openStream();
 			 FileOutputStream out = new FileOutputStream(destinationFile);
 			 DigestOutputStream dos = new DigestOutputStream(out, MessageDigest.getInstance("SHA-256"))) {
 
