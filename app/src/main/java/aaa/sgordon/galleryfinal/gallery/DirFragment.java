@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,12 +34,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
@@ -52,6 +58,9 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
+import aaa.sgordon.galleryfinal.repository.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class DirFragment extends Fragment {
 	public FragmentDirectoryBinding binding;
@@ -179,8 +188,7 @@ public class DirFragment extends Fragment {
 				System.out.println("Clicked settings");
 
 				//This is for testing, settings should not launch this
-				Path pathFromRootButNotReally = Paths.get(dirViewModel.getDirUID().toString());
-				MoveCopyFullscreen.launch(this, pathFromRootButNotReally);
+
 			}
 			return false;
 		});

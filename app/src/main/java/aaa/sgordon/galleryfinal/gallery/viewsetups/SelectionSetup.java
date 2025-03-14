@@ -21,6 +21,8 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,11 +36,15 @@ import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
+import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
 import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class SelectionSetup {
@@ -145,6 +151,49 @@ public class SelectionSetup {
 			else if(menuItem.getItemId() == R.id.tag) {
 				System.out.println("Clicked tags");
 				TagFullscreen.launch(dirFragment);
+			}
+
+			else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
+				boolean isMove = menuItem.getItemId() == R.id.move;
+				System.out.println("Move/Copy: "+(isMove ? "move" : "copy"));
+
+				Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
+				MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
+
+					System.out.println("Confirmed with destination "+destinationUID);
+
+					//Get the selected items from the viewModel's list and pass them along
+					Set<UUID> selectedItems = new HashSet<>(selectionController.getSelectedList());
+					List<TraversalHelper.ListItem> toMove = new ArrayList<>();
+
+					//Grab the first instance of each selected item in the list
+					List<TraversalHelper.ListItem> currList = dirFragment.dirViewModel.getFilterRegistry().filteredList.getValue();
+					for(int i = 0; i < currList.size(); i++) {
+						UUID itemUID = currList.get(i).fileUID;
+
+						if(selectedItems.contains(itemUID)) {
+							toMove.add(currList.get(i));
+							selectedItems.remove(itemUID);
+						}
+					}
+
+
+					Thread operation = new Thread(() -> {
+						try {
+							//Passing a fake item to move/copy will place the items at the start when the function can't find it
+							UUID fakeItem = UUID.randomUUID();
+
+							//Given the move/copy destination, perform the move/copy
+							if(isMove)
+								DirUtilities.moveFiles(toMove, destinationUID, fakeItem);
+							else /*(isCopy)*/
+								DirUtilities.copyFiles(toMove, destinationUID, fakeItem);
+						} catch (FileNotFoundException | ContentsNotFoundException | ConnectException | NotDirectoryException e) {
+							throw new RuntimeException(e);
+						}
+					});
+					operation.start();
+				});
 			}
 
 			else if(menuItem.getItemId() == R.id.share) {

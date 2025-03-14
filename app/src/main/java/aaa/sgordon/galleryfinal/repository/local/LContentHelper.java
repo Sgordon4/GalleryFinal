@@ -85,27 +85,35 @@ public class LContentHelper {
 		}
 
 
-
-
-
-		//Write the source data to the destination file
-		try (InputStream in = MyApplication.getAppContext().getContentResolver().openInputStream(source);
-		//try (InputStream in = new URL(source.toString()).openStream();
-			 FileOutputStream out = new FileOutputStream(destinationFile);
-			 DigestOutputStream dos = new DigestOutputStream(out, MessageDigest.getInstance("SHA-256"))) {
-
-			byte[] dataBuffer = new byte[1024];
-			int bytesRead;
-			while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
-				dos.write(dataBuffer, 0, bytesRead);
+		InputStream in = null;
+		try {
+			//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
+			try {
+				in = MyApplication.getAppContext().getContentResolver().openInputStream(source);
+			} catch (FileNotFoundException e) {
+				in = new URL(source.toString()).openStream();
 			}
 
-			String fileHash = Utilities.bytesToHex(dos.getMessageDigest().digest());
-			int fileSize = (int) destinationFile.length();
+			//Write the source data to the destination file
+			try (FileOutputStream out = new FileOutputStream(destinationFile);
+				 DigestOutputStream dos = new DigestOutputStream(out, MessageDigest.getInstance("SHA-256"))) {
 
-			return new LContent(name, fileHash, fileSize);
+				byte[] dataBuffer = new byte[1024];
+				int bytesRead;
+				while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+					dos.write(dataBuffer, 0, bytesRead);
+				}
+
+				String fileHash = Utilities.bytesToHex(dos.getMessageDigest().digest());
+				int fileSize = (int) destinationFile.length();
+
+				return new LContent(name, fileHash, fileSize);
+			}
+			catch (NoSuchAlgorithmException e) { throw new RuntimeException(e); }
+
+		} finally {
+			if(in != null) in.close();
 		}
-		catch (NoSuchAlgorithmException e) { throw new RuntimeException(e); }
 	}
 
 

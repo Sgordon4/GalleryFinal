@@ -5,10 +5,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,7 +27,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
@@ -44,26 +42,39 @@ import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class MoveCopyFullscreen extends DialogFragment {
-	private final DirFragment dirFragment;
+	private final MoveCopyCallback callback;
 	private Path currPath;
 	private UUID currDirUID;
+
+	private List<TraversalHelper.ListItem> fullList;
+	private String filterQuery;
 
 	private MaterialToolbar toolbar;
 	private EditText search;
 	private ImageButton searchClear;
 	private RecyclerView recyclerView;
+	private Button confirmButton;
 
 	private MCAdapter adapter;
 
-	public static void launch(DirFragment fragment, Path startPath) {
-		MoveCopyFullscreen dialog = new MoveCopyFullscreen(fragment, startPath);
-		dialog.show(fragment.getChildFragmentManager(), "move_copy_fullscreen");
+	public static void launch(DirFragment dirFragment, Path startPath, MoveCopyCallback callback) {
+		MoveCopyFullscreen dialog = new MoveCopyFullscreen(startPath, callback);
+		dialog.show(dirFragment.getChildFragmentManager(), "move_copy_fullscreen");
 	}
-	private MoveCopyFullscreen(DirFragment dirFragment, Path startPath) {
-		this.dirFragment = dirFragment;
+	private MoveCopyFullscreen(Path startPath, MoveCopyCallback callback) {
+		this.callback = callback;
 		this.currPath = startPath;
 		this.currDirUID = UUID.fromString(startPath.getFileName().toString());
+
+		fullList = new ArrayList<>();
+		filterQuery = "";
 	}
+
+
+	public interface MoveCopyCallback {
+		void onConfirm(UUID destinationUID);
+	}
+
 
 
 	@Nullable
@@ -74,8 +85,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 		search = view.findViewById(R.id.search);
 		searchClear = view.findViewById(R.id.search_clear);
 		recyclerView = view.findViewById(R.id.recyclerview);
-
-		//TODO Add a refresh button in the toolbar menu
+		confirmButton = view.findViewById(R.id.confirm);
 
 		return view;
 	}
@@ -99,11 +109,18 @@ public class MoveCopyFullscreen extends DialogFragment {
 		else
 			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
 
+		toolbar.setOnMenuItemClickListener(item -> {
+			if(item.getItemId() == R.id.refresh)
+				changeDirectory(currDirUID, currPath);
+			return false;
+		});
+
 
 		search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				String newQuery = charSequence.toString();
+				filterQuery = charSequence.toString();
+				adapter.setList( filterList(fullList) );
 			}
 
 			@Override
@@ -112,6 +129,12 @@ public class MoveCopyFullscreen extends DialogFragment {
 			public void afterTextChanged(Editable editable) {}
 		});
 		searchClear.setOnClickListener(view2 -> search.setText(""));
+
+
+		confirmButton.setOnClickListener(view2 -> {
+			callback.onConfirm(currDirUID);
+			dismiss();
+		});
 
 
 
@@ -128,7 +151,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 	private void changeDirectory(UUID fileUID, Path newPath) {
 		currPath = newPath;
 
-
+		//Update the toolbar name and icon
 		if(currPath.getNameCount() <= 1)
 			updateToolbar("Root", true);
 		else {
@@ -141,17 +164,16 @@ public class MoveCopyFullscreen extends DialogFragment {
 			updateToolbarThread.start();
 		}
 
-
-
-
+		//Update the list itself
 		Thread updateViaTraverse = new Thread(() -> {
 			try {
 				UUID target = LinkCache.getInstance().resolvePotentialLink(fileUID);
 				currDirUID = target;
 				List<TraversalHelper.ListItem> list = traverseDir(target);
+				fullList = list;
 
 				Handler mainHandler = new Handler(getContext().getMainLooper());
-				mainHandler.post(() -> adapter.setList(list));
+				mainHandler.post(() -> adapter.setList( filterList(list) ));
 			}
 			catch (FileNotFoundException e) {
 				throw new RuntimeException(e);
@@ -169,6 +191,13 @@ public class MoveCopyFullscreen extends DialogFragment {
 		toolbar.setTitle(newTitle);
 	}
 
+
+
+	private List<TraversalHelper.ListItem> filterList(List<TraversalHelper.ListItem> list) {
+		return list.stream()
+				.filter(item -> item.name.toLowerCase().contains(filterQuery.toLowerCase()))
+				.collect(Collectors.toList());
+	}
 
 
 

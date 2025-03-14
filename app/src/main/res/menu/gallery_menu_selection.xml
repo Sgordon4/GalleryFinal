@@ -30,6 +30,19 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/move"
+        android:title="Move to"
+        android:icon="@drawable/icon_move"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/copy"
+        android:title="Copy to"
+        android:icon="@drawable/icon_copy"
+        app:showAsAction="ifRoom" />
+
+
+    <item
         android:id="@+id/export"
         android:title="Export"
         app:showAsAction="ifRoom"/>

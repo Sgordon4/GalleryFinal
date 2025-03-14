@@ -157,6 +157,7 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
+	boolean printed = false;
 	private void refreshList() {
 		try {
 			//Grab the current list of all files in this directory from the system
@@ -170,10 +171,13 @@ public class DirectoryViewModel extends ViewModel {
 			//TODO Expand this to include a list of files per tag
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 
-			/*
-			System.out.println("NewFiles: ");
-			for(TraversalHelper.ListItem item : newFileList)
-				System.out.println(item.filePath+" "+item.name);
+			/**/
+			if(!printed) {
+				System.out.println("NewFiles: ");
+				for(TraversalHelper.ListItem item : newFileList)
+					System.out.println(item.filePath+" "+item.name);
+				printed = true;
+			}
 			/**/
 
 			fileList.postValue(newFileList);

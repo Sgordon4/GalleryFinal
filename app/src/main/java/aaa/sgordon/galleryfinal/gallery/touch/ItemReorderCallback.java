@@ -150,6 +150,10 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		//The nextItem is only null if the dragged item was moved to the end of the list, and should therefore be placed in its relative root
 		Path destination = (nextItem != null) ? nextItem.filePath.getParent() : draggedItem.filePath.getName(0);
 
+		System.out.println("Dragged: "+draggedItem.fileUID+" "+draggedItem.name);
+		System.out.println("DraggedPos: "+draggedItemPos);
+		System.out.println("Next: "+nextItem);
+
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
 		Path newPath = destination.resolve(draggedItem.filePath.getFileName());
 		TraversalHelper.ListItem updatedItem = new TraversalHelper.ListItem(newPath, draggedItem.fileUID,

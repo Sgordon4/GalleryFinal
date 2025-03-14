@@ -141,7 +141,6 @@ public class DirUtilities {
 			}
 
 			//In case this is a link to a directory, get the actual directory UID it points to
-			//TODO Pretty sure this will break
 			parentUID = linkCache.resolvePotentialLink(parentUID);
 
 			dirMap.putIfAbsent(parentUID, new ArrayList<>());
@@ -176,7 +175,7 @@ public class DirUtilities {
 			}
 
 
-			//Convert the list types to match, grabbing the fileUID out of the path
+			//Convert the list items to UUID::String pairs
 			List<Pair<UUID, String>> moveOrdering = toMove.stream()
 					.map(item -> new Pair<>(item.fileUID, item.name))
 					.collect(Collectors.toList());
@@ -192,7 +191,7 @@ public class DirUtilities {
 			//If the lists are the same, this means nothing was actually moved, and we should skip the write
 			//We should also skip the deletes after this because nothing was moved
 			if(dirList.size() == newList.size() && dirList.equals(newList)) {
-				Log.i(TAG, "When moving, no items were moved, so nothing is being written");
+				Log.i(TAG, "When moving, no items were changed, so nothing is being written");
 				return false;
 			}
 
@@ -232,6 +231,93 @@ public class DirUtilities {
 			} finally {
 				hAPI.unlockLocal(parentUID);
 			}
+		}
+
+		return true;
+	}
+
+
+	public static boolean copyFiles(@NonNull List<TraversalHelper.ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)
+			throws FileNotFoundException, ContentsNotFoundException, ConnectException {
+		if(toCopy.isEmpty()) {
+			Log.w(TAG, "copyFiles was called with no files to copy!");
+			return false;
+		}
+
+		LinkCache linkCache = LinkCache.getInstance();
+		UUID destinationDirUID = linkCache.resolvePotentialLink(destinationUID);
+
+
+		//TODO Links can be moved inside themselves atm
+
+
+		HybridAPI hAPI = HybridAPI.getInstance();
+
+		//Since we're copying, we need to create a new file for each of the toCopy files
+		List<Pair<UUID, String>> newFiles = new ArrayList<>();
+		for(TraversalHelper.ListItem item : toCopy) {
+			try {
+				UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
+				newFiles.add(new Pair<>(newFileUID, "Copy of "+item.name));
+				System.out.println("CopyID: "+newFileUID+" from: "+item.fileUID);
+			}
+			catch (FileNotFoundException e) {
+				//Skip this file
+				continue;
+			}
+		}
+
+
+
+		//Add all the files in order to the destination directory
+		try {
+			hAPI.lockLocal(destinationDirUID);
+
+			HFile destinationProps = hAPI.getFileProps(destinationDirUID);
+			List<Pair<UUID, String>> dirList = readDir(destinationDirUID);
+
+
+			//Find the position to insert the items into
+			int insertPos = 0;
+			if(nextItem == null)
+				//NextItem should only ever be null if we dragged to the end of the dir
+				insertPos = dirList.size();
+			else {
+				//We need to find the nextItem in the list (if it still exists). We will insert the moved file(s) before it
+				for(int i = 0; i < dirList.size(); i++) {
+					if(dirList.get(i).first.equals(nextItem)) {
+						insertPos = i;
+						break;
+					}
+				}
+			}
+
+
+			//Convert the list items to UUID::String pairs
+			List<Pair<UUID, String>> moveOrdering = newFiles.stream()
+					.map(item -> new Pair<>(item.first, item.second))
+					.collect(Collectors.toList());
+
+			//Insert the moved files at the correct position
+			List<Pair<UUID, String>> newList = new ArrayList<>(dirList);
+			newList.addAll(insertPos, moveOrdering);
+
+			//If the lists are the same, this means nothing was actually moved, and we should skip the write
+			//We should also skip the deletes after this because nothing was moved
+			if(dirList.size() == newList.size() && dirList.equals(newList)) {
+				Log.i(TAG, "When copying, no items were changed, so nothing is being written");
+				return false;
+			}
+
+
+			//Write the list back to the directory
+			List<String> newLines = newList.stream().map(pair -> pair.first+" "+pair.second)
+					.collect(Collectors.toList());
+			byte[] newContent = String.join("\n", newLines).getBytes();
+			hAPI.writeFile(destinationDirUID, newContent, destinationProps.checksum);
+		}
+		finally {
+			hAPI.unlockLocal(destinationDirUID);
 		}
 
 		return true;

@@ -139,7 +139,7 @@ public class HybridAPI {
 		newFile.isdir = isDir;
 		newFile.islink = isLink;
 
-		//Create blank file contents
+		//Create blank file contents (will do nothing if they already exist)
 		localRepo.writeContents(LFile.defaultChecksum, "".getBytes());
 
 		try {
@@ -162,6 +162,45 @@ public class HybridAPI {
 		localRepo.putJournalEntry(journal);
 
 		//Set zoning information.
+		HZone newZoningInfo = new HZone(fileUID, true, false);
+		Sync.getInstance().zoningDAO.put(newZoningInfo);
+
+		return newFile.fileuid;
+	}
+
+	public UUID copyFile(@NonNull UUID toCopyUID, @NonNull UUID accountUID) throws FileNotFoundException {
+		//Grab the properties from the item to copy
+		LFile newFile = localRepo.getFileProps(toCopyUID);
+
+		//Generate a new UUID, update the accountUID, and edit timestamps, but keep all other properties the same
+		UUID fileUID = UUID.randomUUID();
+		newFile.fileuid = fileUID;
+		newFile.accountuid = accountUID;
+		newFile.createtime = Instant.now().getEpochSecond();
+		newFile.changetime = Instant.now().getEpochSecond();
+
+
+		//Note: Locking for this file doesn't really matter, since nothing can know about it yet
+		try {
+			lockLocal(fileUID);
+			//Put the properties themselves
+			newFile = localRepo.putFileProps(newFile, "", "");
+		}
+		finally {
+			unlockLocal(fileUID);
+		}
+
+		//Add a journal entry
+		JsonObject changes = new JsonObject();
+		changes.addProperty("checksum", newFile.checksum);
+		changes.addProperty("attrhash", newFile.attrhash);
+		changes.addProperty("changetime", newFile.changetime);
+		changes.addProperty("createtime", newFile.createtime);
+		LJournal journal = new LJournal(fileUID, newFile.accountuid, changes);
+		localRepo.putJournalEntry(journal);
+
+		//Set zoning information.
+		//Zoning information should not match the copied file, the larger application should take handle movements.
 		HZone newZoningInfo = new HZone(fileUID, true, false);
 		Sync.getInstance().zoningDAO.put(newZoningInfo);
 
