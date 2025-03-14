@@ -126,7 +126,13 @@ public class DirSampleData {
 		Pair<UUID, String> r_f5 = new Pair<>(hapi.createFile(currentAccount, false, false), "Root file 5");
 		List<Pair<UUID, String>> rootList = new ArrayList<>(Arrays.asList(r_l1, r_d1, r_f1, r_f2, r_f3, r_l2, r_l3, r_f4, r_f5));
 
+
+
+		Pair<UUID, String> sideDirParent = new Pair<>(hapi.createFile(currentAccount, true, false), "Side dir Parent");
+		Pair<UUID, String> sideDirParent_f1 = new Pair<>(hapi.createFile(currentAccount, false, false), "Side dir Parent file 1");
 		Pair<UUID, String> sideDir = new Pair<>(hapi.createFile(currentAccount, true, false), "Side dir");
+		List<Pair<UUID, String>> sideDirParentList = new ArrayList<>(Arrays.asList(sideDirParent_f1, sideDir));
+
 
 
 
@@ -272,7 +278,7 @@ public class DirSampleData {
 		//Link r_l3 to sideDir
 		try {
 			hapi.lockLocal(r_l3.first);
-			Uri target = new Uri.Builder().scheme("gallery").appendPath(root.toString()).appendPath(sideDir.first.toString()).build();
+			Uri target = new Uri.Builder().scheme("gallery").appendPath(sideDirParent.first.toString()).appendPath(sideDir.first.toString()).build();
 			hapi.writeFile(r_l3.first, target.toString().getBytes(), HFile.defaultChecksum);
 		} finally { hapi.unlockLocal(r_l3.first); }
 
@@ -303,6 +309,17 @@ public class DirSampleData {
 			hapi.lockLocal(r_d1.first);
 			hapi.writeFile(r_d1.first, newContent, HFile.defaultChecksum);
 		} finally { hapi.unlockLocal(r_d1.first); }
+
+		//------------------------------------------------------
+
+		//Write the sideDir parent list to the sideDir parent directory
+		List<String> sdParentLines = sideDirParentList.stream().map(pair -> pair.first+" "+pair.second)
+				.collect(Collectors.toList());
+		newContent = String.join("\n", sdParentLines).getBytes();
+		try {
+			hapi.lockLocal(sideDirParent.first);
+			hapi.writeFile(sideDirParent.first, newContent, HFile.defaultChecksum);
+		} finally { hapi.unlockLocal(sideDirParent.first); }
 
 		//------------------------------------------------------
 

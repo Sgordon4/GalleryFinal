@@ -171,7 +171,7 @@ public class DirectoryViewModel extends ViewModel {
 			//TODO Expand this to include a list of files per tag
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 
-			/**/
+			/*
 			if(!printed) {
 				System.out.println("NewFiles: ");
 				for(TraversalHelper.ListItem item : newFileList)

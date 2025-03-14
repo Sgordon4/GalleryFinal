@@ -17,6 +17,7 @@ import java.net.URL;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -51,6 +52,7 @@ public class DirUtilities {
 				//TODO Handle invalid filenames
 				//Split each line into UUID::FileName and add it to our list
 				String[] parts = line.trim().split(" ", 2);
+				System.out.println(Arrays.toString(parts));
 				Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
 				dirList.add(entry);
 			}

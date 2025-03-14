@@ -16,6 +16,7 @@ import android.widget.ImageButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -60,7 +61,12 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 	public static void launch(DirFragment dirFragment, Path startPath, MoveCopyCallback callback) {
 		MoveCopyFullscreen dialog = new MoveCopyFullscreen(startPath, callback);
-		dialog.show(dirFragment.getChildFragmentManager(), "move_copy_fullscreen");
+
+		FragmentTransaction transaction = dirFragment.getChildFragmentManager().beginTransaction();
+		transaction.add(dialog, "move_copy_fullscreen");
+		transaction.commitAllowingStateLoss();
+
+		//dialog.show(dirFragment.getChildFragmentManager(), "move_copy_fullscreen");
 	}
 	private MoveCopyFullscreen(Path startPath, MoveCopyCallback callback) {
 		this.callback = callback;
@@ -77,6 +83,12 @@ public class MoveCopyFullscreen extends DialogFragment {
 	}
 
 
+	@NonNull
+	@Override
+	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+		setRetainInstance(true);
+		return super.onCreateDialog(savedInstanceState);
+	}
 
 	@Nullable
 	@Override
@@ -101,6 +113,10 @@ public class MoveCopyFullscreen extends DialogFragment {
 				dismiss();
 			else {
 				UUID prevDir = UUID.fromString(currPath.getParent().getFileName().toString());
+				UUID superPrevDir = (currPath.getNameCount() > 2) ?
+						UUID.fromString(currPath.getParent().getParent().getFileName().toString()) : null;
+
+				updateToolbar(superPrevDir, prevDir);
 				changeDirectory(prevDir, currPath.getParent());
 			}
 		});
@@ -145,26 +161,35 @@ public class MoveCopyFullscreen extends DialogFragment {
 		adapter = new MCAdapter();
 		recyclerView.setAdapter(adapter);
 
+		updateToolbar(null, currDirUID);
 		changeDirectory(currDirUID, currPath);
 	}
 
 
-	private void changeDirectory(UUID fileUID, Path newPath) {
-		currDirUID = fileUID;
-		currPath = newPath;
 
+	private void updateToolbar(@Nullable UUID parentDirUID, @NonNull UUID fileUID) {
 		//Update the toolbar name and icon
-		if(currPath.getNameCount() <= 1)
-			updateToolbar("Root", true);
+		if(parentDirUID == null)
+			toolbar.setTitle("Root");
 		else {
 			Thread updateToolbarThread = new Thread(() -> {
-				UUID parentDirUID = UUID.fromString(newPath.getParent().getFileName().toString());
 				String fileName = getFileNameFromDir(parentDirUID, fileUID);
 				Handler mainHandler = new Handler(getContext().getMainLooper());
-				mainHandler.post(() -> updateToolbar(fileName, false));
+				mainHandler.post(() -> toolbar.setTitle(fileName));
 			});
 			updateToolbarThread.start();
 		}
+
+		//If there is no parent, we're at relative root and going back should dismiss
+		if(parentDirUID == null)
+			toolbar.setNavigationIcon(R.drawable.icon_close);
+		else
+			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
+	}
+
+	private void changeDirectory(UUID fileUID, Path newPath) {
+		currDirUID = fileUID;
+		currPath = newPath;
 
 		//Update the list itself
 		Thread updateViaTraverse = new Thread(() -> {
@@ -175,15 +200,6 @@ public class MoveCopyFullscreen extends DialogFragment {
 			mainHandler.post(() -> adapter.setList( filterList(list) ));
 		});
 		updateViaTraverse.start();
-	}
-
-	private void updateToolbar(String newTitle, boolean isRoot) {
-		if(isRoot)
-			toolbar.setNavigationIcon(R.drawable.icon_close);
-		else
-			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
-
-		toolbar.setTitle(newTitle);
 	}
 
 
@@ -279,15 +295,19 @@ public class MoveCopyFullscreen extends DialogFragment {
 			holder.bind(item.fileUID, list.get(position).name);
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
-					if(item.type.equals(TraversalHelper.ListItemType.LINKDIVIDER)) {
+					if(item.isLink) {
 						LinkCache.InternalTarget target = (LinkCache.InternalTarget)
 								LinkCache.getInstance().followLinkChain(item.fileUID);
 
-						changeDirectory(target.getParentUID(), currPath.resolve(target.getParentUID().toString()));
+						updateToolbar(target.getParentUID(), target.getFileUID());
 					}
 					else {
-						changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
+						updateToolbar(currDirUID, item.fileUID);
 					}
+
+
+					changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
+
 				});
 				thread.start();
 			});
