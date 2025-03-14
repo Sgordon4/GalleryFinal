@@ -33,17 +33,6 @@ public class LinkCache {
 	private final Map<UUID, LinkTarget> linkTargets;
 
 
-	public final static String linkPrefix = "LINK_";
-	public final static String linkEnd = linkPrefix+"END";
-	public final static String linkDirectory = linkPrefix+"DIRECTORY";
-	public final static String linkDivider = linkPrefix+"DIVIDER";
-	public final static String linkSingle = linkPrefix+"SINGLE";
-	public final static String linkExternal = linkPrefix+"EXTERNAL";
-	public final static String linkBroken = linkPrefix+"BROKEN";
-	public final static String linkCycle = linkPrefix+"CYCLE";
-
-
-
 	public static LinkCache getInstance() {
 		return SingletonHelper.INSTANCE;
 	}
@@ -65,21 +54,6 @@ public class LinkCache {
 			}
 		};
 		hAPI.addListener(fileChangeListener);
-	}
-
-
-
-	//If this path is a link, or link related, it may have a link suffix attached
-	private static Path trimLinkPath(@NonNull Path path) {
-		String name = path.getFileName().toString();
-		if(name.startsWith(linkPrefix)) {
-			return path.getParent();
-		}
-		return path;
-	}
-	private static boolean isLinkEnd(@NonNull Path path) {
-		String name = path.getFileName().toString();
-		return name.equals(linkEnd);
 	}
 
 

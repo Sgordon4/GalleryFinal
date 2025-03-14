@@ -36,6 +36,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DividerViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class MoveCopyFullscreen extends DialogFragment {
@@ -170,7 +171,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 	//---------------------------------------------------------------------------------------------
 
-	private static class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
+	private class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		public List<TraversalHelper.ListItem> list;
 
 		public MCAdapter() {
@@ -236,7 +237,22 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 			holder.bind(item.fileUID, list.get(position).name);
 			holder.itemView.setOnClickListener(view -> {
-				System.out.println("Clicked item!");
+				Thread thread = new Thread(() -> {
+					if(item.type.equals(TraversalHelper.ListItemType.DIRECTORY))
+						changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
+					else if(item.type.equals(TraversalHelper.ListItemType.LINKDIRECTORY)) {
+						try {
+							UUID target = LinkCache.getInstance().resolvePotentialLink(item.fileUID);
+							changeDirectory(target, currPath.resolve(target.toString()));
+						} catch (FileNotFoundException e) {
+							//Do nothing
+						}
+					}
+					else if(item.type.equals(TraversalHelper.ListItemType.LINKDIVIDER)) {
+						//Nothing for now
+					}
+				});
+				thread.start();
 			});
 		}
 
