@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -26,6 +28,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
@@ -36,6 +39,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DividerViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
+import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
@@ -81,14 +85,19 @@ public class MoveCopyFullscreen extends DialogFragment {
 		super.onViewCreated(view, savedInstanceState);
 
 		//If there is only one item in the path, we're at our root (possibly relative root, not true root)
-		if(currPath.getNameCount() == 1) {
-			toolbar.setNavigationOnClickListener(v -> dismiss());
+		toolbar.setNavigationOnClickListener(v -> {
+			if(currPath.getNameCount() <= 1)
+				dismiss();
+			else {
+				UUID prevDir = UUID.fromString(currPath.getParent().getFileName().toString());
+				changeDirectory(prevDir, currPath.getParent());
+			}
+		});
+
+		if(currPath.getNameCount() <= 1)
 			toolbar.setNavigationIcon(R.drawable.icon_close);
-		}
-		else {
-			UUID prevDir = UUID.fromString(currPath.getFileName().toString());
-			changeDirectory(prevDir, currPath.getParent());
-		}
+		else
+			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
 
 
 		search.addTextChangedListener(new TextWatcher() {
@@ -106,7 +115,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 
 
-		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 4);
+		LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
 		recyclerView.setLayoutManager(layoutManager);
 
 		adapter = new MCAdapter();
@@ -116,18 +125,66 @@ public class MoveCopyFullscreen extends DialogFragment {
 	}
 
 
-	private void changeDirectory(UUID dirUID, Path newPath) {
+	private void changeDirectory(UUID fileUID, Path newPath) {
 		currPath = newPath;
-		currDirUID = dirUID;
+
+
+		if(currPath.getNameCount() <= 1)
+			updateToolbar("Root", true);
+		else {
+			Thread updateToolbarThread = new Thread(() -> {
+				UUID parentDirUID = UUID.fromString(newPath.getParent().getFileName().toString());
+				String fileName = getFileName(parentDirUID, fileUID);
+				Handler mainHandler = new Handler(getContext().getMainLooper());
+				mainHandler.post(() -> updateToolbar(fileName, false));
+			});
+			updateToolbarThread.start();
+		}
+
+
+
 
 		Thread updateViaTraverse = new Thread(() -> {
-			List<TraversalHelper.ListItem> list = traverseDir(dirUID);
+			try {
+				UUID target = LinkCache.getInstance().resolvePotentialLink(fileUID);
+				currDirUID = target;
+				List<TraversalHelper.ListItem> list = traverseDir(target);
 
-			Handler mainHandler = new Handler(getContext().getMainLooper());
-			mainHandler.post(() -> adapter.setList(list));
+				Handler mainHandler = new Handler(getContext().getMainLooper());
+				mainHandler.post(() -> adapter.setList(list));
+			}
+			catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			}
 		});
 		updateViaTraverse.start();
 	}
+
+	private void updateToolbar(String newTitle, boolean isRoot) {
+		if(isRoot)
+			toolbar.setNavigationIcon(R.drawable.icon_close);
+		else
+			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
+
+		toolbar.setTitle(newTitle);
+	}
+
+
+
+
+	private String getFileName(UUID parentDirUID, UUID fileUID) {
+		try {
+			return DirCache.getInstance().getDirContents(parentDirUID).stream()
+					.filter(item -> item.first.equals(fileUID))
+					.map(item -> item.second)
+					.findFirst()
+					.orElse("Unknown");
+		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+			return "Unknown";
+		}
+	}
+
+
 
 	@NonNull
 	private List<TraversalHelper.ListItem> traverseDir(UUID dirUID) {
@@ -178,27 +235,6 @@ public class MoveCopyFullscreen extends DialogFragment {
 			list = new ArrayList<>();
 		}
 
-
-		@Override
-		public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
-			super.onAttachedToRecyclerView(recyclerView);
-
-			//Some items (links, linkEnds, dividers) need to span across all columns
-			if(recyclerView.getLayoutManager() instanceof GridLayoutManager) {
-				GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
-				layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-					@Override
-					public int getSpanSize(int position) {
-						int viewType = getItemViewType(position);
-						if(isFullSpan(viewType))
-							return layoutManager.getSpanCount();
-						return 1;
-					}
-				});
-			}
-
-		}
-
 		public void setList(List<TraversalHelper.ListItem> newList) {
 			//Calculate the differences between the current list and the new one
 			DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
@@ -238,27 +274,13 @@ public class MoveCopyFullscreen extends DialogFragment {
 			holder.bind(item.fileUID, list.get(position).name);
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
-					if(item.type.equals(TraversalHelper.ListItemType.DIRECTORY))
-						changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
-					else if(item.type.equals(TraversalHelper.ListItemType.LINKDIRECTORY)) {
-						try {
-							UUID target = LinkCache.getInstance().resolvePotentialLink(item.fileUID);
-							changeDirectory(target, currPath.resolve(target.toString()));
-						} catch (FileNotFoundException e) {
-							//Do nothing
-						}
-					}
-					else if(item.type.equals(TraversalHelper.ListItemType.LINKDIVIDER)) {
-						//Nothing for now
-					}
+					changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
 				});
 				thread.start();
 			});
 		}
 
-		private boolean isFullSpan(int viewType) {
-			return viewType == 0 || viewType == 1 || viewType == 2;
-		}
+
 		@Override
 		public int getItemViewType(int position) {
 			TraversalHelper.ListItem item = list.get(position);
@@ -290,13 +312,13 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 			BaseViewHolder holder;
 			switch(viewType) {
-				case 0: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
+				case 0: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_mc_link, parent, false));
 					break;
 				case 1: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 					break;
 				case 2: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
 					break;
-				case 3: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_vh_directory, parent, false));
+				case 3: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_mc_directory, parent, false));
 					break;
 				case -1:
 				default: throw new RuntimeException("Unknown view type in Move/Copy adapter!");

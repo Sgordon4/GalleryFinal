@@ -103,7 +103,7 @@ public class LinkCache {
 		HFile fileProps = hAPI.getFileProps(bartholemew);
 
 		try {
-			while(fileProps.islink) {
+			while (fileProps.islink) {
 				LinkTarget target = getLinkTarget(bartholemew);
 
 				//If the final link in the chain points to an external file, we want the resolved UUID to be that link

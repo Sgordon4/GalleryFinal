@@ -29,5 +29,8 @@ public class DirectoryViewHolder extends BaseViewHolder{
 		super.bind(fileUID, fileName);
 
 		name.setText(fileName);
+		if(color != null) {
+			//TODO Set background
+		}
 	}
 }
