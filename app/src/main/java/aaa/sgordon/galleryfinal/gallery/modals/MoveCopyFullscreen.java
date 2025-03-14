@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.modals;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.os.Handler;
@@ -149,6 +150,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 
 	private void changeDirectory(UUID fileUID, Path newPath) {
+		currDirUID = fileUID;
 		currPath = newPath;
 
 		//Update the toolbar name and icon
@@ -157,7 +159,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 		else {
 			Thread updateToolbarThread = new Thread(() -> {
 				UUID parentDirUID = UUID.fromString(newPath.getParent().getFileName().toString());
-				String fileName = getFileName(parentDirUID, fileUID);
+				String fileName = getFileNameFromDir(parentDirUID, fileUID);
 				Handler mainHandler = new Handler(getContext().getMainLooper());
 				mainHandler.post(() -> updateToolbar(fileName, false));
 			});
@@ -166,18 +168,11 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 		//Update the list itself
 		Thread updateViaTraverse = new Thread(() -> {
-			try {
-				UUID target = LinkCache.getInstance().resolvePotentialLink(fileUID);
-				currDirUID = target;
-				List<TraversalHelper.ListItem> list = traverseDir(target);
-				fullList = list;
+			List<TraversalHelper.ListItem> list = traverseDir(fileUID);
+			fullList = list;
 
-				Handler mainHandler = new Handler(getContext().getMainLooper());
-				mainHandler.post(() -> adapter.setList( filterList(list) ));
-			}
-			catch (FileNotFoundException e) {
-				throw new RuntimeException(e);
-			}
+			Handler mainHandler = new Handler(getContext().getMainLooper());
+			mainHandler.post(() -> adapter.setList( filterList(list) ));
 		});
 		updateViaTraverse.start();
 	}
@@ -201,8 +196,9 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 
 
-	private String getFileName(UUID parentDirUID, UUID fileUID) {
+	private String getFileNameFromDir(UUID parentDirUID, UUID fileUID) {
 		try {
+			//TODO I bet with the new LinkCache.followLinkChain we could get the correct filename
 			return DirCache.getInstance().getDirContents(parentDirUID).stream()
 					.filter(item -> item.first.equals(fileUID))
 					.map(item -> item.second)
@@ -218,6 +214,9 @@ public class MoveCopyFullscreen extends DialogFragment {
 	@NonNull
 	private List<TraversalHelper.ListItem> traverseDir(UUID dirUID) {
 		try {
+			//If the item is a link to a directory, follow that link
+			dirUID = LinkCache.getInstance().resolvePotentialLink(dirUID);
+
 			//Grab the current list of all files in this directory from the system
 			List<TraversalHelper.ListItem> newFileList = TraversalHelper.traverseDir(dirUID);
 
@@ -264,35 +263,12 @@ public class MoveCopyFullscreen extends DialogFragment {
 			list = new ArrayList<>();
 		}
 
+		@SuppressLint("NotifyDataSetChanged")
 		public void setList(List<TraversalHelper.ListItem> newList) {
-			//Calculate the differences between the current list and the new one
-			DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
-				@Override
-				public int getOldListSize() {
-					return list.size();
-				}
-				@Override
-				public int getNewListSize() {
-					return newList.size();
-				}
+			list = newList;
 
-				@Override
-				public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-					return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
-				}
-				@Override
-				public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-					return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name);
-				}
-
-				//TODO Override getChangePayload if we end up using ItemAnimator
-			};
-			DiffUtil.DiffResult diffs = DiffUtil.calculateDiff(diffCallback);
-
-			list.clear();
-			list.addAll(newList);
-
-			diffs.dispatchUpdatesTo(this);
+			//We want the full dataset to reset since we're changing dirs, even if there are common items
+			notifyDataSetChanged();
 		}
 
 
@@ -303,7 +279,15 @@ public class MoveCopyFullscreen extends DialogFragment {
 			holder.bind(item.fileUID, list.get(position).name);
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
-					changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
+					if(item.type.equals(TraversalHelper.ListItemType.LINKDIVIDER)) {
+						LinkCache.InternalTarget target = (LinkCache.InternalTarget)
+								LinkCache.getInstance().followLinkChain(item.fileUID);
+
+						changeDirectory(target.getParentUID(), currPath.resolve(target.getParentUID().toString()));
+					}
+					else {
+						changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
+					}
 				});
 				thread.start();
 			});

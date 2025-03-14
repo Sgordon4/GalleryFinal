@@ -48,8 +48,6 @@ public class ReorderSetup {
 
 				try {
 					UUID destinationUID = UUID.fromString(destination.getFileName().toString());
-					//TODO Pretty sure this will break
-					//destinationUID = LinkCache.getInstance().resolvePotentialLink(destinationUID);
 
 					System.out.println("Reordering: ");
 					System.out.println(destination);

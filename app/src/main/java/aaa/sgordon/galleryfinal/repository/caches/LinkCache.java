@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal.repository.caches;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -96,24 +97,45 @@ public class LinkCache {
 	}
 
 
-	//UUID could be a normal file, or it could be a link. If its a link, we want to follow it down a potential link chain until the final target
-	//Thanks Sophia for the naming suggestion
+
 	@NonNull
-	public UUID resolvePotentialLink(UUID bartholemew) throws FileNotFoundException {
-		HFile fileProps = hAPI.getFileProps(bartholemew);
+	public UUID resolvePotentialLink(UUID fileUID) throws FileNotFoundException {
+		LinkTarget target = followLinkChain(fileUID);
 
+		if(target == null)
+			return fileUID;
+		if(target instanceof ExternalTarget)
+			return fileUID;
+		else
+			return ((InternalTarget) target).getFileUID();
+	}
+
+
+	//UUID could be a normal file, or it could be a link.
+	//If its a link, we want to follow it down a potential link chain until the final target
+	//Thanks Sophia for the naming suggestion
+	@Nullable
+	public LinkTarget followLinkChain(UUID linkUID) {
+		LinkTarget bartholemew = null;
 		try {
-			while (fileProps.islink) {
-				LinkTarget target = getLinkTarget(bartholemew);
+			HFile fileProps = hAPI.getFileProps(linkUID);
 
-				//If the final link in the chain points to an external file, we want the resolved UUID to be that link
-				if(target instanceof ExternalTarget)
+			while (fileProps.islink) {
+				LinkTarget newTarget = getLinkTarget(linkUID);
+
+				//If the final link in the chain points to an external file, just return the last target
+				if(newTarget instanceof ExternalTarget)
 					break;
 
+				bartholemew = newTarget;
+
 				//If the link points to an internal file, follow it
-				bartholemew = ((InternalTarget) target).getFileUID();
-				fileProps = hAPI.getFileProps(bartholemew);
+				linkUID = ((InternalTarget) bartholemew).getFileUID();
+				fileProps = hAPI.getFileProps(linkUID);
 			}
+
+			//Once we've reached the end of the link chain, return the last UUID
+			return bartholemew;
 		}
 		catch (FileNotFoundException | ConnectException e) {
 			//If the file isn't found or we just can't reach it, just pretend the link is broken
@@ -123,9 +145,6 @@ public class LinkCache {
 			//If we can't find the link's contents, just pretend the link is broken
 			return bartholemew;
 		}
-
-		//Once we've reached the end of the link chain, return the last UUID
-		return bartholemew;
 	}
 
 

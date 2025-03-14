@@ -147,8 +147,27 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	public void onDragComplete() {
 		TraversalHelper.ListItem draggedItem = adapter.list.get(draggedItemPos);
 		TraversalHelper.ListItem nextItem = draggedItemPos != adapter.list.size() - 1 ? adapter.list.get(draggedItemPos + 1) : null;
-		//The nextItem is only null if the dragged item was moved to the end of the list, and should therefore be placed in its relative root
-		Path destination = (nextItem != null) ? nextItem.filePath.getParent() : draggedItem.filePath.getName(0);
+
+
+		//Path destination = (nextItem != null) ? nextItem.filePath.getParent() : draggedItem.filePath.getName(0);
+		Path destination;
+		if(nextItem != null) {
+			//If the nextItem is a link end, we want to put draggedItem at the end of the link
+			if(nextItem.type.equals(TraversalHelper.ListItemType.LINKEND)) {
+				destination = nextItem.filePath;
+				nextItem = null;
+			}
+			//If nextItem is just a normal item, we want to put draggedItem before nextItem in nextItem's parent
+			else {
+				destination = nextItem.filePath.getParent();
+			}
+		}
+		else {
+			//The nextItem is only null if draggedItem was moved to the very end of the list,
+			// and should therefore be placed in its relative root
+			destination = draggedItem.filePath.getName(0);
+		}
+
 
 		System.out.println("Dragged: "+draggedItem.fileUID+" "+draggedItem.name);
 		System.out.println("DraggedPos: "+draggedItemPos);

@@ -134,7 +134,7 @@ public class DirUtilities {
 			UUID parentUID = UUID.fromString(itemToMove.filePath.getParent().getFileName().toString());
 			UUID fileUID = itemToMove.fileUID;
 
-			if(destinationUID.equals(fileUID)) {
+			if(destinationUID.equals(fileUID) || destinationDirUID.equals(fileUID)) {
 				Log.d(TAG, "Not allowed to move links inside themselves");
 				iterator.remove();
 				continue;
