@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
@@ -58,7 +59,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
 		//Disallow link ends to be dragged
 		int adapterPos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
-		if(adapterPos == -1 || adapter.list.get(adapterPos).type.equals(TraversalHelper.ListItemType.LINKEND))
+		if(adapterPos == -1 || LinkCache.isLinkEnd(adapter.list.get(adapterPos)))
 			return makeMovementFlags(0, 0);
 
 		int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
@@ -145,15 +146,15 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 
 	public void onDragComplete() {
-		TraversalHelper.ListItem draggedItem = adapter.list.get(draggedItemPos);
-		TraversalHelper.ListItem nextItem = draggedItemPos != adapter.list.size() - 1 ? adapter.list.get(draggedItemPos + 1) : null;
+		ListItem draggedItem = adapter.list.get(draggedItemPos);
+		ListItem nextItem = draggedItemPos != adapter.list.size() - 1 ? adapter.list.get(draggedItemPos + 1) : null;
 
 
 		//Path destination = (nextItem != null) ? nextItem.filePath.getParent() : draggedItem.filePath.getName(0);
 		Path destination;
 		if(nextItem != null) {
 			//If the nextItem is a link end, we want to put draggedItem at the end of the link
-			if(nextItem.type.equals(TraversalHelper.ListItemType.LINKEND)) {
+			if(LinkCache.isLinkEnd(nextItem)) {
 				destination = nextItem.filePath;
 				nextItem = null;
 			}
@@ -175,7 +176,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
 		Path newPath = destination.resolve(draggedItem.filePath.getFileName());
-		TraversalHelper.ListItem updatedItem = new TraversalHelper.ListItem(newPath, draggedItem.fileUID,
+		ListItem updatedItem = new ListItem(newPath, draggedItem.fileUID, draggedItem.parentUID,
 				draggedItem.name+" ", 	//Add a space to force a DiffUtil update
 				draggedItem.isDir, draggedItem.isLink, draggedItem.type);
 
@@ -190,6 +191,6 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 
 	public interface ReorderCallback {
-		void onReorderComplete(Path destination, TraversalHelper.ListItem nextItem);
+		void onReorderComplete(Path destination, ListItem nextItem);
 	}
 }

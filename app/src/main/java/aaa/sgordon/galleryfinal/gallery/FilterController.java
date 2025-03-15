@@ -31,9 +31,9 @@ public class FilterController {
 	}
 
 
-	public void onListUpdated(List<TraversalHelper.ListItem> fileList) {
+	public void onListUpdated(List<ListItem> fileList) {
 		//Filter the list of files based on the current query
-		List<TraversalHelper.ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
+		List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
 		filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
 		registry.filteredList.postValue(filtered);
 	}
@@ -58,18 +58,18 @@ public class FilterController {
 	}
 
 
-	public void onActiveQueryChanged(String newActiveQuery, List<TraversalHelper.ListItem> fullList) {
+	public void onActiveQueryChanged(String newActiveQuery, List<ListItem> fullList) {
 		registry.activeQuery.postValue(newActiveQuery);
 
-		List<TraversalHelper.ListItem> filtered = filterListByQuery(newActiveQuery, fullList);
+		List<ListItem> filtered = filterListByQuery(newActiveQuery, fullList);
 		filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
 		registry.filteredList.postValue(filtered);
 	}
 
-	public void onActiveTagsChanged(Set<String> newActiveTags, List<TraversalHelper.ListItem> fullList) {
+	public void onActiveTagsChanged(Set<String> newActiveTags, List<ListItem> fullList) {
 		registry.activeTags.postValue(newActiveTags);
 
-		List<TraversalHelper.ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
+		List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
 		filtered = filterListByTags(newActiveTags, filtered, attrCache);
 		registry.filteredList.postValue(filtered);
 	}
@@ -88,7 +88,7 @@ public class FilterController {
 
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
-	public static List<TraversalHelper.ListItem> filterListByQuery(String filterQuery, List<TraversalHelper.ListItem> list) {
+	public static List<ListItem> filterListByQuery(String filterQuery, List<ListItem> list) {
 		if(filterQuery.isEmpty())
 			return list;
 
@@ -99,14 +99,14 @@ public class FilterController {
 		}).collect(Collectors.toList());
 	}
 
-	public static List<TraversalHelper.ListItem> filterListByTags(Set<String> filterTags, List<TraversalHelper.ListItem> list, AttrCache attrCache) {
+	public static List<ListItem> filterListByTags(Set<String> filterTags, List<ListItem> list, AttrCache attrCache) {
 		if(filterTags.isEmpty())
 			return list;
 
 		return list.stream().filter(item -> {
 			//If we're filtering for tags, make sure each item has all filtered tags
 
-			if(item.type.equals(TraversalHelper.ListItemType.LINKEND))
+			if(LinkCache.isLinkEnd(item))
 				return false;	//Exclude ends, since we can't reorder
 
 			try {
@@ -134,7 +134,7 @@ public class FilterController {
 	//---------------------------------------------------------------------------------------------
 
 	public static class FilterRegistry {
-		public final MutableLiveData< List<TraversalHelper.ListItem> > filteredList;
+		public final MutableLiveData< List<ListItem> > filteredList;
 
 		public final MutableLiveData< Map<String, Set<UUID>> > filteredTags;
 

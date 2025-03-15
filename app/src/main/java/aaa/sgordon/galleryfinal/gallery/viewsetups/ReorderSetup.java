@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
@@ -32,10 +33,10 @@ public class ReorderSetup {
 			Thread reorderThread = new Thread(() -> {
 				//Get the selected items from the viewModel's list and pass them along
 				Set<UUID> selectedItems = new HashSet<>(dirViewModel.getSelectionRegistry().getSelectedList());
-				List<TraversalHelper.ListItem> toMove = new ArrayList<>();
+				List<ListItem> toMove = new ArrayList<>();
 
 				//Grab the first instance of each selected item in the list
-				List<TraversalHelper.ListItem> currList = dirViewModel.getFilterRegistry().filteredList.getValue();
+				List<ListItem> currList = dirViewModel.getFilterRegistry().filteredList.getValue();
 				for(int i = 0; i < currList.size(); i++) {
 					UUID itemUID = currList.get(i).fileUID;
 
@@ -56,7 +57,7 @@ public class ReorderSetup {
 
 
 					UUID nextItemUID = null;
-					if(nextItem != null && !nextItem.type.equals(TraversalHelper.ListItemType.LINKEND))
+					if(nextItem != null && !LinkCache.isLinkEnd(nextItem))
 						nextItemUID = nextItem.fileUID;
 
 

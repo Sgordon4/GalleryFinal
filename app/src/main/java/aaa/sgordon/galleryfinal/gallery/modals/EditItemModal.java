@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -212,19 +213,19 @@ public class EditItemModal extends DialogFragment {
 
 	//---------------------------------------------------------------------------------------------
 
-	public static boolean launchHelper(@NonNull DirFragment dirFragment, SelectionController selectionController, List<TraversalHelper.ListItem> adapterList) {
+	public static boolean launchHelper(@NonNull DirFragment dirFragment, SelectionController selectionController, List<ListItem> adapterList) {
 		//Get the current selected item
 		UUID fileUID = selectionController.getSelectedList().iterator().next();
 
 		//Get the filename from the file list
 		String fileName = null;
 		UUID dirUID = null;
-		for(TraversalHelper.ListItem item : adapterList) {
+		for(ListItem item : adapterList) {
 			UUID itemUID = item.fileUID;
 
 			if(itemUID.equals(fileUID)) {
 				fileName = item.name;
-				dirUID = UUID.fromString(item.filePath.getParent().getFileName().toString());
+				dirUID = item.parentUID;
 				break;
 			}
 		}

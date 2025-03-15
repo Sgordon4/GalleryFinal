@@ -45,6 +45,13 @@
     <item
         android:id="@+id/export"
         android:title="Export"
+        android:icon="@drawable/icon_export"
+        app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/trash"
+        android:title="Trash"
+        android:icon="@drawable/icon_trash"
         app:showAsAction="ifRoom"/>
 
     <item

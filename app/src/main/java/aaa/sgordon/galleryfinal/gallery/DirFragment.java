@@ -51,6 +51,7 @@ import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
+import aaa.sgordon.galleryfinal.gallery.modals.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -181,14 +182,14 @@ public class DirFragment extends Fragment {
 				else
 					requireActivity().getOnBackPressedDispatcher().onBackPressed();
 			}
-			//TODO Add fab options
 
+			else if (item.getItemId() == R.id.trashed) {
+				System.out.println("Clicked trashed");
+				TrashFullscreen.launch(this, dirViewModel.getDirUID(), null);
+			}
 
 			else if (item.getItemId() == R.id.settings) {
 				System.out.println("Clicked settings");
-
-				//This is for testing, settings should not launch this
-
 			}
 			return false;
 		});

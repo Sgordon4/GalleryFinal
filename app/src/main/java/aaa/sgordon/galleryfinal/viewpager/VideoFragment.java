@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerVideoBinding;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -30,12 +31,12 @@ import pl.droidsonroids.gif.GifImageView;
 
 public class VideoFragment extends Fragment {
 	private FragmentViewpagerVideoBinding binding;
-	private final TraversalHelper.ListItem item;
+	private final ListItem item;
 	private final UUID fileUID;
 
 	private ExoPlayer player;
 
-	public VideoFragment(TraversalHelper.ListItem item) {
+	public VideoFragment(ListItem item) {
 		this.item = item;
 		this.fileUID = item.fileUID;
 	}

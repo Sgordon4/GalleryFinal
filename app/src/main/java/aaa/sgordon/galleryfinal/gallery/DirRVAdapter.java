@@ -1,6 +1,5 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
@@ -9,14 +8,11 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import org.apache.commons.io.FilenameUtils;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -32,7 +28,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
-	public List<TraversalHelper.ListItem> list;
+	public List<ListItem> list;
 	public RecyclerView.LayoutManager layoutManager;
 	private AdapterCallbacks touchCallback;
 
@@ -67,7 +63,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public int getItemCount() {
 		return list.size();
 	}
-	public void setList(List<TraversalHelper.ListItem> newList) {
+	public void setList(List<ListItem> newList) {
 		//Calculate the differences between the current list and the new one
 		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
 			@Override
@@ -102,28 +98,13 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 	@Override
 	public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
-		TraversalHelper.ListItem item = list.get(position);
+		ListItem item = list.get(position);
 
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
 			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
 		UUID fileUID = item.fileUID;
-
-		String level = "";
-		if(!(layoutManager instanceof GridLayoutManager || layoutManager instanceof StaggeredGridLayoutManager)) {
-			//Put in some fancy printing to show the directory structure
-			int depth = item.filePath.getNameCount()-1;
-			level = "│   ".repeat(Math.max(0, depth-1));
-			if(depth > 0) {
-				if(item.type.equals(TraversalHelper.ListItemType.LINKEND))
-					level += "└─ ";
-				else
-					level += "├─ ";
-			}
-		}
-
-
-		holder.bind(fileUID, level + list.get(position).name);
+		holder.bind(fileUID, list.get(position).name);
 
 
 		holder.itemView.setSelected( touchCallback.isItemSelected(fileUID) );
@@ -142,10 +123,10 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	}
 	@Override
 	public int getItemViewType(int position) {
-		TraversalHelper.ListItem item = list.get(position);
+		ListItem item = list.get(position);
 		UUID fileUID = item.fileUID;
 
-		boolean isEnd = item.type.equals(TraversalHelper.ListItemType.LINKEND);
+		boolean isEnd = LinkCache.isLinkEnd(item);
 
 		boolean isDir = item.isDir;
 		boolean isLink = item.isLink;

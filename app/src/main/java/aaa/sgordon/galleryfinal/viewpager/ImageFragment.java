@@ -25,6 +25,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -32,10 +33,10 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageFragment extends Fragment {
 	private FragmentViewpagerImageBinding binding;
-	private final TraversalHelper.ListItem item;
+	private final ListItem item;
 	private final UUID fileUID;
 
-	public ImageFragment(TraversalHelper.ListItem item) {
+	public ImageFragment(ListItem item) {
 		this.item = item;
 		this.fileUID = item.fileUID;
 	}

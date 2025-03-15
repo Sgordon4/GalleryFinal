@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
@@ -57,6 +58,10 @@ public class LinkCache {
 		hAPI.addListener(fileChangeListener);
 	}
 
+
+	public static boolean isLinkEnd(ListItem item) {
+		return item.type.equals(ListItem.ListItemType.LINKEND);
+	}
 
 
 	public LinkTarget getLinkTarget(UUID fileUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {

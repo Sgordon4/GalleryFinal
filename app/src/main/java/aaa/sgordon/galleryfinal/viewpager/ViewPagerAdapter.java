@@ -18,17 +18,18 @@ import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
-	public List<TraversalHelper.ListItem> list;
+	public List<ListItem> list;
 
 	public ViewPagerAdapter(@NonNull Fragment fragment) {
 		super(fragment);
 		list = new ArrayList<>();
 	}
 
-	public void setList(List<TraversalHelper.ListItem> newList) {
+	public void setList(List<ListItem> newList) {
 		//Calculate the differences between the current list and the new one
 		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
 			@Override

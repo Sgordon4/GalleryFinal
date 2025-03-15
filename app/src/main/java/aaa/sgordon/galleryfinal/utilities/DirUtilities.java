@@ -16,6 +16,7 @@ import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -52,7 +54,7 @@ public class DirUtilities {
 				//TODO Handle invalid filenames
 				//Split each line into UUID::FileName and add it to our list
 				String[] parts = line.trim().split(" ", 2);
-				System.out.println(Arrays.toString(parts));
+				//System.out.println(Arrays.toString(parts));
 				Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
 				dirList.add(entry);
 			}
@@ -111,9 +113,72 @@ public class DirUtilities {
 	}
 
 
+	//Each file in renamed should have "name" updated before passing to this function
+	//Returns true if all renames were successful, false if not
+	public static boolean renameFiles(List<ListItem> renamed) {
+
+		//Map each item to its parent directory for ease of access
+		Map<UUID, Map<UUID, String>> dirMap = new HashMap<>();
+		for(ListItem item : renamed) {
+			try {
+				UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
+				dirMap.putIfAbsent(parentUID, new HashMap<>());
+				dirMap.get(parentUID).put(item.fileUID, item.name);
+			}
+			catch (FileNotFoundException e) {
+				//If the file's parent is not found, skip it
+				continue;
+			}
+		}
+
+
+		//For each parent directory...
+		for(Map.Entry<UUID, Map<UUID, String>> entry : dirMap.entrySet()) {
+			UUID dirUID = entry.getKey();
+			Map<UUID, String> fileUIDs = entry.getValue();
+
+			HybridAPI hAPI = HybridAPI.getInstance();
+			try {
+				hAPI.lockLocal(dirUID);
+				HFile fileProps = hAPI.getFileProps(dirUID);
+
+				//For each file in the directory...
+				List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
+				for(int i = 0; i < dirList.size(); i++) {
+					Pair<UUID, String> file = dirList.get(i);
+
+					//If the file is in the list of files to rename, rename it
+					if(fileUIDs.containsKey(file.first)) {
+						dirList.set(i, new Pair<>(file.first, fileUIDs.get(file.first)));
+						break;
+					}
+				}
+
+				//Compile the list into a String
+				List<String> rootLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+						.collect(Collectors.toList());
+				byte[] newContent = String.join("\n", rootLines).getBytes();
+
+				//Write the new content to the directory
+				hAPI.writeFile(dirUID, newContent, fileProps.checksum);
+
+			} catch (FileNotFoundException | ContentsNotFoundException e) {
+				//If the directory or its contents are not found, skip it
+				return false;
+			} catch (ConnectException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hAPI.unlockLocal(dirUID);
+			}
+		}
+
+		return true;
+	}
+
+
 
 	//TODO Cut this up into pieces (this is my last resort)
-	public static boolean moveFiles(@NonNull List<TraversalHelper.ListItem> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
+	public static boolean moveFiles(@NonNull List<ListItem> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException, NotDirectoryException {
 		//System.out.println("Moving files!");
 
@@ -130,10 +195,10 @@ public class DirUtilities {
 		//Group each file by its parent directory so we know where to remove them from
 		//Exclude links being moved inside themselves
 		Map<UUID, List<UUID>> dirMap = new HashMap<>();
-		Iterator<TraversalHelper.ListItem> iterator = toMove.iterator();
+		Iterator<ListItem> iterator = toMove.iterator();
 		while (iterator.hasNext()) {
-			TraversalHelper.ListItem itemToMove = iterator.next();
-			UUID parentUID = UUID.fromString(itemToMove.filePath.getParent().getFileName().toString());
+			ListItem itemToMove = iterator.next();
+			UUID parentUID = itemToMove.parentUID;
 			UUID fileUID = itemToMove.fileUID;
 
 			if(destinationUID.equals(fileUID) || destinationDirUID.equals(fileUID)) {
@@ -239,7 +304,7 @@ public class DirUtilities {
 	}
 
 
-	public static boolean copyFiles(@NonNull List<TraversalHelper.ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)
+	public static boolean copyFiles(@NonNull List<ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException {
 		if(toCopy.isEmpty()) {
 			Log.w(TAG, "copyFiles was called with no files to copy!");
@@ -257,7 +322,7 @@ public class DirUtilities {
 
 		//Since we're copying, we need to create a new file for each of the toCopy files
 		List<Pair<UUID, String>> newFiles = new ArrayList<>();
-		for(TraversalHelper.ListItem item : toCopy) {
+		for(ListItem item : toCopy) {
 			try {
 				UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
 				newFiles.add(new Pair<>(newFileUID, "Copy of "+item.name));

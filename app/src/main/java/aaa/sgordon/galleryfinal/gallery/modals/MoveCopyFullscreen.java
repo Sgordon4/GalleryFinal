@@ -23,6 +23,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
@@ -48,7 +51,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 	private Path currPath;
 	private UUID currDirUID;
 
-	private List<TraversalHelper.ListItem> fullList;
+	private List<ListItem> fullList;
 	private String filterQuery;
 
 	private MaterialToolbar toolbar;
@@ -83,12 +86,14 @@ public class MoveCopyFullscreen extends DialogFragment {
 	}
 
 
+	/*
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		setRetainInstance(true);
 		return super.onCreateDialog(savedInstanceState);
 	}
+	 */
 
 	@Nullable
 	@Override
@@ -193,7 +198,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 		//Update the list itself
 		Thread updateViaTraverse = new Thread(() -> {
-			List<TraversalHelper.ListItem> list = traverseDir(fileUID);
+			List<ListItem> list = traverseDir(fileUID);
 			fullList = list;
 
 			Handler mainHandler = new Handler(getContext().getMainLooper());
@@ -204,7 +209,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 
 
-	private List<TraversalHelper.ListItem> filterList(List<TraversalHelper.ListItem> list) {
+	private List<ListItem> filterList(List<ListItem> list) {
 		return list.stream()
 				.filter(item -> item.name.toLowerCase().contains(filterQuery.toLowerCase()))
 				.collect(Collectors.toList());
@@ -228,20 +233,25 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 
 	@NonNull
-	private List<TraversalHelper.ListItem> traverseDir(UUID dirUID) {
+	private List<ListItem> traverseDir(UUID dirUID) {
 		try {
 			//If the item is a link to a directory, follow that link
 			dirUID = LinkCache.getInstance().resolvePotentialLink(dirUID);
 
 			//Grab the current list of all files in this directory from the system
-			List<TraversalHelper.ListItem> newFileList = TraversalHelper.traverseDir(dirUID);
+			List<ListItem> newFileList = TraversalHelper.traverseDir(dirUID);
+
+			newFileList = newFileList.stream()
+					//Filter out anything that is trashed
+					.filter(item -> !FilenameUtils.getExtension(item.name).startsWith("trashed_"))
+					.collect(Collectors.toList());
 
 			//Filter out anything that isn't a directory, a link to a directory/divider, or a linkEnd
 			newFileList = newFileList.stream()
-					.filter(item -> item.type.equals(TraversalHelper.ListItemType.DIRECTORY)
-							|| item.type.equals(TraversalHelper.ListItemType.LINKDIRECTORY)
-							|| item.type.equals(TraversalHelper.ListItemType.LINKDIVIDER)
-							//|| item.type.equals(TraversalHelper.ListItemType.LINKEND)
+					.filter(item -> item.type.equals(ListItem.ListItemType.DIRECTORY)
+							|| item.type.equals(ListItem.ListItemType.LINKDIRECTORY)
+							|| item.type.equals(ListItem.ListItemType.LINKDIVIDER)
+							//|| item.type.equals(ListItemType.LINKEND)
 					).collect(Collectors.toList());
 
 			return newFileList;
@@ -273,14 +283,14 @@ public class MoveCopyFullscreen extends DialogFragment {
 	//---------------------------------------------------------------------------------------------
 
 	private class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
-		public List<TraversalHelper.ListItem> list;
+		public List<ListItem> list;
 
 		public MCAdapter() {
 			list = new ArrayList<>();
 		}
 
 		@SuppressLint("NotifyDataSetChanged")
-		public void setList(List<TraversalHelper.ListItem> newList) {
+		public void setList(List<ListItem> newList) {
 			list = newList;
 
 			//We want the full dataset to reset since we're changing dirs, even if there are common items
@@ -290,7 +300,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 		@Override
 		public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
-			TraversalHelper.ListItem item = list.get(position);
+			ListItem item = list.get(position);
 
 			holder.bind(item.fileUID, list.get(position).name);
 			holder.itemView.setOnClickListener(view -> {
@@ -316,11 +326,11 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 		@Override
 		public int getItemViewType(int position) {
-			TraversalHelper.ListItem item = list.get(position);
+			ListItem item = list.get(position);
 
-			boolean isEnd = item.type.equals(TraversalHelper.ListItemType.LINKEND);
-			boolean isDirLink = item.type.equals(TraversalHelper.ListItemType.LINKDIRECTORY);
-			boolean isDivLink = item.type.equals(TraversalHelper.ListItemType.LINKDIVIDER);
+			boolean isEnd = item.type.equals(ListItem.ListItemType.LINKEND);
+			boolean isDirLink = item.type.equals(ListItem.ListItemType.LINKDIRECTORY);
+			boolean isDivLink = item.type.equals(ListItem.ListItemType.LINKDIVIDER);
 
 			boolean isDir = item.isDir;
 			boolean isLink = item.isLink;

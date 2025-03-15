@@ -22,11 +22,15 @@ import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
@@ -34,6 +38,7 @@ import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
@@ -120,7 +125,7 @@ public class SelectionSetup {
 			if(menuItem.getItemId() == R.id.select_all) {
 				System.out.println("Select all!");
 				Set<UUID> toSelect = new HashSet<>();
-				for(TraversalHelper.ListItem item : adapter.list) {
+				for(ListItem item : adapter.list) {
 					UUID itemUID = item.fileUID;
 
 					toSelect.add(itemUID);
@@ -162,21 +167,8 @@ public class SelectionSetup {
 
 					System.out.println("Confirmed with destination "+destinationUID);
 
-					//Get the selected items from the viewModel's list and pass them along
-					Set<UUID> selectedItems = new HashSet<>(selectionController.getSelectedList());
-					List<TraversalHelper.ListItem> toMove = new ArrayList<>();
-
-					//Grab the first instance of each selected item in the list
-					List<TraversalHelper.ListItem> currList = dirFragment.dirViewModel.getFilterRegistry().filteredList.getValue();
-					for(int i = 0; i < currList.size(); i++) {
-						UUID itemUID = currList.get(i).fileUID;
-
-						if(selectedItems.contains(itemUID)) {
-							toMove.add(currList.get(i));
-							selectedItems.remove(itemUID);
-						}
-					}
-
+					//Get the selected items
+					List<ListItem> toMove = getSelected(dirFragment, selectionController);
 
 					Thread operation = new Thread(() -> {
 						try {
@@ -194,6 +186,34 @@ public class SelectionSetup {
 					});
 					operation.start();
 				});
+			}
+
+			else if(menuItem.getItemId() == R.id.export) {
+				System.out.println("Export!");
+			}
+
+			else if(menuItem.getItemId() == R.id.trash) {
+				System.out.println("Trash!");
+
+				//Get the selected items
+				List<ListItem> toTrash = getSelected(dirFragment, selectionController);
+
+				//Update each item's name with a 'trashed' suffix
+				String suffix = ".trashed_"+Instant.now().getEpochSecond();
+				List<ListItem> renamed = new ArrayList<>();
+				for(ListItem item : toTrash) {
+					renamed.add(new ListItem.Builder(item)
+							.setName(item.name + suffix)
+							.build());
+				}
+
+				//And 'trash' them
+				Thread trashThread = new Thread(() -> {
+					DirUtilities.renameFiles(renamed);
+				});
+				trashThread.start();
+
+				selectionController.stopSelecting();
 			}
 
 			else if(menuItem.getItemId() == R.id.share) {
@@ -232,19 +252,40 @@ public class SelectionSetup {
 
 
 
+	private static List<ListItem> getSelected(DirFragment dirFragment, SelectionController selectionController) {
+		//Get the selected items from the viewModel's list
+		Set<UUID> selectedItems = new HashSet<>(selectionController.getSelectedList());
+
+		//Grab the first instance of each selected item in the list
+		List<ListItem> selected = new ArrayList<>();
+		List<ListItem> currList = dirFragment.dirViewModel.getFilterRegistry().filteredList.getValue();
+		for(int i = 0; i < currList.size(); i++) {
+			UUID itemUID = currList.get(i).fileUID;
+
+			if(selectedItems.contains(itemUID)) {
+				selected.add(currList.get(i));
+				selectedItems.remove(itemUID);
+			}
+		}
+
+		return selected;
+	}
+
+
+
 	//Unselect any items that are no longer in the list
 	//Note: This is mostly untested
-	public static void deselectAnyRemoved(List<TraversalHelper.ListItem> newList, DirectoryViewModel dirViewModel,
+	public static void deselectAnyRemoved(List<ListItem> newList, DirectoryViewModel dirViewModel,
 										  SelectionController.SelectionCallbacks selectionCallbacks) {
 		//Grab all UUIDs from the full list
 		Set<UUID> inAdapter = new HashSet<>();
-		for(TraversalHelper.ListItem item : dirViewModel.fileList.getValue()) {
+		for(ListItem item : dirViewModel.fileList.getValue()) {
 			inAdapter.add(item.fileUID);
 		}
 
 		//Grab all UUIDs from the new list
 		Set<UUID> inNewList = new HashSet<>();
-		for(TraversalHelper.ListItem item : newList) {
+		for(ListItem item : newList) {
 			inNewList.add(item.fileUID);
 		}
 

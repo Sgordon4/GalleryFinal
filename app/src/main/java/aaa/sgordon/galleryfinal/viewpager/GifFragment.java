@@ -23,6 +23,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
 import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -31,10 +32,10 @@ import pl.droidsonroids.gif.GifImageView;
 
 public class GifFragment extends Fragment {
 	private FragmentViewpagerGifBinding binding;
-	private final TraversalHelper.ListItem item;
+	private final ListItem item;
 	private final UUID fileUID;
 
-	public GifFragment(TraversalHelper.ListItem item) {
+	public GifFragment(ListItem item) {
 		this.item = item;
 		this.fileUID = item.fileUID;
 	}
