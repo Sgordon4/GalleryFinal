@@ -93,15 +93,16 @@ public class TraversalHelper {
 				files.addAll(traverseLink(fileUID, topLink, localVisited, thisFilePath));
 			}
 			catch (FileNotFoundException | ConnectException e) {
-				//If the file isn't found or we just can't reach it, treat it like a normal file
+				//If the file isn't found (file may be local on another device) or we just can't reach it, treat it as unreachable
 				files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, false,
 						ListItem.ListItemType.UNREACHABLE));
 				continue;
 			}
 			catch (ContentsNotFoundException e) {
-				//If we can't find the link's contents, this is an issue, but treat it like a normal file
-				files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, false,
-						ListItem.ListItemType.UNREACHABLE));
+				//If we're here, traverseLink threw this exception
+				//If we can't find the link's contents, this is an issue, link is broken
+				files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, true,
+						ListItem.ListItemType.LINKBROKEN));
 				continue;
 			}
 		}
@@ -148,11 +149,25 @@ public class TraversalHelper {
 
 		//If the target is trashed, we don't want to follow it
 		List<Pair<UUID, String>> dirContents = dirCache.getDirContents(target.getParentUID());
+		boolean exists = false;
 		for(Pair<UUID, String> pair : dirContents) {
-			if(pair.first.equals(target.getFileUID()) && FilenameUtils.getExtension(pair.second).startsWith("trashed_"))
-				return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, true,
-						ListItem.ListItemType.LINKBROKEN));
+			//If we find the targeted file...
+			if(pair.first.equals(target.getFileUID())) {
+				exists = true;
+
+				//...and it's a trashed file, mark as broken
+				if(FilenameUtils.getExtension(pair.second).startsWith("trashed_"))
+					return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, true,
+							ListItem.ListItemType.LINKBROKEN));
+			}
 		}
+
+		//If the targeted file doesn't exist in its parent directory, mark the link as broken
+		if(!exists)
+			return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, true,
+					ListItem.ListItemType.LINKBROKEN));
+
+
 
 		try {
 			HFile fileProps = hAPI.getFileProps(target.getFileUID());
@@ -217,15 +232,20 @@ public class TraversalHelper {
 				return files;
 			}
 		}
-		catch (FileNotFoundException | ConnectException e) {
-			//If the file isn't found or we just can't reach it, skip it
-			return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, false,
-					ListItem.ListItemType.UNREACHABLE));
+		catch (FileNotFoundException e) {
+			//If the target isn't found, mark as unreachable (file may be local on another device)
+			return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, true,
+					ListItem.ListItemType.LINKUNREACHABLE));
+		}
+		catch (ConnectException e) {
+			//If we can't reach the target, mark as unreachable
+			return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, true,
+					ListItem.ListItemType.LINKUNREACHABLE));
 		}
 		catch (ContentsNotFoundException e) {
-			//If we can't find the link's contents, this is an issue, but skip it
-			return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, false,
-					ListItem.ListItemType.UNREACHABLE));
+			//If we can't find the link's contents, this is an issue, link is broken
+			return List.of(new ListItem(currPath, topLink.fileUID, topLink.parentUID, topLink.name, false, true,
+					ListItem.ListItemType.LINKBROKEN));
 		}
 	}
 
