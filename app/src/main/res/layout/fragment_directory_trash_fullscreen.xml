@@ -17,8 +17,15 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/icon_close"
+            app:navigationIcon="@drawable/icon_arrow_back"
             app:menu="@menu/gallery_menu_trash" />
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/selection_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/icon_close"
+            android:visibility="gone" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -34,8 +41,10 @@
             android:layout_weight="1"/>
 
         <FrameLayout
+            android:id="@+id/bottom_bar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:visibility="gone">
 
             <View
                 android:layout_width="match_parent"

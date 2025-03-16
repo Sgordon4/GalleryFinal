@@ -185,7 +185,7 @@ public class DirFragment extends Fragment {
 
 			else if (item.getItemId() == R.id.trashed) {
 				System.out.println("Clicked trashed");
-				TrashFullscreen.launch(this, dirViewModel.getDirUID(), null);
+				TrashFullscreen.launch(this, dirViewModel.getDirUID());
 			}
 
 			else if (item.getItemId() == R.id.settings) {

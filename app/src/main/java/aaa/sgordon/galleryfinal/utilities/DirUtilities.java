@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -173,6 +174,57 @@ public class DirUtilities {
 		}
 
 		return true;
+	}
+
+
+
+
+	public static boolean deleteFiles(List<ListItem> toDelete) {
+
+		//This one's a bit tricky, since we need to delete files in a tree from leaves to root
+		//If we delete a root file first, we can no longer delete its children
+
+		Map<UUID, List<UUID>> parentMap = new HashMap<>();
+		Map<UUID, List<UUID>> childMap = new HashMap<>();
+
+		for(ListItem item : toDelete) {
+			try {
+				UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
+
+				parentMap.putIfAbsent(parentUID, new ArrayList<>());
+				parentMap.get(parentUID).add(item.fileUID);
+
+				childMap.putIfAbsent(item.fileUID, new ArrayList<>());
+				childMap.get(item.fileUID).add(parentUID);
+			} catch (FileNotFoundException e) {
+				//Skip the file if the parent is not found
+			}
+		}
+
+
+
+		LinkedHashMap<UUID, List<UUID>> deletionOrder = new LinkedHashMap<>();
+
+		while (!childMap.isEmpty()) {
+			Iterator<UUID> childIterator = childMap.keySet().iterator();
+			while (childIterator.hasNext()) {
+				UUID nextFile = childIterator.next();
+
+				//If this file has children, don't delete it yet
+				if(parentMap.containsKey(nextFile))
+					continue;
+
+
+			}
+		}
+
+
+
+
+
+
+
+		throw new RuntimeException("Stub!");
 	}
 
 

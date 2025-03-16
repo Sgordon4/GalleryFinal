@@ -85,7 +85,8 @@ public class AdapterTouchSetup {
 					//If we're selecting, select/deselect the item
 					if(selectionController.isSelecting())
 						selectionController.toggleSelectItem(fileUID);
-						//If we're not selecting, launch a new fragment
+
+					//If we're not selecting, launch a new fragment
 					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
 						int pos = holder.getAdapterPosition();
 
