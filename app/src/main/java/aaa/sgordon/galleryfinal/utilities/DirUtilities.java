@@ -174,6 +174,8 @@ public class DirUtilities {
 
 
 	//Returns a list of files that were unable to be deleted, empty if all were successfully removed
+	//TODO This doesn't allow deleting files from a directory listing if they aren't in our db (e.g. local on another device)
+	// How would we even do that? Like, how do we notify the server this file should be deleted? Just orphan it?
 	public static List<ListItem> deleteFiles(List<ListItem> toDelete) {
 		HybridAPI hAPI = HybridAPI.getInstance();
 		List<ListItem> failed = new ArrayList<>();
