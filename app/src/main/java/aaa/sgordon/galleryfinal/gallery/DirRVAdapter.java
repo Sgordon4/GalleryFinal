@@ -81,7 +81,8 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name);
+				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name) &&
+						list.get(oldItemPosition).type == newList.get(newItemPosition).type;
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator
