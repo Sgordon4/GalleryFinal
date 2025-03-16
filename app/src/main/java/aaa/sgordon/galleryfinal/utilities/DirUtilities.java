@@ -207,15 +207,6 @@ public class DirUtilities {
 				parentMap.putIfAbsent(parentUID, new HashSet<>());
 				parentMap.get(parentUID).add(item);
 
-				//Delete the file
-				UUID fileUID = item.fileUID;
-				try {
-					hAPI.lockLocal(fileUID);
-					hAPI.deleteFile(fileUID);
-				} finally {
-					hAPI.unlockLocal(fileUID);
-				}
-
 			} catch (FileNotFoundException e) {
 				//If this file doesn't exist, skip it
 			}
@@ -246,10 +237,25 @@ public class DirUtilities {
 				//If the directory doesn't exist, our job is technically done
 			} catch (ContentsNotFoundException | ConnectException e) {
 				//If we can't reach this directory, skip it, and mark the delete as a fail
-				failed.addAll(parentMap.get(parentUID));
+				toDelete.removeAll(filesToDelete);
+				failed.addAll(filesToDelete);
 			}
 			finally {
 				hAPI.unlockLocal(parentUID);
+			}
+		}
+
+		//For the remaining files, delete them
+		for(ListItem item : toDelete) {
+			//Delete the file
+			UUID fileUID = item.fileUID;
+			try {
+				hAPI.lockLocal(fileUID);
+				hAPI.deleteFile(fileUID);
+			} catch (FileNotFoundException e) {
+				//If the file is already deleted, our job is technically done
+			} finally {
+				hAPI.unlockLocal(fileUID);
 			}
 		}
 
