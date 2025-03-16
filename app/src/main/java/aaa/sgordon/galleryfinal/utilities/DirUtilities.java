@@ -15,14 +15,10 @@ import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +26,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -117,6 +112,7 @@ public class DirUtilities {
 	//Each file in renamed should have "name" updated before passing to this function
 	//Returns true if all renames were successful, false if not
 	public static boolean renameFiles(List<ListItem> renamed) {
+		HybridAPI hAPI = HybridAPI.getInstance();
 
 		//Map each item to its parent directory for ease of access
 		Map<UUID, Map<UUID, String>> dirMap = new HashMap<>();
@@ -138,7 +134,6 @@ public class DirUtilities {
 			UUID dirUID = entry.getKey();
 			Map<UUID, String> fileUIDs = entry.getValue();
 
-			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
 				hAPI.lockLocal(dirUID);
 				HFile fileProps = hAPI.getFileProps(dirUID);
@@ -151,7 +146,6 @@ public class DirUtilities {
 					//If the file is in the list of files to rename, rename it
 					if(fileUIDs.containsKey(file.first)) {
 						dirList.set(i, new Pair<>(file.first, fileUIDs.get(file.first)));
-						break;
 					}
 				}
 
@@ -179,53 +173,123 @@ public class DirUtilities {
 
 
 
-	public static boolean deleteFiles(List<ListItem> toDelete) {
+	//Returns a list of files that were unable to be deleted, empty if all were successfully removed
+	public static List<ListItem> deleteFiles(List<ListItem> toDelete) {
+		HybridAPI hAPI = HybridAPI.getInstance();
+		List<ListItem> failed = new ArrayList<>();
 
-		//This one's a bit tricky, since we need to delete files in a tree from leaves to root
-		//If we delete a root file first, we can no longer delete its children
+		//For each item to delete...
+		Iterator<ListItem> iterator = toDelete.iterator();
+		while (iterator.hasNext()) {
+			ListItem item = iterator.next();
+			if(!item.isDir || item.isLink) continue;
 
-		Map<UUID, List<UUID>> parentMap = new HashMap<>();
-		Map<UUID, List<UUID>> childMap = new HashMap<>();
+			//If the file is a directory, recursively delete all files within
+			try {
+				deleteDirContents(item.fileUID);
+			} catch (ContentsNotFoundException | ConnectException e) {
+				//If we can't reach this file, exclude this file from the list since we can't delete it
+				iterator.remove();
+				failed.add(item);
+			}
+		}
 
+
+
+		//For each item to delete
+		Map<UUID, Set<ListItem>> parentMap = new HashMap<>();
 		for(ListItem item : toDelete) {
 			try {
+				//In case this is a link to a directory, get the actual directory UID it points to
 				UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
 
-				parentMap.putIfAbsent(parentUID, new ArrayList<>());
-				parentMap.get(parentUID).add(item.fileUID);
+				//Group the files by parent
+				parentMap.putIfAbsent(parentUID, new HashSet<>());
+				parentMap.get(parentUID).add(item);
 
-				childMap.putIfAbsent(item.fileUID, new ArrayList<>());
-				childMap.get(item.fileUID).add(parentUID);
+				//Delete the file
+				UUID fileUID = item.fileUID;
+				try {
+					hAPI.lockLocal(fileUID);
+					hAPI.deleteFile(fileUID);
+				} finally {
+					hAPI.unlockLocal(fileUID);
+				}
+
 			} catch (FileNotFoundException e) {
-				//Skip the file if the parent is not found
+				//If this file doesn't exist, skip it
 			}
 		}
 
 
+		//For each parent directory with files to delete...
+		for(Map.Entry<UUID, Set<ListItem>> entry : parentMap.entrySet()) {
+			UUID parentUID = entry.getKey();
+			Set<ListItem> filesToDelete = entry.getValue();
+			Set<UUID> UUIDsToDelete = filesToDelete.stream().map(item -> item.fileUID).collect(Collectors.toSet());
 
-		LinkedHashMap<UUID, List<UUID>> deletionOrder = new LinkedHashMap<>();
+			try {
+				hAPI.lockLocal(parentUID);
 
-		while (!childMap.isEmpty()) {
-			Iterator<UUID> childIterator = childMap.keySet().iterator();
-			while (childIterator.hasNext()) {
-				UUID nextFile = childIterator.next();
+				HFile destinationProps = hAPI.getFileProps(parentUID);
+				List<Pair<UUID, String>> dirList = readDir(parentUID);
 
-				//If this file has children, don't delete it yet
-				if(parentMap.containsKey(nextFile))
-					continue;
+				//Remove all file entries in this dir for files that were marked for deletion
+				dirList.removeIf(item -> UUIDsToDelete.contains(item.first));
 
-
+				//Write the list back to the directory
+				List<String> newLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+						.collect(Collectors.toList());
+				byte[] newContent = String.join("\n", newLines).getBytes();
+				hAPI.writeFile(parentUID, newContent, destinationProps.checksum);
+			} catch (FileNotFoundException e) {
+				//If the directory doesn't exist, our job is technically done
+			} catch (ContentsNotFoundException | ConnectException e) {
+				//If we can't reach this directory, skip it, and mark the delete as a fail
+				failed.addAll(parentMap.get(parentUID));
+			}
+			finally {
+				hAPI.unlockLocal(parentUID);
 			}
 		}
 
-
-
-
-
-
-
-		throw new RuntimeException("Stub!");
+		return failed;
 	}
+
+
+	private static void deleteDirContents(UUID dirUID) throws ContentsNotFoundException, ConnectException {
+		HybridAPI hAPI = HybridAPI.getInstance();
+		try {
+			//Get the contents of the directory
+			List<Pair<UUID, String>> dirList = readDir(dirUID);
+
+			//For each item in the directory...
+			for(Pair<UUID, String> entry : dirList) {
+				try {
+					//If the file is a directory, delete its contents
+					boolean isDir = hAPI.getFileProps(entry.first).isdir;
+					if(isDir) deleteDirContents(entry.first);
+
+					//Delete the file
+					hAPI.lockLocal(entry.first);
+					hAPI.deleteFile(entry.first);
+				} catch (FileNotFoundException e) {
+					//If the file doesn't exist, our job is technically done
+				} finally {
+					hAPI.unlockLocal(entry.first);
+				}
+			}
+
+		} catch (FileNotFoundException e) {
+			//If the directory doesn't exist, our job is technically done
+		}
+	}
+
+
+
+
+
+
 
 
 

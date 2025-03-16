@@ -165,6 +165,17 @@ public class DirectoryViewModel extends ViewModel {
 			//Grab the current list of all files in this directory from the system
 			List<ListItem> newFileList = TraversalHelper.traverseDir(currDirUID);
 
+
+			/**/
+			if(!printed) {
+				System.out.println("NewFiles: ");
+				for(ListItem item : newFileList)
+					System.out.println(item.filePath+" "+item.type+" "+item.name);
+				//printed = true;
+			}
+			/**/
+
+
 			newFileList = newFileList.stream()
 					//Filter out anything that is trashed
 					.filter(item -> !FilenameUtils.getExtension(item.name).startsWith("trashed_"))
@@ -177,15 +188,6 @@ public class DirectoryViewModel extends ViewModel {
 			//Grab all tags for each fileUID
 			//TODO Expand this to include a list of files per tag
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
-
-			/*
-			if(!printed) {
-				System.out.println("NewFiles: ");
-				for(ListItem item : newFileList)
-					System.out.println(item.filePath+" "+item.name);
-				printed = true;
-			}
-			/**/
 
 			fileList.postValue(newFileList);
 			fileTags.postValue(newTags);

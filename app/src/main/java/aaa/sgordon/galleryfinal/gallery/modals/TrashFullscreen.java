@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -109,9 +111,15 @@ public class TrashFullscreen extends DialogFragment {
 			//Get the selected items
 			List<ListItem> toDelete = getSelected();
 
+			selectionController.stopSelecting();
+
 			//And full-delete them
 			Thread trashThread = new Thread(() -> {
-				DirUtilities.deleteFiles(toDelete);
+				List<ListItem> failed = DirUtilities.deleteFiles(toDelete);
+				if(!failed.isEmpty()) {
+					Toast.makeText(getContext(), failed.size()+" files were unable to be deleted!", Toast.LENGTH_SHORT).show();
+				}
+				updateList();
 			});
 			trashThread.start();
 		});
@@ -127,9 +135,12 @@ public class TrashFullscreen extends DialogFragment {
 						.build());
 			}
 
+			selectionController.stopSelecting();
+
 			//And 'restore' them
 			Thread trashThread = new Thread(() -> {
 				DirUtilities.renameFiles(renamed);
+				updateList();
 			});
 			trashThread.start();
 		});
@@ -239,6 +250,10 @@ public class TrashFullscreen extends DialogFragment {
 	private void updateList() {
 		Thread traverse = new Thread(() -> {
 			List<ListItem> list = traverseDir(viewModel.dirUID);
+
+			//Remove duplicate items from the list
+			Set<UUID> duplicate = new HashSet<>();
+			list.removeIf(item -> !duplicate.add(item.fileUID));
 
 			Handler mainHandler = new Handler(getContext().getMainLooper());
 			mainHandler.post(() -> adapter.setList(list));

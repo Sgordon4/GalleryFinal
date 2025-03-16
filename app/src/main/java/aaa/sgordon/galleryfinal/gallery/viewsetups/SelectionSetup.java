@@ -198,6 +198,10 @@ public class SelectionSetup {
 				//Get the selected items
 				List<ListItem> toTrash = getSelected(dirFragment, selectionController);
 
+				System.out.println("Selected items: ");
+				for(ListItem item : toTrash)
+					System.out.println(item.name);
+
 				//Update each item's name with a 'trashed' suffix
 				String suffix = ".trashed_"+Instant.now().getEpochSecond();
 				List<ListItem> renamed = new ArrayList<>();
@@ -206,6 +210,10 @@ public class SelectionSetup {
 							.setName(item.name + suffix)
 							.build());
 				}
+
+				System.out.println("Remamed items: ");
+				for(ListItem item : renamed)
+					System.out.println(item.name);
 
 				//And 'trash' them
 				Thread trashThread = new Thread(() -> {
