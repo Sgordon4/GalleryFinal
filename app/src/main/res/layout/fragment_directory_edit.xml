@@ -18,17 +18,6 @@
         android:importantForAutofill="no"
         android:hint="Filename..." />
 
-
-    <EditText
-        android:id="@+id/color"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="text"
-        android:maxLines="1"
-        android:importantForAutofill="no"
-        android:hint="Color..." />
-
-
     <EditText
         android:id="@+id/description"
         android:layout_width="match_parent"
@@ -37,5 +26,32 @@
         android:maxLines="10"
         android:importantForAutofill="no"
         android:hint="Description..." />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.github.naz013.colorslider.ColorSlider
+            android:id="@+id/color_slider"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            app:cs_colors="@array/modal_color_picker"
+            android:background="@color/dark_gray"/>
+
+
+        <View
+            android:id="@+id/color_picker_button"
+            android:layout_width="66dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="16dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:contentDescription="Custom color"
+            android:background="@null" />
+
+    </LinearLayout>
 
 </LinearLayout>

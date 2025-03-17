@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery.modals;
 
 import android.app.Dialog;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -14,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
+import com.github.naz013.colorslider.ColorSlider;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -37,14 +39,16 @@ import aaa.sgordon.galleryfinal.utilities.Utilities;
 public class EditItemModal extends DialogFragment {
 	private final DirFragment dirFragment;
 
-	private EditProps props;
+	private final EditProps props;
+	private int color;
 
 	private EditText name;
-	private EditText color;
 	private EditText description;
+	private ColorSlider colorSlider;
+	private View colorPickerButton;
 
-	private final Integer defaultColor = Color.GRAY;
-	private final String defaultDescription = "";
+	private static final Integer defaultColor = Color.GRAY;
+	private static final String defaultDescription = "";
 
 
 	public static class EditProps {
@@ -75,47 +79,83 @@ public class EditItemModal extends DialogFragment {
 	private EditItemModal(@NonNull DirFragment fragment, EditProps props) {
 		this.dirFragment = fragment;
 		this.props = props;
+
+		color = props.color != null ? props.color : defaultColor;
 	}
 
 
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
 		builder.setView(R.layout.fragment_directory_edit);
 		builder.setTitle("Edit Item");
 
-		LayoutInflater inflater = LayoutInflater.from(getContext());
+		LayoutInflater inflater = getLayoutInflater();
 		View view = inflater.inflate(R.layout.fragment_directory_edit, null);
 		builder.setView(view);
 
 
 
 		name = view.findViewById(R.id.name);
-		color = view.findViewById(R.id.color);
 		description = view.findViewById(R.id.description);
+		colorSlider = view.findViewById(R.id.color_slider);
+		colorPickerButton = view.findViewById(R.id.color_picker_button);
 
-
-		name.setText(props.fileName);
 
 		boolean isMedia = Utilities.isFileMedia(props.fileName);
-		System.out.println("IsMedia: "+isMedia);
 		if(isMedia) {
-			color.setVisibility(View.GONE);
+			colorSlider.setVisibility(View.GONE);
+			colorPickerButton.setVisibility(View.GONE);
 			description.setVisibility(View.VISIBLE);
 		} else {
-			color.setVisibility(View.VISIBLE);
+			colorSlider.setVisibility(View.VISIBLE);
+			colorPickerButton.setVisibility(View.VISIBLE);
 			description.setVisibility(View.GONE);
 		}
 
 
-		if(props.color != null)
-			color.setText(String.valueOf(props.color));
+		name.setText(props.fileName);
+
 		if(props.description != null)
 			description.setText(props.description);
 
 
 
+
+
+		//Set the background color of the button to the current color
+		GradientDrawable drawable = new GradientDrawable();
+		drawable.setShape(GradientDrawable.RECTANGLE);
+		drawable.setColor(color);
+		drawable.setStroke(4, Color.DKGRAY);
+		colorPickerButton.setBackground(drawable);
+
+
+
+		colorSlider.setListener((position, newColor) -> {
+			color =  newColor | 0xFF000000;		//Set alpha to 100%
+
+			//Change the color picker button's background color
+			GradientDrawable background = (GradientDrawable) colorPickerButton.getBackground();
+			background.setColor(color);
+			colorPickerButton.setBackground(background);
+		});
+
+
+		colorPickerButton.setOnClickListener(v -> {
+			ColorPickerModal.launch(dirFragment, color, newColor -> {
+				color =  newColor | 0xFF000000;		//Set alpha to 100%
+
+				//Change the color picker button's background color
+				GradientDrawable background = (GradientDrawable) colorPickerButton.getBackground();
+				background.setColor(color);
+				colorPickerButton.setBackground(background);
+
+				//Unselect the slider's currently selected item
+				colorSlider.setSelection(-1);
+			});
+		});
 
 
 
@@ -141,9 +181,14 @@ public class EditItemModal extends DialogFragment {
 	}
 
 
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+	}
+
 	private void commitProps() {
 		//Grab the current properties, setting them to null if they are default
-		Integer newColor = color.getText().toString().isEmpty() ? defaultColor : Integer.parseInt(color.getText().toString());
+		Integer newColor = color;
 		if(newColor.equals(defaultColor))
 			newColor = null;
 
@@ -152,15 +197,15 @@ public class EditItemModal extends DialogFragment {
 			newDescription = null;
 
 
-		final Integer fnewColor = newColor;
-		final String fnewDescription = newDescription;
+		final Integer fNewColor = newColor;
+		final String fNewDescription = newDescription;
 
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 
 
 
-			if(!Objects.equals(props.color, fnewColor) || !Objects.equals(props.description, fnewDescription)) {
+			if(!Objects.equals(props.color, fNewColor) || !Objects.equals(props.description, fNewDescription)) {
 				//Update the file attributes
 				try {
 					hAPI.lockLocal(props.fileUID);
@@ -168,10 +213,18 @@ public class EditItemModal extends DialogFragment {
 					HFile fileProps = hAPI.getFileProps(props.fileUID);
 
 					JsonObject attributes = fileProps.userattr;
-					if(!Objects.equals(props.color, fnewColor))
-						attributes.addProperty("color", Integer.parseInt(color.getText().toString()));
-					if(!Objects.equals(props.description, fnewDescription))
-						attributes.addProperty("description", description.getText().toString());
+					if(!Objects.equals(props.color, fNewColor)) {
+						if(fNewColor == null)
+							attributes.remove("color");
+						else
+							attributes.addProperty("color", fNewColor);
+					}
+					if(!Objects.equals(props.description, fNewDescription)) {
+						if(fNewDescription == null)
+							attributes.remove("description");
+						else
+							attributes.addProperty("description", fNewDescription);
+					}
 
 					hAPI.setAttributes(props.fileUID, attributes, fileProps.attrhash);
 				}
@@ -195,22 +248,15 @@ public class EditItemModal extends DialogFragment {
 			if(!Objects.equals(props.fileName, newFilename)) {
 				try {
 					//DirUID could be a link to a directory, we need the directory itself
-					//TODO Pretty sure this will break
 					UUID dirUID = LinkCache.getInstance().resolvePotentialLink(props.dirUID);
-					if(dirUID == null) {
-						Toast.makeText(getContext(), "Cannot rename, broken link!", Toast.LENGTH_SHORT).show();
-						return;
-					}
 
 					DirUtilities.renameFile(props.fileUID, dirUID, newFilename);
 				} catch (ContentsNotFoundException e) {
 					throw new RuntimeException(e);
 				} catch (FileNotFoundException e) {
 					Toast.makeText(getContext(), "Cannot rename, file not found!", Toast.LENGTH_SHORT).show();
-					return;
 				} catch (ConnectException e) {
 					Toast.makeText(getContext(), "Could not connect, rename failed!", Toast.LENGTH_SHORT).show();
-					return;
 				}
 			}
 		});
@@ -267,11 +313,11 @@ public class EditItemModal extends DialogFragment {
 
 
 				//Launch the edit modal
-				Handler mainHandler = new Handler(dirFragment.getContext().getMainLooper());
+				Handler mainHandler = new Handler(dirFragment.requireContext().getMainLooper());
 				mainHandler.post(() -> EditItemModal.launch(dirFragment, props));
 
-			} catch (Exception e) {
-
+			} catch (FileNotFoundException e) {
+				Toast.makeText(dirFragment.getContext(), "Cannot edit, file not found!", Toast.LENGTH_SHORT).show();
 			}
 		});
 		thread.start();
