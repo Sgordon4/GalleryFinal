@@ -82,7 +82,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
 				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name) &&
-						list.get(oldItemPosition).type == newList.get(newItemPosition).type;
+						list.get(oldItemPosition).filePath.equals(newList.get(newItemPosition).filePath) &&
+						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type) &&
+						list.get(oldItemPosition).attr.equals(newList.get(newItemPosition).attr);
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator
@@ -105,7 +107,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
 		UUID fileUID = item.fileUID;
-		holder.bind(fileUID, list.get(position).name);
+		holder.bind(list.get(position));
 
 
 		holder.itemView.setSelected( touchCallback.isItemSelected(fileUID) );

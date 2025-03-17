@@ -132,7 +132,7 @@ public class EditItemModal extends DialogFragment {
 		colorPickerButton.setBackground(drawable);
 
 
-
+		colorSlider.setSelection(-1);
 		colorSlider.setListener((position, newColor) -> {
 			color =  newColor | 0xFF000000;		//Set alpha to 100%
 

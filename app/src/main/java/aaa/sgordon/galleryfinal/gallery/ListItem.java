@@ -1,5 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery;
 
+import com.google.gson.JsonObject;
+
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -10,6 +12,7 @@ public class ListItem {
 	public final Path filePath;
 	public final boolean isDir;
 	public final boolean isLink;
+	public final JsonObject attr;
 	public final ListItemType type;
 
 	public enum ListItemType {
@@ -27,13 +30,15 @@ public class ListItem {
 	}
 	
 
-	public ListItem(Path filePath, UUID fileUID, UUID parentUID, String name, boolean isDir, boolean isLink, ListItemType type) {
+	public ListItem(Path filePath, UUID fileUID, UUID parentUID, String name,
+					boolean isDir, boolean isLink, JsonObject attr, ListItemType type) {
 		this.fileUID = fileUID;
 		this.parentUID = parentUID;
 		this.name = name;
 		this.filePath = filePath;
 		this.isDir = isDir;
 		this.isLink = isLink;
+		this.attr = attr;
 		this.type = type;
 	}
 
@@ -58,6 +63,7 @@ public class ListItem {
 		private Path filePath;
 		private boolean isDir;
 		private boolean isLink;
+		private JsonObject attr;
 		private ListItemType type;
 
 		public Builder() {}
@@ -68,6 +74,7 @@ public class ListItem {
 			this.filePath = item.filePath;
 			this.isDir = item.isDir;
 			this.isLink = item.isLink;
+			this.attr = item.attr;
 			this.type = item.type;
 		}
 
@@ -95,13 +102,17 @@ public class ListItem {
 			this.isLink = isLink;
 			return this;
 		}
+		public Builder setAttr(JsonObject attr) {
+			this.attr = attr;
+			return this;
+		}
 		public Builder setType(ListItemType type) {
 			this.type = type;
 			return this;
 		}
 
 		public ListItem build() {
-			return new ListItem(filePath, fileUID, parentUID, name, isDir, isLink, type);
+			return new ListItem(filePath, fileUID, parentUID, name, isDir, isLink, attr, type);
 		}
 	}
 }

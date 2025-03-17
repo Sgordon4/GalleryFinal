@@ -1,12 +1,21 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
+import android.content.Context;
+import android.content.res.TypedArray;
+import android.graphics.Color;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import org.apache.commons.io.FilenameUtils;
 
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class UnknownViewHolder extends BaseViewHolder {
 	public View color;
@@ -22,9 +31,27 @@ public class UnknownViewHolder extends BaseViewHolder {
 	}
 
 	@Override
-	public void bind(UUID fileUID, String fileName) {
-		super.bind(fileUID, fileName);
+	public void bind(ListItem listItem) {
+		super.bind(listItem);
 
-		name.setText(this.fileName);
+		String fileName = FilenameUtils.removeExtension(listItem.name);
+		name.setText(fileName);
+
+		System.out.println(name.getTextColors());
+		//ColorOnSurface
+
+
+		if(listItem.attr.has("color"))
+			color.setBackgroundColor(listItem.attr.get("color").getAsInt());
+		else {
+			TypedValue typedValue = new TypedValue();
+
+			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorBackgroundFloating , typedValue, true)) {
+				int defaultBackgroundColor = typedValue.data;
+				color.setBackgroundColor(defaultBackgroundColor);
+			} else {
+				color.setBackgroundColor(Color.GRAY);
+			}
+		}
 	}
 }

@@ -176,9 +176,10 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
 		Path newPath = destination.resolve(draggedItem.filePath.getFileName());
-		ListItem updatedItem = new ListItem(newPath, draggedItem.fileUID, draggedItem.parentUID,
-				draggedItem.name+" ", 	//Add a space to force a DiffUtil update
-				draggedItem.isDir, draggedItem.isLink, draggedItem.type);
+		ListItem updatedItem = new ListItem.Builder(draggedItem)
+				.setFilePath(newPath)
+				.setName(draggedItem.name+" ")	//Add a space to force a DiffUtil update
+				.build();
 
 		if(!newPath.equals(draggedItem.filePath))
 			adapter.list.set(draggedItemPos, updatedItem);

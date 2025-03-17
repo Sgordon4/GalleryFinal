@@ -302,7 +302,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 		public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
 			ListItem item = list.get(position);
 
-			holder.bind(item.fileUID, list.get(position).name);
+			holder.bind(list.get(position));
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
 					if(item.isLink) {

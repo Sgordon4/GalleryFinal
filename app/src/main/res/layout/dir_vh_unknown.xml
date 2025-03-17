@@ -41,7 +41,7 @@
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
 
-            android:background="@color/white_overlay"
+            android:background="?attr/colorSurfaceVariant"
             android:text="Sample Title"
             android:gravity="center_vertical"
             android:textSize="16sp"

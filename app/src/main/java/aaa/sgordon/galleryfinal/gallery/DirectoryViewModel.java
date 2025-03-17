@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.gson.JsonObject;
+
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.FileNotFoundException;
@@ -130,12 +132,41 @@ public class DirectoryViewModel extends ViewModel {
 		 */
 
 		attrListener = uuid -> {
-			//Don't even check if this update affects one of our files, just refresh things idc
-			//90% chance it does anyway
 			List<ListItem> items = excludeLinkEnds(fileList.getValue());
-			List<UUID> fileUIDs = getUUIDsFromPaths(items);
-			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
-			fileTags.postValue(newTags);
+			List<UUID> fileUIDs = getUUIDsFromItems(items);
+
+			//If one of our files changed, update its attributes
+			if(fileUIDs.contains(uuid)) {
+
+				//Update the tags
+				Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
+				fileTags.postValue(newTags);
+
+
+
+				try {
+					//Grab the new attributes from the repository
+					JsonObject newAttr = attrCache.getAttr(uuid);
+
+					//For each file in the fileList...
+					List<ListItem> updatedList = fileList.getValue();
+					for(int i = 0; i < updatedList.size(); i++) {
+						ListItem item = updatedList.get(i);
+
+						//If the file has an attribute update...
+						if(item.fileUID.equals(uuid)) {
+							//Replace the list item with a new one, containing the updated attributes
+							updatedList.set(i, new ListItem.Builder(item).setAttr(newAttr).build());
+						}
+					}
+
+					//Update the livedata
+					fileList.postValue(updatedList);
+				}
+				catch (FileNotFoundException e) {
+					//Skip updating the file if we can't find it
+				}
+			}
 		};
 		attrCache.addListener(attrListener);
 
@@ -183,7 +214,7 @@ public class DirectoryViewModel extends ViewModel {
 
 			//Grab the UUIDs of all the files in the new list for use with tagging
 			//Don't include link ends, we only consider their parents
-			List<UUID> fileUIDs = getUUIDsFromPaths( excludeLinkEnds(newFileList) );
+			List<UUID> fileUIDs = getUUIDsFromItems( excludeLinkEnds(newFileList) );
 
 			//Grab all tags for each fileUID
 			//TODO Expand this to include a list of files per tag
@@ -204,7 +235,7 @@ public class DirectoryViewModel extends ViewModel {
 				.filter(item -> !LinkCache.isLinkEnd(item))
 				.collect(Collectors.toList());
 	}
-	private List<UUID> getUUIDsFromPaths(List<ListItem> fileList) {
+	private List<UUID> getUUIDsFromItems(List<ListItem> fileList) {
 		return fileList.stream().map(item -> item.fileUID).collect(Collectors.toList());
 	}
 

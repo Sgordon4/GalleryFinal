@@ -51,9 +51,8 @@ public class ReorderSetup {
 					UUID destinationUID = UUID.fromString(destination.getFileName().toString());
 
 					System.out.println("Reordering: ");
-					System.out.println(destination);
-					System.out.println(destinationUID);
-					System.out.println(nextItem);
+					System.out.println("Dest: "+destinationUID);
+					System.out.println("Next: "+nextItem);
 
 
 					UUID nextItemUID = null;

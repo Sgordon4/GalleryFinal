@@ -12,6 +12,7 @@ import java.net.ConnectException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
@@ -25,8 +26,8 @@ public class VideoViewHolder extends BaseViewHolder {
 	}
 
 	@Override
-	public void bind(UUID fileUID, String fileName) {
-		super.bind(fileUID, fileName);
+	public void bind(ListItem listItem) {
+		super.bind(listItem);
 
 		//We can't call getFileContent without a thread, so just Load a placeholder here
 		Glide.with(image.getContext())
@@ -37,7 +38,7 @@ public class VideoViewHolder extends BaseViewHolder {
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
-				Uri content = hAPI.getFileContent(fileUID).first;
+				Uri content = hAPI.getFileContent(listItem.fileUID).first;
 
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() ->

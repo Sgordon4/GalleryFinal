@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
+import android.graphics.Color;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -9,23 +10,20 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.util.UUID;
 
+import aaa.sgordon.galleryfinal.gallery.ListItem;
+
 public class BaseViewHolder extends RecyclerView.ViewHolder {
-	protected UUID fileUID;
-	protected String fileName;
+	protected ListItem listItem;
 
 	public BaseViewHolder(@NonNull View itemView) {
 		super(itemView);
 	}
 
-	public UUID getFileUID() {
-		return fileUID;
-	}
-	public String getFileName() {
-		return fileName;
+	public ListItem getListItem() {
+		return listItem;
 	}
 
-	public void bind(UUID fileUID, String fileName) {
-		this.fileUID = fileUID;
-		this.fileName = fileName;
+	public void bind(ListItem listItem) {
+		this.listItem = listItem;
 	}
 }

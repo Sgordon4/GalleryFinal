@@ -4,17 +4,21 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Pair;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -342,6 +346,56 @@ public class DirFragment extends Fragment {
 				else if(dy < 0 && !fab.isShown()) fab.show();
 			}
 		});
+
+
+
+
+
+		Context context = requireContext();
+
+		int[] attrs = new int[]{
+				com.google.android.material.R.attr.colorSurface,
+				com.google.android.material.R.attr.colorSurfaceVariant,
+				com.google.android.material.R.attr.colorBackgroundFloating,
+				com.google.android.material.R.attr.colorOnSurface,
+				com.google.android.material.R.attr.colorPrimaryContainer,
+				android.R.attr.textColorPrimary
+		};
+
+		String[] attrNames = {
+				"colorSurface",
+				"colorSurfaceVariant",
+				"colorBackgroundFloating",
+				"colorOnSurface",
+				"colorPrimaryContainer",
+				"textColorPrimary"
+		};
+
+		LinearLayout overlay = new LinearLayout(context);
+		overlay.setOrientation(LinearLayout.VERTICAL);
+		overlay.setBackgroundColor(Color.BLACK);
+		overlay.setPadding(20, 20, 20, 20);
+		overlay.setAlpha(0.8f);
+
+		TypedValue typedValue = new TypedValue();
+		for (int i = 0; i < attrs.length; i++) {
+			if (context.getTheme().resolveAttribute(attrs[i], typedValue, true)) {
+				int color = typedValue.data;
+
+				TextView textView = new TextView(context);
+				textView.setText(attrNames[i] + ": #" + Integer.toHexString(color));
+				textView.setBackgroundColor(color);
+				textView.setTextColor((Color.luminance(color) > 0.5) ? Color.BLACK : Color.WHITE);
+				textView.setPadding(16, 8, 16, 8);
+
+				overlay.addView(textView);
+			}
+		}
+
+		// Add overlay to root layout
+		((ViewGroup) view).addView(overlay, new ViewGroup.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
 	}
 
 
