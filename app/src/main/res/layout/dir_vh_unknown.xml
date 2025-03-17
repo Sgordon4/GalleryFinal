@@ -42,7 +42,7 @@
             android:paddingEnd="8dp"
 
             android:background="?attr/colorSurfaceVariant"
-            android:text="Sample Title"
+            android:text="Unknown"
             android:gravity="center_vertical"
             android:textSize="16sp"
             android:ellipsize="middle"

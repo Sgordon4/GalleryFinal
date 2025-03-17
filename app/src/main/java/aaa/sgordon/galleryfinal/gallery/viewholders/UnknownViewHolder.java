@@ -37,15 +37,13 @@ public class UnknownViewHolder extends BaseViewHolder {
 		String fileName = FilenameUtils.removeExtension(listItem.name);
 		name.setText(fileName);
 
-		System.out.println(name.getTextColors());
-		//ColorOnSurface
 
-
-		if(listItem.attr.has("color"))
+		if(listItem.attr.has("color")) {
 			color.setBackgroundColor(listItem.attr.get("color").getAsInt());
-		else {
+		} else {
 			TypedValue typedValue = new TypedValue();
 
+			//Get the default card background color from the theme
 			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorBackgroundFloating , typedValue, true)) {
 				int defaultBackgroundColor = typedValue.data;
 				color.setBackgroundColor(defaultBackgroundColor);

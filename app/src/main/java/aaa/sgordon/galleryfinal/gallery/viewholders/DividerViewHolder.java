@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 
@@ -30,15 +31,17 @@ public class DividerViewHolder extends BaseViewHolder {
 		String fileName = FilenameUtils.removeExtension(listItem.name);
 		name.setText(fileName);
 
-		//Get the default background color from the theme
-		try (TypedArray typedArray = itemView.getContext().getTheme()
-				.obtainStyledAttributes(new int[]{android.R.attr.windowBackground})) {
-			int defaultBackgroundColor = typedArray.getColor(0, Color.GRAY); //Default to Gray
+		if(listItem.attr.has("color")) {
+			//color.setBackgroundColor(listItem.attr.get("color").getAsInt());
+		} else {
+			TypedValue typedValue = new TypedValue();
 
-			if(listItem.attr.has("color")) {
-				//color.setBackgroundColor(listItem.attr.get("color").getAsInt());
-			} else {
+			//Get the default card background color from the theme
+			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorBackgroundFloating , typedValue, true)) {
+				int defaultBackgroundColor = typedValue.data;
 				//color.setBackgroundColor(defaultBackgroundColor);
+			} else {
+				//color.setBackgroundColor(Color.GRAY);
 			}
 		}
 	}

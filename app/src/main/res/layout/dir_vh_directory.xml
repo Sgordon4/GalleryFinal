@@ -29,7 +29,7 @@
             android:scaleX=".7"
             android:scaleY=".7"
             android:src="@drawable/icon_folder"
-            android:contentDescription="An unknown item." />
+            android:contentDescription="A directory." />
 
         <TextView
             android:id="@+id/name"
@@ -41,11 +41,11 @@
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
 
-            android:background="@color/white_overlay"
-            android:text="Sample Title"
+            android:background="?attr/colorSurfaceVariant"
+            android:text="Unknown Dir"
             android:gravity="center_vertical"
-            android:textSize="18sp"
-            android:ellipsize="middle"
+            android:textSize="16sp"
+            android:ellipsize="end"
             android:maxLines="1" />
 
     </androidx.cardview.widget.CardView>
