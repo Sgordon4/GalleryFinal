@@ -1,6 +1,10 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Handler;
 import android.util.Pair;
 import android.view.MenuItem;
@@ -123,7 +127,6 @@ public class SelectionSetup {
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
 			if(menuItem.getItemId() == R.id.select_all) {
-				System.out.println("Select all!");
 				Set<UUID> toSelect = new HashSet<>();
 				for(ListItem item : adapter.list) {
 					UUID itemUID = item.fileUID;
@@ -160,12 +163,10 @@ public class SelectionSetup {
 
 			else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
 				boolean isMove = menuItem.getItemId() == R.id.move;
-				System.out.println("Move/Copy: "+(isMove ? "move" : "copy"));
 
 				Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
 				MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
 
-					System.out.println("Confirmed with destination "+destinationUID);
 
 					//Get the selected items
 					List<ListItem> toMove = getSelected(dirFragment, selectionController);
@@ -193,14 +194,8 @@ public class SelectionSetup {
 			}
 
 			else if(menuItem.getItemId() == R.id.trash) {
-				System.out.println("Trash!");
-
 				//Get the selected items
 				List<ListItem> toTrash = getSelected(dirFragment, selectionController);
-
-				System.out.println("Selected items: ");
-				for(ListItem item : toTrash)
-					System.out.println(item.name);
 
 				//Update each item's name with a 'trashed' suffix
 				String suffix = ".trashed_"+Instant.now().getEpochSecond();
@@ -210,10 +205,6 @@ public class SelectionSetup {
 							.setName(item.name + suffix)
 							.build());
 				}
-
-				System.out.println("Remamed items: ");
-				for(ListItem item : renamed)
-					System.out.println(item.name);
 
 				//And 'trash' them
 				Thread trashThread = new Thread(() -> {
@@ -226,9 +217,56 @@ public class SelectionSetup {
 
 			else if(menuItem.getItemId() == R.id.share) {
 				System.out.println("Share!");
+				/*
+				HybridAPI hAPI = HybridAPI.getInstance();
+
+				//Get the selected items
+				List<ListItem> toShare = getSelected(dirFragment, selectionController);
+
+
+				Thread share = new Thread(() -> {
+					ArrayList<Uri> uris = new ArrayList<>();
+					for(ListItem item : toShare) {
+						try {
+							Uri uri = hAPI.getFileContent(item.fileUID).first;
+							uris.add(uri);
+						} catch (FileNotFoundException | ContentsNotFoundException e) {
+							Toast.makeText(dirFragment.getContext(), "Could not find file contents!", Toast.LENGTH_SHORT).show();
+						} catch (ConnectException e) {
+							Toast.makeText(dirFragment.getContext(), "Could not find file contents on device!", Toast.LENGTH_SHORT).show();
+						}
+					}
+					if(uris.isEmpty()) {
+						Toast.makeText(dirFragment.getContext(), "No files to share!", Toast.LENGTH_SHORT).show();
+						return;
+					}
+
+
+					Handler handler = new Handler(dirFragment.getActivity().getMainLooper());
+					handler.post(() -> {
+						Intent shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+						//shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+						shareIntent.setType("* /*");  //If use, remove space. No space interrupts the comment
+
+						//Grant permission to other apps to read the files
+						for (Uri uri : uris) {
+							dirFragment.getActivity().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+						}
+
+						//Add URIs to the intent
+						shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+
+						//Start the share intent
+						dirFragment.startActivity(Intent.createChooser(shareIntent, "Share files"));
+					});
+				});
+				share.start();
+				*/
+
 			}
 			return false;
 		});
+
 
 		//The filter button itself unfortunately can't just use a selector since it's in a menu so it has to be special
 		FilterController.FilterRegistry fregistry = dirFragment.dirViewModel.getFilterRegistry();
