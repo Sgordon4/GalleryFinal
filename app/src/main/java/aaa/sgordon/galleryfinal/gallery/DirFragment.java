@@ -55,6 +55,7 @@ import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
 import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
+import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
@@ -315,6 +316,7 @@ public class DirFragment extends Fragment {
 		binding.fab.setOnActionSelectedListener(actionItem -> {
 			if (actionItem.getId() == R.id.new_item) {
 				System.out.println("Clicked new item");
+				NewItemModal.launch(this);
 			}
 			else if (actionItem.getId() == R.id.import_image) {
 				System.out.println("Clicked import image");

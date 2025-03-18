@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Gallery Final</string>
+
+
+    <string-array name="new_items_array">
+        <item>Directory</item>
+        <item>Text</item>
+        <item>Divider</item>
+        <item>Link</item>
+    </string-array>
 </resources>
