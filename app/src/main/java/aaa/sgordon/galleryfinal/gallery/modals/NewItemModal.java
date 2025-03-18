@@ -1,15 +1,18 @@
 package aaa.sgordon.galleryfinal.gallery.modals;
 
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -28,6 +31,7 @@ import java.net.ConnectException;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
@@ -43,7 +47,8 @@ public class NewItemModal extends DialogFragment {
 	private final DirFragment dirFragment;
 
 	private static final Integer defaultColor = Color.GRAY;
-	private int color;
+	private Integer color;
+	private LinkCache.LinkTarget linkTarget;
 
 	private EditText name;
 	private Spinner dropdown;
@@ -58,7 +63,6 @@ public class NewItemModal extends DialogFragment {
 	}
 	private NewItemModal(@NonNull DirFragment fragment) {
 		this.dirFragment = fragment;
-
 		color = defaultColor;
 	}
 
@@ -67,13 +71,12 @@ public class NewItemModal extends DialogFragment {
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-		builder.setView(R.layout.fragment_directory_new);
-		builder.setTitle("New Item");
-
 		LayoutInflater inflater = getLayoutInflater();
 		View view = inflater.inflate(R.layout.fragment_directory_new, null);
 		builder.setView(view);
 
+
+		builder.setTitle("New Item");
 
 
 		name = view.findViewById(R.id.name);
@@ -92,6 +95,7 @@ public class NewItemModal extends DialogFragment {
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 				System.out.println("Position "+position+" clicked! ID:"+id);
+
 			}
 			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
@@ -143,180 +147,110 @@ public class NewItemModal extends DialogFragment {
 
 
 
-
-		builder.setPositiveButton("OK", (dialog, which) -> {
-			System.out.println("OK Clicked");
-			createFile();
-		});
-		builder.setNegativeButton("Cancel", (dialog, which) -> {
+		builder.setPositiveButton(android.R.string.ok, null);
+		builder.setNegativeButton("Cancel", (dialog2, which) -> {
 			System.out.println("Cancel clicked");
 		});
 
-
 		AlertDialog dialog = builder.create();
 		dialog.setCanceledOnTouchOutside(false);
+
+		//Need to define the positive button in this way since we don't want the dialog to be auto-dismissed on OK
+		dialog.setOnShowListener(dialogInterface -> {
+			Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+			button.setOnClickListener(v -> {
+				System.out.println("OK Clicked");
+				if(name.getText().toString().isEmpty()) {
+					Toast.makeText(requireContext(), "Name cannot be empty!", Toast.LENGTH_SHORT).show();
+					return;
+				}
+
+				createFile();
+				dismiss();
+			});
+		});
+
+
 		return dialog;
 	}
 
 
 
 	private void createFile() {
-		boolean isDir = dropdown.getSelectedItem().equals("Directory");
-		boolean isLink = dropdown.getSelectedItem().equals("Link");
+		String dropdownItem = dropdown.getSelectedItem().toString();
 
+		boolean isDir = dropdownItem.equals("Directory");
+		boolean isLink = dropdownItem.equals("Link");
+
+		//Add a file extension based on the dropdown choice
+		String fileName = name.getText().toString();
+		if(dropdownItem.equals("Text"))
+			fileName += ".txt";
+		else if(dropdownItem.equals("Divider"))
+			fileName += ".div";
+
+
+		final String fFileName = fileName;
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 
+			//Create a new file
 			UUID newFileUID = hAPI.createFile(hAPI.getCurrentAccount(), isDir, isLink);
 
 			try {
 				hAPI.lockLocal(newFileUID);
+
+				//Add color to the new file's properties
+				if(color != null) {
+					JsonObject attributes = new JsonObject();
+					attributes.addProperty("color", color);
+					hAPI.setAttributes(newFileUID, attributes, HFile.defaultAttrHash);
+				}
+
+				//Write the link target to the new file
+				if(isLink && linkTarget != null) {
+					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
+				}
 			}
-			finally {
+			catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			} finally {
 				hAPI.unlockLocal(newFileUID);
 			}
 
-		});
 
-
-
-		/*
-		//Grab the current properties, setting them to null if they are default
-		Integer newColor = color;
-		if(newColor.equals(defaultColor))
-			newColor = null;
-
-		String newDescription = description.getText().toString();
-		if(newDescription.equals(defaultDescription))
-			newDescription = null;
-
-
-		final Integer fNewColor = newColor;
-		final String fNewDescription = newDescription;
-
-		Thread thread = new Thread(() -> {
-			HybridAPI hAPI = HybridAPI.getInstance();
-
-
-
-			if(!Objects.equals(props.color, fNewColor) || !Objects.equals(props.description, fNewDescription)) {
-				//Update the file attributes
-				try {
-					hAPI.lockLocal(props.fileUID);
-
-					HFile fileProps = hAPI.getFileProps(props.fileUID);
-
-					JsonObject attributes = fileProps.userattr;
-					if(!Objects.equals(props.color, fNewColor)) {
-						if(fNewColor == null)
-							attributes.remove("color");
-						else
-							attributes.addProperty("color", fNewColor);
-					}
-					if(!Objects.equals(props.description, fNewDescription)) {
-						if(fNewDescription == null)
-							attributes.remove("description");
-						else
-							attributes.addProperty("description", fNewDescription);
-					}
-
-					hAPI.setAttributes(props.fileUID, attributes, fileProps.attrhash);
-				}
-				catch (FileNotFoundException e) {
-					Toast.makeText(getContext(), "Cannot save, file not found!", Toast.LENGTH_SHORT).show();
-					return;
-				}
-				finally {
-					hAPI.unlockLocal(props.fileUID);
-				}
-			}
-
-
-
-			//Make sure the new filename isn't an empty string
-			String newFilename = name.getText().toString();
-			if(newFilename.isEmpty())
-				newFilename = props.fileName;
-
-			//Rename the file if the filename changed
-			if(!Objects.equals(props.fileName, newFilename)) {
-				try {
-					//DirUID could be a link to a directory, we need the directory itself
-					UUID dirUID = LinkCache.getInstance().resolvePotentialLink(props.dirUID);
-
-					DirUtilities.renameFile(props.fileUID, dirUID, newFilename);
-				} catch (ContentsNotFoundException e) {
-					throw new RuntimeException(e);
-				} catch (FileNotFoundException e) {
-					Toast.makeText(getContext(), "Cannot rename, file not found!", Toast.LENGTH_SHORT).show();
-				} catch (ConnectException e) {
-					Toast.makeText(getContext(), "Could not connect, rename failed!", Toast.LENGTH_SHORT).show();
-				}
-			}
-		});
-		thread.start();
-		 */
-	}
-
-
-
-	//---------------------------------------------------------------------------------------------
-
-	public static boolean launchHelper(@NonNull DirFragment dirFragment, SelectionController selectionController, List<ListItem> adapterList) {
-		//Get the current selected item
-		UUID fileUID = selectionController.getSelectedList().iterator().next();
-
-		//Get the filename from the file list
-		String fileName = null;
-		UUID dirUID = null;
-		for(ListItem item : adapterList) {
-			UUID itemUID = item.fileUID;
-
-			if(itemUID.equals(fileUID)) {
-				fileName = item.name;
-				dirUID = item.parentUID;
-				break;
-			}
-		}
-		if(fileName == null) {
-			Toast.makeText(dirFragment.getContext(), "Selected file was removed, cannot edit!", Toast.LENGTH_SHORT).show();
-			return false;
-		}
-		if(dirUID == null) {
-			throw new RuntimeException("Somehow DirUID is null");
-		}
-
-
-		//TODO Get the dirUID from the path and update the name
-
-		String finalFileName = fileName;
-		UUID finalDirUID = dirUID;
-		Thread thread = new Thread(() -> {
-			HybridAPI hAPI = HybridAPI.getInstance();
+			//Add the new file to the top of the current directory
+			UUID dirUID = dirFragment.dirViewModel.getDirUID();
 			try {
-				//Get the file attributes from the system
-				JsonObject attributes = hAPI.getFileProps(fileUID).userattr;
+				hAPI.lockLocal(dirUID);
+				HFile dirProps = hAPI.getFileProps(dirUID);
 
-				//Grab any items we can edit
-				JsonElement colorElement = attributes.get("color");
-				Integer color = colorElement == null ? null : colorElement.getAsInt();
-				JsonElement descriptionElement = attributes.get("description");
-				String description = descriptionElement == null ? null : descriptionElement.getAsString();
+				//Get the current directory contents in a list, and add our new file to the top
+				List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
+				dirList.add(0, new Pair<>(newFileUID, fFileName));
 
-				//Compile them into a props object
-				//NewItemModal.EditProps props = new NewItemModal.EditProps(fileUID, finalDirUID, finalFileName, color, description);
+				//Write the updated contents back to the directory
+				List<String> dirLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+						.collect(Collectors.toList());
+				byte[] newContent = String.join("\n", dirLines).getBytes();
+				hAPI.writeFile(dirUID, newContent, dirProps.checksum);
+			}
+			catch (FileNotFoundException | ConnectException | ContentsNotFoundException e) {
+				Toast.makeText(requireContext(), "Could not create file, please try again.", Toast.LENGTH_SHORT).show();
 
-
-				//Launch the edit modal
-				Handler mainHandler = new Handler(dirFragment.requireContext().getMainLooper());
-				//mainHandler.post(() -> NewItemModal.launch(dirFragment, props));
-
-			} catch (FileNotFoundException e) {
-				Toast.makeText(dirFragment.getContext(), "Cannot edit, file not found!", Toast.LENGTH_SHORT).show();
+				//If we can't find the directory for whatever reason, delete the file we just created
+				try {
+					hAPI.lockLocal(newFileUID);
+					hAPI.deleteFile(newFileUID);
+				} catch (FileNotFoundException ex) {
+					//Job done
+				} finally {
+					hAPI.unlockLocal(newFileUID);
+				}
+			} finally {
+				hAPI.unlockLocal(dirUID);
 			}
 		});
 		thread.start();
-
-		return true;
 	}
 }

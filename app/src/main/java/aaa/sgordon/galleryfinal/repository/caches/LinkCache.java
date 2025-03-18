@@ -82,6 +82,7 @@ public class LinkCache {
 			 BufferedReader reader = new BufferedReader( new InputStreamReader(inputStream) )) {
 			String firstLine = reader.readLine();
 
+			//TODO Handle empty links and malformed link targets.
 			Uri linkUri = Uri.parse(firstLine);
 
 			//If the uri scheme starts with "gallery", it's an internal link
