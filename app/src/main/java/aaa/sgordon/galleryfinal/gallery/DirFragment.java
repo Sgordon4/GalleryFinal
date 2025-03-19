@@ -49,6 +49,7 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
@@ -92,6 +93,8 @@ public class DirFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+
+		//Utilities.showColorDebugOverlay(binding.galleryAppbar.getRoot(), requireContext());
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;

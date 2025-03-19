@@ -250,9 +250,6 @@ public class LinkTargetModal extends DialogFragment {
 		Thread traverse = new Thread(() -> {
 			List<ListItem> list = traverseDir(viewModel.dirUID);
 
-			//Remove duplicate items from the list
-			Set<UUID> duplicate = new HashSet<>();
-			list.removeIf(item -> !duplicate.add(item.fileUID));
 
 			Handler mainHandler = new Handler(getContext().getMainLooper());
 			mainHandler.post(() -> adapter.setList(list));

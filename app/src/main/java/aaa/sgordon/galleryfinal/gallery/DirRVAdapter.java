@@ -126,29 +126,20 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	@Override
 	public int getItemViewType(int position) {
 		ListItem item = list.get(position);
-		UUID fileUID = item.fileUID;
 
-
-		boolean isDir = item.isDir;
-		boolean isWideLink = item.type.equals(ListItem.ListItemType.LINKDIRECTORY)
-				|| item.type.equals(ListItem.ListItemType.LINKDIVIDER)
-				|| item.type.equals(ListItem.ListItemType.LINKEND);
-		boolean isEnd = item.type.equals(ListItem.ListItemType.LINKEND);
-
-
-
-
-
-
-
-		if(isWideLink) {
-			if(isEnd)
-				return 6;		//End of link to directory
-			else
-				return 5;		//Link to directory
+		if(item.type.equals(ListItem.ListItemType.LINKDIRECTORY)
+		|| item.type.equals(ListItem.ListItemType.LINKDIVIDER)
+		|| item.type.equals(ListItem.ListItemType.LINKBROKEN)
+		|| item.type.equals(ListItem.ListItemType.LINKCYCLE)
+		|| item.type.equals(ListItem.ListItemType.LINKUNREACHABLE)) {
+			return 6;
 		}
 
-		if(isDir)
+		else if(item.type.equals(ListItem.ListItemType.LINKEND)) {
+			return 5;
+		}
+
+		if(item.isDir)
 			return 0;			//Directory
 
 		//Get the filename extension, maybe we need fileNameUtils for this idk

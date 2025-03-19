@@ -1,6 +1,12 @@
 package aaa.sgordon.galleryfinal.utilities;
 
+import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
+import android.util.TypedValue;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -41,5 +47,52 @@ public class Utilities {
 			hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
 		}
 		return new String(hexChars, StandardCharsets.UTF_8);
+	}
+
+
+
+
+	//Thanks ChatGPT!
+	public static void showColorDebugOverlay(ViewGroup rootView, Context context) {
+		int[] attrs = new int[]{
+				com.google.android.material.R.attr.colorSurface,
+				com.google.android.material.R.attr.colorSurfaceVariant,
+				com.google.android.material.R.attr.colorBackgroundFloating,
+				com.google.android.material.R.attr.colorOnSurface,
+				com.google.android.material.R.attr.colorPrimaryContainer
+		};
+
+		String[] attrNames = {
+				"colorSurface",
+				"colorSurfaceVariant",
+				"colorBackgroundFloating",
+				"colorOnSurface",
+				"colorPrimaryContainer"
+		};
+
+		LinearLayout overlay = new LinearLayout(context);
+		overlay.setOrientation(LinearLayout.VERTICAL);
+		overlay.setBackgroundColor(Color.BLACK);
+		overlay.setPadding(20, 20, 20, 20);
+		//overlay.setAlpha(0.8f);
+
+		TypedValue typedValue = new TypedValue();
+		for (int i = 0; i < attrs.length; i++) {
+			if (context.getTheme().resolveAttribute(attrs[i], typedValue, true)) {
+				int color = typedValue.data;
+
+				TextView textView = new TextView(context);
+				textView.setText(attrNames[i] + ": #" + Integer.toHexString(color));
+				textView.setBackgroundColor(color);
+				textView.setTextColor((Color.luminance(color) > 0.5) ? Color.BLACK : Color.WHITE);
+				textView.setPadding(16, 8, 16, 8);
+
+				overlay.addView(textView);
+			}
+		}
+
+		// Add overlay to root layout
+		rootView.addView(overlay, new ViewGroup.LayoutParams(
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 	}
 }
