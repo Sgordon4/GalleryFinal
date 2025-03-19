@@ -202,7 +202,7 @@ public class DirectoryViewModel extends ViewModel {
 				System.out.println("NewFiles: ");
 				for(ListItem item : newFileList)
 					System.out.println(item.filePath+" "+item.type+" "+item.name);
-				//printed = true;
+				printed = true;
 			}
 			/**/
 

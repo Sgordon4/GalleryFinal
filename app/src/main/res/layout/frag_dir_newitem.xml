@@ -27,78 +27,139 @@
         android:layout_height="wrap_content"
         android:paddingHorizontal="4dp"
         android:paddingVertical="8dp"
-        android:layout_marginBottom="8dp"/>
+        android:layout_marginBottom="16dp"/>
 
 
-    <RadioGroup
-        android:id="@+id/link_type"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="center">
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginHorizontal="24dp"
+        app:dividerColor="?attr/colorOnSurface"/>
 
-        <RadioButton
-            android:id="@+id/internal_link"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Internal Link"
-            android:layout_marginHorizontal="16dp"/>
 
-        <RadioButton
-            android:id="@+id/external_link"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="External Link"
-            android:layout_marginHorizontal="16dp"/>
-
-    </RadioGroup>
 
 
     <LinearLayout
+        android:id="@+id/link_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:visibility="visible">
 
-        <TextView
+        <RadioGroup
+            android:id="@+id/link_type"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_marginEnd="8dp"
-            android:text="Target:"
-            android:textSize="16sp"/>
+            android:orientation="horizontal"
+            android:layout_gravity="center">
 
-        <TextView
-            android:id="@+id/target_internal"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:paddingVertical="4dp"
-            android:paddingHorizontal="8dp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:textSize="16sp"
-            android:background="@drawable/item_border"/>
+            <RadioButton
+                android:id="@+id/internal_link"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Internal Link"
+                android:layout_marginHorizontal="16dp"/>
 
-        <ImageButton
-            android:id="@+id/browse"
-            android:layout_width="wrap_content"
+            <RadioButton
+                android:id="@+id/external_link"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="External Link"
+                android:layout_marginHorizontal="16dp"/>
+
+        </RadioGroup>
+
+
+
+        <LinearLayout
+            android:id="@+id/link_internal"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/icon_folder"
-            android:scaleX=".9"
-            android:scaleY=".9"
-            android:contentDescription="Browse" />
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="8dp"
+                android:text="Target:"
+                android:textSize="16sp"/>
+
+            <TextView
+                android:id="@+id/target_internal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="8dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textSize="16sp"
+                android:background="@drawable/item_border"/>
+
+            <ImageButton
+                android:id="@+id/browse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/icon_folder"
+                android:scaleX=".9"
+                android:scaleY=".9"
+                android:contentDescription="Browse" />
+
+        </LinearLayout>
+
+
+
+        <LinearLayout
+            android:id="@+id/link_external"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="8dp"
+                android:text="Target:"
+                android:textSize="16sp"/>
+
+            <EditText
+                android:id="@+id/target_external"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+
+                android:inputType="text"
+                android:maxLines="1"
+                android:importantForAutofill="no"
+                android:hint="Web url..."/>
+
+        </LinearLayout>
+
+
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="24dp"
+            app:dividerColor="?attr/colorOnSurface"/>
+
 
     </LinearLayout>
 
 
 
-
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:layout_marginTop="12dp"
         android:layout_marginHorizontal="4dp">
 
         <com.github.naz013.colorslider.ColorSlider

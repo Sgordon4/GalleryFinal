@@ -305,10 +305,15 @@ public class MoveCopyFullscreen extends DialogFragment {
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
 					if(item.isLink) {
-						LinkCache.InternalTarget target = (LinkCache.InternalTarget)
-								LinkCache.getInstance().followLinkChain(item.fileUID);
-
-						updateToolbar(target.getParentUID(), target.getFileUID());
+						try {
+							LinkCache.LinkTarget target = LinkCache.getInstance().getLinkTarget(item.fileUID);
+							if(target instanceof LinkCache.InternalTarget) {
+								LinkCache.InternalTarget internal = (LinkCache.InternalTarget) target;
+								updateToolbar(internal.getParentUID(), internal.getFileUID());
+							}
+						} catch (Exception e) {
+							//TODO Handle error
+						}
 					}
 					else {
 						updateToolbar(currDirUID, item.fileUID);

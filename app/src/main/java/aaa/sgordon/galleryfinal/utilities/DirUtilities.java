@@ -117,15 +117,9 @@ public class DirUtilities {
 		//Map each item to its parent directory for ease of access
 		Map<UUID, Map<UUID, String>> dirMap = new HashMap<>();
 		for(ListItem item : renamed) {
-			try {
-				UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
-				dirMap.putIfAbsent(parentUID, new HashMap<>());
-				dirMap.get(parentUID).put(item.fileUID, item.name);
-			}
-			catch (FileNotFoundException e) {
-				//If the file's parent is not found, skip it
-				continue;
-			}
+			UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
+			dirMap.putIfAbsent(parentUID, new HashMap<>());
+			dirMap.get(parentUID).put(item.fileUID, item.name);
 		}
 
 
@@ -201,17 +195,12 @@ public class DirUtilities {
 		//For each item to delete
 		Map<UUID, Set<ListItem>> parentMap = new HashMap<>();
 		for(ListItem item : toDelete) {
-			try {
-				//In case this is a link to a directory, get the actual directory UID it points to
-				UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
+			//In case this is a link to a directory, get the actual directory UID it points to
+			UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
 
-				//Group the files by parent
-				parentMap.putIfAbsent(parentUID, new HashSet<>());
-				parentMap.get(parentUID).add(item);
-
-			} catch (FileNotFoundException e) {
-				//If this file doesn't exist, skip it
-			}
+			//Group the files by parent
+			parentMap.putIfAbsent(parentUID, new HashSet<>());
+			parentMap.get(parentUID).add(item);
 		}
 
 

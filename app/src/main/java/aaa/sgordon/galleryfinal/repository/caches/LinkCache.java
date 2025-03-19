@@ -34,6 +34,10 @@ public class LinkCache {
 
 	private final Map<UUID, LinkTarget> linkTargets;
 
+	//Since, in our current implementation, files cannot change their nature (isDir/isLink), this works well
+	private final Set<UUID> isLink;
+	private final Set<UUID> isNotLink;
+
 
 	public static LinkCache getInstance() {
 		return SingletonHelper.INSTANCE;
@@ -47,6 +51,9 @@ public class LinkCache {
 
 		this.linkTargets = new HashMap<>();
 
+		this.isLink = new HashSet<>();
+		this.isNotLink = new HashSet<>();
+
 
 		//Whenever any file we have cached is changed, update our data
 		fileChangeListener = uuid -> {
@@ -59,12 +66,33 @@ public class LinkCache {
 	}
 
 
+	public boolean isLink(UUID fileUID) throws FileNotFoundException {
+		if(isLink.contains(fileUID))
+			return true;
+		if(isNotLink.contains(fileUID))
+			return false;
+
+		boolean isFileLink = hAPI.getFileProps(fileUID).islink;
+
+		if(isFileLink)
+			isLink.add(fileUID);
+		else
+			isNotLink.add(fileUID);
+
+		return isFileLink;
+	}
+
+
 	public static boolean isLinkEnd(ListItem item) {
 		return item.type.equals(ListItem.ListItemType.LINKEND);
 	}
 
 
+	@NonNull
 	public LinkTarget getLinkTarget(UUID fileUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+		if(!isLink(fileUID))
+			throw new IllegalArgumentException("File is not a link! FileUID="+fileUID);
+
 		//If we have the target cached, just use that
 		if(linkTargets.containsKey(fileUID))
 			return linkTargets.get(fileUID);
@@ -104,54 +132,35 @@ public class LinkCache {
 
 
 
-	@NonNull
-	public UUID resolvePotentialLink(UUID fileUID) throws FileNotFoundException {
-		LinkTarget target = followLinkChain(fileUID);
-
-		if(target == null)
-			return fileUID;
-		if(target instanceof ExternalTarget)
-			return fileUID;
-		else
-			return ((InternalTarget) target).getFileUID();
-	}
-
-
 	//UUID could be a normal file, or it could be a link.
 	//If its a link, we want to follow it down a potential link chain until the final target
 	//Thanks Sophia for the naming suggestion
-	@Nullable
-	public LinkTarget followLinkChain(UUID linkUID) {
-		LinkTarget bartholemew = null;
+	@NonNull
+	public UUID resolvePotentialLink(UUID bartholomew) {
 		try {
-			HFile fileProps = hAPI.getFileProps(linkUID);
+			while (isLink(bartholomew)) {
+				LinkTarget newTarget = getLinkTarget(bartholomew);
 
-			while (fileProps.islink) {
-				LinkTarget newTarget = getLinkTarget(linkUID);
-
-				//If the final link in the chain points to an external file, just return the last target
-				if(newTarget instanceof ExternalTarget)
-					break;
-
-				bartholemew = newTarget;
+				//If the final link in the chain points to an external file, just return the last item
+				if(newTarget instanceof ExternalTarget) {
+					return bartholomew;
+				}
 
 				//If the link points to an internal file, follow it
-				linkUID = ((InternalTarget) bartholemew).getFileUID();
-				fileProps = hAPI.getFileProps(linkUID);
+				bartholomew = ((InternalTarget) newTarget).getFileUID();
 			}
-
-			//Once we've reached the end of the link chain, return the last UUID
-			return bartholemew;
+			return bartholomew;
 		}
 		catch (FileNotFoundException | ConnectException e) {
 			//If the file isn't found or we just can't reach it, just pretend the link is broken
-			return bartholemew;
+			return bartholomew;
 		}
 		catch (ContentsNotFoundException e) {
 			//If we can't find the link's contents, just pretend the link is broken
-			return bartholemew;
+			return bartholomew;
 		}
 	}
+
 
 
 	/*

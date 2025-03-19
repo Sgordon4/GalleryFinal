@@ -3,11 +3,13 @@ package aaa.sgordon.galleryfinal.gallery.modals;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -46,13 +48,16 @@ public class NewItemModal extends DialogFragment {
 
 	private static final Integer defaultColor = Color.GRAY;
 	private Integer color;
-	private LinkCache.LinkTarget linkTarget;
 	private ListItem internalTarget;
 
 	private EditText name;
 	private Spinner dropdown;
+	private ViewGroup linkInfo;
 	private RadioGroup linkType;
+	private ViewGroup linkInternal;
 	private TextView targetInternal;
+	private ViewGroup linkExternal;
+	private EditText targetExternal;
 	private ColorSlider colorSlider;
 	private View colorPickerButton;
 
@@ -82,10 +87,18 @@ public class NewItemModal extends DialogFragment {
 
 		name = view.findViewById(R.id.name);
 		dropdown = view.findViewById(R.id.dropdown);
+		linkInfo = view.findViewById(R.id.link_info);
 		linkType = view.findViewById(R.id.link_type);
+		linkInternal = view.findViewById(R.id.link_internal);
 		targetInternal = view.findViewById(R.id.target_internal);
+		linkExternal = view.findViewById(R.id.link_external);
+		targetExternal = view.findViewById(R.id.target_external);
 		colorSlider = view.findViewById(R.id.color_slider);
 		colorPickerButton = view.findViewById(R.id.color_picker_button);
+
+
+
+		//---------------------------------------------------------
 
 
 		ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(requireContext(),
@@ -97,23 +110,44 @@ public class NewItemModal extends DialogFragment {
 		dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				System.out.println("Position "+position+" clicked! ID:"+id);
-
+				String dropdownItem = parent.getItemAtPosition(position).toString();
+				if(dropdownItem.equals("Link"))
+					linkInfo.setVisibility(View.VISIBLE);
+				else
+					linkInfo.setVisibility(View.GONE);
 			}
 			@Override
 			public void onNothingSelected(AdapterView<?> parent) {
 			}
 		});
+		if(dropdown.getSelectedItem() != null && dropdown.getSelectedItem().toString().equals("Link"))
+			linkInfo.setVisibility(View.VISIBLE);
+		else
+			linkInfo.setVisibility(View.GONE);
 
 
+		//---------------------------------------------------------
+
+
+		linkType.setOnCheckedChangeListener((group, checkedId) -> {
+			if(checkedId == R.id.internal_link) {
+				linkInternal.setVisibility(View.VISIBLE);
+				linkExternal.setVisibility(View.GONE);
+			}
+			else {
+				linkInternal.setVisibility(View.GONE);
+				linkExternal.setVisibility(View.VISIBLE);
+			}
+		});
 		linkType.check(R.id.internal_link);
 
+
+		//---------------------------------------------------------
 
 		ImageButton browse = view.findViewById(R.id.browse);
 		browse.setOnClickListener(view1 ->
 			LinkTargetModal.launch(dirFragment, dirFragment.dirViewModel.getDirUID(), target -> {
 				internalTarget = target;
-				linkTarget = new LinkCache.InternalTarget(target.parentUID, target.fileUID);
 				targetInternal.setText(target.name);
 			})
 		);
@@ -181,6 +215,28 @@ public class NewItemModal extends DialogFragment {
 					return;
 				}
 
+				if(linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
+					Toast.makeText(requireContext(), "Please select a link target!", Toast.LENGTH_SHORT).show();
+					return;
+				}
+
+				if(linkType.getCheckedRadioButtonId() == R.id.external_link) {
+					if(targetExternal.getText().toString().isEmpty()) {
+						Toast.makeText(requireContext(), "Please enter a target URL!", Toast.LENGTH_SHORT).show();
+						return;
+					}
+
+					//Make sure the Url is valid
+					try {
+						Uri.parse(targetExternal.getText().toString());
+					}
+					catch (IllegalArgumentException e) {
+						Toast.makeText(requireContext(), "Please enter a valid URL!", Toast.LENGTH_SHORT).show();
+						return;
+					}
+				}
+
+
 				createFile();
 				dismiss();
 			});
@@ -224,7 +280,13 @@ public class NewItemModal extends DialogFragment {
 				}
 
 				//Write the link target to the new file
-				if(isLink && linkTarget != null) {
+				if(isLink) {
+					LinkCache.LinkTarget linkTarget;
+					if(linkType.getCheckedRadioButtonId() == R.id.internal_link)
+						linkTarget = new LinkCache.InternalTarget(internalTarget.parentUID, internalTarget.fileUID);
+					else
+						linkTarget = new LinkCache.ExternalTarget(Uri.parse(targetExternal.getText().toString()));
+
 					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
 				}
 			}

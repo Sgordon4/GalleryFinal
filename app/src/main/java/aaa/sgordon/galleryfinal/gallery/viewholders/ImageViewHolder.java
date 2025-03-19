@@ -16,6 +16,7 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class ImageViewHolder extends BaseViewHolder {
 	public ImageView image;
@@ -39,8 +40,21 @@ public class ImageViewHolder extends BaseViewHolder {
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
-				UUID fileUID = LinkCache.getInstance().resolvePotentialLink(listItem.fileUID);
-				Uri content = hAPI.getFileContent(fileUID).first;
+				//We are trying to get the correct content Uri for this file
+				Uri content;
+
+				LinkCache linkCache = LinkCache.getInstance();
+				UUID fileUID = linkCache.resolvePotentialLink(listItem.fileUID);
+
+				//If the file is a link, we have an external link
+				if(linkCache.isLink(fileUID)) {
+					LinkCache.ExternalTarget target = (LinkCache.ExternalTarget) linkCache.getLinkTarget(fileUID);
+					content = target.getUri();
+				}
+				else {
+					content = hAPI.getFileContent(fileUID).first;
+				}
+
 
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() ->
@@ -54,6 +68,8 @@ public class ImageViewHolder extends BaseViewHolder {
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing
+				System.out.println("Error for "+listItem.name);
+				e.printStackTrace();
 			}
 		});
 		thread.start();
