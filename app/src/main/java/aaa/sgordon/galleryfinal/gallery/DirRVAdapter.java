@@ -106,10 +106,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
 			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
-		UUID fileUID = item.fileUID;
 		holder.bind(list.get(position));
 
-
+		UUID fileUID = item.fileUID;
 		holder.itemView.setSelected( touchCallback.isItemSelected(fileUID) );
 
 		holder.itemView.setOnTouchListener((view, motionEvent) -> {
@@ -122,24 +121,27 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 
 	private boolean isFullSpan(int viewType) {
-		return viewType == 5 || viewType == 6;
+		return viewType == 4 || viewType == 5 || viewType == 6;
 	}
 	@Override
 	public int getItemViewType(int position) {
 		ListItem item = list.get(position);
 		UUID fileUID = item.fileUID;
 
-		boolean isEnd = LinkCache.isLinkEnd(item);
 
 		boolean isDir = item.isDir;
-		boolean isLink = item.isLink;
+		boolean isWideLink = item.type.equals(ListItem.ListItemType.LINKDIRECTORY)
+				|| item.type.equals(ListItem.ListItemType.LINKDIVIDER)
+				|| item.type.equals(ListItem.ListItemType.LINKEND);
+		boolean isEnd = item.type.equals(ListItem.ListItemType.LINKEND);
 
 
 
 
 
 
-		if(isLink) {
+
+		if(isWideLink) {
 			if(isEnd)
 				return 6;		//End of link to directory
 			else
