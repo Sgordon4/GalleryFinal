@@ -31,18 +31,21 @@
 
 
     <RadioGroup
+        android:id="@+id/link_type"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_gravity="center">
 
         <RadioButton
+            android:id="@+id/internal_link"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Internal Link"
             android:layout_marginHorizontal="16dp"/>
 
         <RadioButton
+            android:id="@+id/external_link"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="External Link"
@@ -65,14 +68,20 @@
             android:textSize="16sp"/>
 
         <TextView
+            android:id="@+id/target_internal"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_gravity="center_vertical"
-            android:text="TARGET HERE"
-            android:textSize="16sp"/>
+            android:paddingVertical="4dp"
+            android:paddingHorizontal="8dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="16sp"
+            android:background="@drawable/item_border"/>
 
         <ImageButton
+            android:id="@+id/browse"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/icon_folder"

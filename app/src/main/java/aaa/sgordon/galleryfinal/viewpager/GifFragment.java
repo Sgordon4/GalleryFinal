@@ -21,8 +21,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.databinding.FragViewpagerGifBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
@@ -31,7 +30,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import pl.droidsonroids.gif.GifImageView;
 
 public class GifFragment extends Fragment {
-	private FragmentViewpagerGifBinding binding;
+	private FragViewpagerGifBinding binding;
 	private final ListItem item;
 	private final UUID fileUID;
 
@@ -48,7 +47,7 @@ public class GifFragment extends Fragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		binding = FragmentViewpagerGifBinding.inflate(inflater, container, false);
+		binding = FragViewpagerGifBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
 

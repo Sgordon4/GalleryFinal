@@ -4,21 +4,16 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.Pair;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -38,23 +33,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
-import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
-import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
+import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
 import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
@@ -64,12 +49,9 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
-import aaa.sgordon.galleryfinal.repository.caches.DirCache;
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class DirFragment extends Fragment {
-	public FragmentDirectoryBinding binding;
+	public FragDirBinding binding;
 	public DirectoryViewModel dirViewModel;
 
 	ActivityResultLauncher<Intent> filePickerLauncher;
@@ -102,7 +84,7 @@ public class DirFragment extends Fragment {
 
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		binding = FragmentDirectoryBinding.inflate(inflater, container, false);
+		binding = FragDirBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
 

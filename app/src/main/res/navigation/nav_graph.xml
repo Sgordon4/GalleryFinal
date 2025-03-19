@@ -9,7 +9,7 @@
         android:id="@+id/DirectoryFragment"
         android:name="aaa.sgordon.galleryfinal.gallery.DirFragment"
         android:label="Directory"
-        tools:layout="@layout/fragment_directory">
+        tools:layout="@layout/frag_dir">
 
         <argument
             android:name="directoryUID"
@@ -33,7 +33,7 @@
         android:id="@+id/ViewPagerFragment"
         android:name="aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment"
         android:label="ViewPager"
-        tools:layout="@layout/fragment_viewpager">
+        tools:layout="@layout/frag_viewpager">
 
         <argument
             android:name="directoryUID"

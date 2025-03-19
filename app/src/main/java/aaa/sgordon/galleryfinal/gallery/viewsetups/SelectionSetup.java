@@ -37,7 +37,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
+import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
@@ -117,7 +117,7 @@ public class SelectionSetup {
 
 
 	public static void setupSelectionToolbar(DirFragment dirFragment, SelectionController selectionController) {
-		FragmentDirectoryBinding binding = dirFragment.binding;
+		FragDirBinding binding = dirFragment.binding;
 
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;

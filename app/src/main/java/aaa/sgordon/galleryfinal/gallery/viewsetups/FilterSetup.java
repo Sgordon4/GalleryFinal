@@ -24,14 +24,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
+import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 
 public class FilterSetup {
 	public static void setupFilters(@NonNull DirFragment dirFragment, FilterController fControl) {
-		FragmentDirectoryBinding binding = dirFragment.binding;
+		FragDirBinding binding = dirFragment.binding;
 		DirectoryViewModel dirViewModel = dirFragment.dirViewModel;
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
 		FilterController.FilterRegistry registry = fControl.registry;

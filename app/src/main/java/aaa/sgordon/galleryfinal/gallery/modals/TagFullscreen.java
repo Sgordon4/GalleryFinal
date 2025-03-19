@@ -59,7 +59,7 @@ public class TagFullscreen extends DialogFragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.fragment_directory_tag_fullscreen, container, false);
+		View view = inflater.inflate(R.layout.frag_dir_tag_fullscreen, container, false);
 		toolbar = view.findViewById(R.id.toolbar);
 		search = view.findViewById(R.id.search);
 		searchClear = view.findViewById(R.id.search_clear);

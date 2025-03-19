@@ -23,8 +23,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentDirectoryBinding;
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerImageBinding;
+import aaa.sgordon.galleryfinal.databinding.FragViewpagerImageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
@@ -32,7 +31,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageFragment extends Fragment {
-	private FragmentViewpagerImageBinding binding;
+	private FragViewpagerImageBinding binding;
 	private final ListItem item;
 	private final UUID fileUID;
 
@@ -49,7 +48,7 @@ public class ImageFragment extends Fragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		binding = FragmentViewpagerImageBinding.inflate(inflater, container, false);
+		binding = FragViewpagerImageBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
 

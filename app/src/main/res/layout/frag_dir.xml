@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <include android:id="@+id/gallery_appbar" layout="@layout/fragment_directory_appbar" />
+        <include android:id="@+id/gallery_appbar" layout="@layout/frag_dir_appbar" />
 
 
         <androidx.recyclerview.widget.RecyclerView

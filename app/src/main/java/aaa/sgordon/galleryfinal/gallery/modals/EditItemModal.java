@@ -88,11 +88,11 @@ public class EditItemModal extends DialogFragment {
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-		builder.setView(R.layout.fragment_directory_edit);
+		builder.setView(R.layout.frag_dir_edit);
 		builder.setTitle("Edit Item");
 
 		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.fragment_directory_edit, null);
+		View view = inflater.inflate(R.layout.frag_dir_edit, null);
 		builder.setView(view);
 
 

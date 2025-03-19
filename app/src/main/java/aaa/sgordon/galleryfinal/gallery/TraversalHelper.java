@@ -153,7 +153,8 @@ public class TraversalHelper {
 
 
 		//If the target is trashed, we don't want to follow it
-		List<Pair<UUID, String>> dirContents = dirCache.getDirContents(target.getParentUID());
+		UUID targetParent = linkCache.resolvePotentialLink(target.getParentUID());
+		List<Pair<UUID, String>> dirContents = dirCache.getDirContents(targetParent);
 		boolean exists = false;
 		for(Pair<UUID, String> pair : dirContents) {
 			//If we find the targeted file...
@@ -203,7 +204,7 @@ public class TraversalHelper {
 				List<ListItem> files = new ArrayList<>();
 
 				//Find the first item in the target's parent directory that matches the target UUID
-				List<Pair<UUID, String>> targetParentContents = dirCache.getDirContents(target.getParentUID());
+				List<Pair<UUID, String>> targetParentContents = dirCache.getDirContents(targetParent);
 				Optional<Pair<UUID, String>> targetItem = targetParentContents.stream()
 						.filter(pair -> pair.first.equals( target.getFileUID() )).findFirst();
 

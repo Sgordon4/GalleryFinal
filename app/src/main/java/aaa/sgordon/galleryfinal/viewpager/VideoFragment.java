@@ -20,8 +20,7 @@ import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerGifBinding;
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerVideoBinding;
+import aaa.sgordon.galleryfinal.databinding.FragViewpagerVideoBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
@@ -30,7 +29,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import pl.droidsonroids.gif.GifImageView;
 
 public class VideoFragment extends Fragment {
-	private FragmentViewpagerVideoBinding binding;
+	private FragViewpagerVideoBinding binding;
 	private final ListItem item;
 	private final UUID fileUID;
 
@@ -49,7 +48,7 @@ public class VideoFragment extends Fragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		binding = FragmentViewpagerVideoBinding.inflate(inflater, container, false);
+		binding = FragViewpagerVideoBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
 

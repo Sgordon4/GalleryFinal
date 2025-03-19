@@ -46,31 +46,38 @@ import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
-public class TrashFullscreen extends DialogFragment {
-	private final TrashViewModel viewModel;
+public class LinkTargetModal extends DialogFragment {
+	private final LinkTargetViewModel viewModel;
+	private final LinkTargetCallback callback;
 
 	private MaterialToolbar toolbar;
 	private MaterialToolbar selectionToolbar;
 	private RecyclerView recyclerView;
 	private ViewGroup bottomBar;
-	private Button deleteButton;
-	private Button restoreButton;
+	private Button confirmButton;
 
 	private DirRVAdapter adapter;
 	private SelectionController selectionController;
 
 
-	public static void launch(DirFragment dirFragment, UUID dirUID) {
-		TrashFullscreen dialog = new TrashFullscreen(dirFragment, dirUID);
+	public static void launch(DirFragment dirFragment, UUID dirUID, LinkTargetCallback callback) {
+		LinkTargetModal dialog = new LinkTargetModal(dirFragment, dirUID, callback);
 
 		FragmentTransaction transaction = dirFragment.getChildFragmentManager().beginTransaction();
-		transaction.add(dialog, "trash_fullscreen");
+		transaction.add(dialog, "linktarget_fullscreen");
 		transaction.commitAllowingStateLoss();
 	}
-	private TrashFullscreen(DirFragment dirFragment, UUID dirUID) {
+	private LinkTargetModal(DirFragment dirFragment, UUID dirUID, LinkTargetCallback callback) {
+		this.callback = callback;
+
 		viewModel = new ViewModelProvider(dirFragment,
-				new TrashViewModel.Factory(dirUID))
-				.get(TrashViewModel.class);
+				new LinkTargetViewModel.Factory(dirUID))
+				.get(LinkTargetViewModel.class);
+	}
+
+
+	public interface LinkTargetCallback {
+		void onTargetSelected(ListItem target);
 	}
 
 
@@ -82,13 +89,12 @@ public class TrashFullscreen extends DialogFragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.frag_dir_trash_fullscreen, container, false);
+		View view = inflater.inflate(R.layout.frag_dir_linktarget_fullscreen, container, false);
 		toolbar = view.findViewById(R.id.toolbar);
 		selectionToolbar = view.findViewById(R.id.selection_toolbar);
 		recyclerView = view.findViewById(R.id.recyclerview);
 		bottomBar = view.findViewById(R.id.bottom_bar);
-		deleteButton = view.findViewById(R.id.delete);
-		restoreButton = view.findViewById(R.id.restore);
+		confirmButton = view.findViewById(R.id.confirm);
 
 		return view;
 	}
@@ -99,6 +105,9 @@ public class TrashFullscreen extends DialogFragment {
 
 		toolbar.setNavigationOnClickListener(v -> dismiss());
 		toolbar.setOnMenuItemClickListener(item -> {
+			if(item.getItemId() == R.id.select)
+				selectionController.startSelecting();
+
 			if(item.getItemId() == R.id.refresh)
 				updateList();
 			return false;
@@ -106,42 +115,13 @@ public class TrashFullscreen extends DialogFragment {
 
 
 
-		deleteButton.setOnClickListener(view1 -> {
-			//Get the selected items
-			List<ListItem> toDelete = getSelected();
+		confirmButton.setOnClickListener(view1 -> {
+			//Get the selected item (there should only be one)
+			ListItem target = getSelected().get(0);
 
-			selectionController.stopSelecting();
-
-			//And full-delete them
-			Thread trashThread = new Thread(() -> {
-				List<ListItem> failed = DirUtilities.deleteFiles(toDelete);
-				if(!failed.isEmpty()) {
-					Toast.makeText(getContext(), failed.size()+" files were unable to be deleted!", Toast.LENGTH_SHORT).show();
-				}
-				updateList();
-			});
-			trashThread.start();
-		});
-		restoreButton.setOnClickListener(view1 -> {
-			//Get the selected items
-			List<ListItem> toRestore = getSelected();
-
-			//Remove the 'trashed' suffix from each item
-			List<ListItem> renamed = new ArrayList<>();
-			for(ListItem item : toRestore) {
-				renamed.add(new ListItem.Builder(item)
-						.setName(FilenameUtils.removeExtension(item.name))
-						.build());
-			}
-
-			selectionController.stopSelecting();
-
-			//And 'restore' them
-			Thread trashThread = new Thread(() -> {
-				DirUtilities.renameFiles(renamed);
-				updateList();
-			});
-			trashThread.start();
+			//And return the result
+			callback.onTargetSelected(target);
+			dismiss();
 		});
 
 
@@ -175,10 +155,9 @@ public class TrashFullscreen extends DialogFragment {
 				@Override
 				public boolean onSingleTapUp(@NonNull MotionEvent e) {
 					//If we're selecting, select/deselect the item
-					if(selectionController.isSelecting())
+					if(selectionController.isSelecting()) {
 						selectionController.toggleSelectItem(fileUID);
-
-					//TODO If we're not selecting, launch a new fragment
+					}
 
 					return true;
 				}
@@ -195,6 +174,9 @@ public class TrashFullscreen extends DialogFragment {
 		selectionController = new SelectionController(viewModel.selectionRegistry, new SelectionController.SelectionCallbacks() {
 			@Override
 			public void onSelectionStarted() {
+				selectionToolbar.setTitle("Target: Nothing");
+				confirmButton.setEnabled(false);
+
 				toolbar.setVisibility(View.GONE);
 				selectionToolbar.setVisibility(View.VISIBLE);
 				bottomBar.setVisibility(View.VISIBLE);
@@ -225,7 +207,13 @@ public class TrashFullscreen extends DialogFragment {
 
 			@Override
 			public void onNumSelectedChanged(int numSelected) {
-				selectionToolbar.setTitle( String.valueOf(numSelected) );
+				if(numSelected == 0) {
+					selectionController.stopSelecting();
+					return;
+				}
+
+				selectionToolbar.setTitle("Target: \""+getSelected().get(0).name+"\"");
+				confirmButton.setEnabled(true);
 			}
 
 			@Override
@@ -233,10 +221,22 @@ public class TrashFullscreen extends DialogFragment {
 				return adapter.list.get(pos).fileUID;
 			}
 		});
+		selectionController.setSingleItemMode(true);
 		if(selectionController.isSelecting()) {
-			selectionToolbar.setTitle( String.valueOf(selectionController.getNumSelected()) );
+			List<ListItem> selected = getSelected();
+			if(selected.isEmpty()) {
+				selectionToolbar.setTitle("Target: Nothing");
+				confirmButton.setEnabled(false);
+			}
+			else {
+				selectionToolbar.setTitle("Target: \"" + selected.get(0).name + "\"");
+				confirmButton.setEnabled(true);
+			}
+
+
 			toolbar.setVisibility(View.GONE);
 			selectionToolbar.setVisibility(View.VISIBLE);
+			bottomBar.setVisibility(View.VISIBLE);
 		}
 		selectionToolbar.setNavigationOnClickListener(v -> selectionController.stopSelecting());
 
@@ -272,10 +272,8 @@ public class TrashFullscreen extends DialogFragment {
 			List<ListItem> newFileList = TraversalHelper.traverseDir(dirUID);
 
 			newFileList = newFileList.stream()
-					//Filter out anything that isn't trashed
-					.filter(item -> FilenameUtils.getExtension(item.name).startsWith("trashed_"))
-					//Trimming the trashed extension from the name so it displays correctly
-					.map(item -> new ListItem.Builder(item).setName(FilenameUtils.removeExtension(item.name)).build())
+					//Filter out anything that is trashed
+					.filter(item -> !FilenameUtils.getExtension(item.name).startsWith("trashed_"))
 					.collect(Collectors.toList());
 
 			return newFileList;
@@ -338,11 +336,11 @@ public class TrashFullscreen extends DialogFragment {
 
 
 
-	public static class TrashViewModel extends ViewModel {
+	public static class LinkTargetViewModel extends ViewModel {
 		public final UUID dirUID;
 		public final SelectionController.SelectionRegistry selectionRegistry;
 
-		public TrashViewModel(UUID dirUID) {
+		public LinkTargetViewModel(UUID dirUID) {
 			this.dirUID = dirUID;
 			this.selectionRegistry = new SelectionController.SelectionRegistry();
 		}
@@ -357,8 +355,8 @@ public class TrashFullscreen extends DialogFragment {
 			@NonNull
 			@Override
 			public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-				if (modelClass.isAssignableFrom(TrashViewModel.class)) {
-					return (T) new TrashViewModel(dirUID);
+				if (modelClass.isAssignableFrom(LinkTargetViewModel.class)) {
+					return (T) new LinkTargetViewModel(dirUID);
 				}
 				throw new IllegalArgumentException("Unknown ViewModel class");
 			}

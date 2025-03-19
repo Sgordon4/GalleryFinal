@@ -41,11 +41,11 @@ public class ColorPickerModal extends DialogFragment {
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-		builder.setView(R.layout.fragment_directory_edit_colorpicker);
+		builder.setView(R.layout.frag_dir_edit_colorpicker);
 		builder.setTitle("Custom Color");
 
 		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.fragment_directory_edit_colorpicker, null);
+		View view = inflater.inflate(R.layout.frag_dir_edit_colorpicker, null);
 		builder.setView(view);
 
 		colorPicker = view.findViewById(R.id.color_picker);

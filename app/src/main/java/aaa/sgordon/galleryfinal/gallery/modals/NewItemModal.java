@@ -1,11 +1,9 @@
 package aaa.sgordon.galleryfinal.gallery.modals;
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -14,7 +12,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -23,20 +24,17 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
 import com.github.naz013.colorslider.ColorSlider;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -49,9 +47,12 @@ public class NewItemModal extends DialogFragment {
 	private static final Integer defaultColor = Color.GRAY;
 	private Integer color;
 	private LinkCache.LinkTarget linkTarget;
+	private ListItem internalTarget;
 
 	private EditText name;
 	private Spinner dropdown;
+	private RadioGroup linkType;
+	private TextView targetInternal;
 	private ColorSlider colorSlider;
 	private View colorPickerButton;
 
@@ -72,7 +73,7 @@ public class NewItemModal extends DialogFragment {
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
 		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.fragment_directory_new, null);
+		View view = inflater.inflate(R.layout.frag_dir_newitem, null);
 		builder.setView(view);
 
 
@@ -81,6 +82,8 @@ public class NewItemModal extends DialogFragment {
 
 		name = view.findViewById(R.id.name);
 		dropdown = view.findViewById(R.id.dropdown);
+		linkType = view.findViewById(R.id.link_type);
+		targetInternal = view.findViewById(R.id.target_internal);
 		colorSlider = view.findViewById(R.id.color_slider);
 		colorPickerButton = view.findViewById(R.id.color_picker_button);
 
@@ -101,6 +104,19 @@ public class NewItemModal extends DialogFragment {
 			public void onNothingSelected(AdapterView<?> parent) {
 			}
 		});
+
+
+		linkType.check(R.id.internal_link);
+
+
+		ImageButton browse = view.findViewById(R.id.browse);
+		browse.setOnClickListener(view1 ->
+			LinkTargetModal.launch(dirFragment, dirFragment.dirViewModel.getDirUID(), target -> {
+				internalTarget = target;
+				linkTarget = new LinkCache.InternalTarget(target.parentUID, target.fileUID);
+				targetInternal.setText(target.name);
+			})
+		);
 
 
 

@@ -22,7 +22,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragmentViewpagerBinding;
+import aaa.sgordon.galleryfinal.databinding.FragViewpagerBinding;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
@@ -31,7 +31,7 @@ import aaa.sgordon.galleryfinal.utilities.Utilities;
 //https://github.com/android/animation-samples/tree/main/GridToPager
 
 public class ViewPagerFragment extends Fragment {
-	private FragmentViewpagerBinding binding;
+	private FragViewpagerBinding binding;
 	private DirectoryViewModel dirViewModel;
 	private int currPos = -1;
 
@@ -58,7 +58,7 @@ public class ViewPagerFragment extends Fragment {
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		binding = FragmentViewpagerBinding.inflate(inflater, container, false);
+		binding = FragViewpagerBinding.inflate(inflater, container, false);
 		return binding.getRoot();
 	}
 

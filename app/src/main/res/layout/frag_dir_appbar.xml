@@ -33,7 +33,7 @@
 
         <include
             android:id="@+id/filter_bar"
-            layout="@layout/fragment_directory_filter"
+            layout="@layout/frag_dir_filter"
             android:visibility="gone"/>
 
     </com.google.android.material.appbar.CollapsingToolbarLayout>
