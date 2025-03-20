@@ -303,6 +303,7 @@ public class DirUtilities {
 
 
 		//If the destination is a link, we need the target dir or target parent
+		//TODO If the destination is a divider, move the files to under the divider
 		UUID destinationDirUID = LinkCache.getInstance().getLinkDir(destinationUID);
 
 
@@ -427,6 +428,7 @@ public class DirUtilities {
 		}
 
 		//If the destination is a link, we need the target dir or target parent
+		//TODO If the destination is a divider, move the files to under the divider
 		UUID destinationDirUID = LinkCache.getInstance().getLinkDir(destinationUID);
 
 		//TODO Links can be moved inside themselves atm

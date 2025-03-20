@@ -167,7 +167,6 @@ public class SelectionSetup {
 				Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
 				MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
 
-
 					//Get the selected items
 					List<ListItem> toMove = getSelected(dirFragment, selectionController);
 

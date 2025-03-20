@@ -67,8 +67,6 @@ public class MoveCopyFullscreen extends DialogFragment {
 		FragmentTransaction transaction = dirFragment.getChildFragmentManager().beginTransaction();
 		transaction.add(dialog, "move_copy_fullscreen");
 		transaction.commitAllowingStateLoss();
-
-		//dialog.show(dirFragment.getChildFragmentManager(), "move_copy_fullscreen");
 	}
 	private MoveCopyFullscreen(Path startPath, MoveCopyCallback callback) {
 		this.callback = callback;
@@ -84,15 +82,6 @@ public class MoveCopyFullscreen extends DialogFragment {
 		void onConfirm(UUID destinationUID);
 	}
 
-
-	/*
-	@NonNull
-	@Override
-	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-		setRetainInstance(true);
-		return super.onCreateDialog(savedInstanceState);
-	}
-	 */
 
 	@Nullable
 	@Override
@@ -329,28 +318,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 				Thread thread = new Thread(() -> {
 					updateToolbar(currDirUID, item.fileUID);
 
-					/*
-					//If the item is a link...
-					if(item.isLink) {
-						//Follow the link chain to the final target
-						LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(item.fileUID);
-
-						//If the target is internal...
-						if(target instanceof LinkCache.InternalTarget) {
-							//Use those fileUIDs to update the toolbar
-							LinkCache.InternalTarget internal = (LinkCache.InternalTarget) target;
-							updateToolbar(internal.getParentUID(), internal.getFileUID());
-						}
-					}
-					else {
-						updateToolbar(currDirUID, item.fileUID);
-					}
-
-					 */
-
-
 					changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));
-
 				});
 				thread.start();
 			});
