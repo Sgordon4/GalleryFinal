@@ -117,7 +117,8 @@ public class DirUtilities {
 		//Map each item to its parent directory for ease of access
 		Map<UUID, Map<UUID, String>> dirMap = new HashMap<>();
 		for(ListItem item : renamed) {
-			UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
+			//If the item's parent is a link, we need the target dir or target parent
+			UUID parentUID = LinkCache.getInstance().getLinkDir(item.parentUID);
 			dirMap.putIfAbsent(parentUID, new HashMap<>());
 			dirMap.get(parentUID).put(item.fileUID, item.name);
 		}
@@ -195,8 +196,8 @@ public class DirUtilities {
 		//For each item to delete
 		Map<UUID, Set<ListItem>> parentMap = new HashMap<>();
 		for(ListItem item : toDelete) {
-			//In case this is a link to a directory, get the actual directory UID it points to
-			UUID parentUID = LinkCache.getInstance().resolvePotentialLink(item.parentUID);
+			//If the item's parent is a link, we need the target dir or target parent
+			UUID parentUID = LinkCache.getInstance().getLinkDir(item.parentUID);
 
 			//Group the files by parent
 			parentMap.putIfAbsent(parentUID, new HashSet<>());
@@ -300,8 +301,9 @@ public class DirUtilities {
 			return false;
 		}
 
-		LinkCache linkCache = LinkCache.getInstance();
-		UUID destinationDirUID = linkCache.resolvePotentialLink(destinationUID);
+
+		//If the destination is a link, we need the target dir or target parent
+		UUID destinationDirUID = LinkCache.getInstance().getLinkDir(destinationUID);
 
 
 
@@ -320,8 +322,8 @@ public class DirUtilities {
 				continue;
 			}
 
-			//In case this is a link to a directory, get the actual directory UID it points to
-			parentUID = linkCache.resolvePotentialLink(parentUID);
+			//If the item's parent is a link, we need the target dir or target parent
+			parentUID = LinkCache.getInstance().getLinkDir(parentUID);
 
 			dirMap.putIfAbsent(parentUID, new ArrayList<>());
 			dirMap.get(parentUID).add(fileUID);
@@ -424,9 +426,8 @@ public class DirUtilities {
 			return false;
 		}
 
-		LinkCache linkCache = LinkCache.getInstance();
-		UUID destinationDirUID = linkCache.resolvePotentialLink(destinationUID);
-
+		//If the destination is a link, we need the target dir or target parent
+		UUID destinationDirUID = LinkCache.getInstance().getLinkDir(destinationUID);
 
 		//TODO Links can be moved inside themselves atm
 

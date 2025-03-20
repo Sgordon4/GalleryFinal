@@ -56,6 +56,9 @@ public class DirSampleData {
 	}
 
 
+	//TODO Add an external link, a link to a single item, and a link to a file that doesn't exist
+
+
 	//Returns the UUID of the root file
 	public static UUID setupDatabase(Context context) throws FileNotFoundException {
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();

@@ -44,15 +44,19 @@ public class ImageViewHolder extends BaseViewHolder {
 				Uri content;
 
 				LinkCache linkCache = LinkCache.getInstance();
-				UUID fileUID = linkCache.resolvePotentialLink(listItem.fileUID);
+				LinkCache.LinkTarget target = linkCache.getFinalTarget(listItem.fileUID);
 
-				//If the file is a link, we have an external link
-				if(linkCache.isLink(fileUID)) {
-					LinkCache.ExternalTarget target = (LinkCache.ExternalTarget) linkCache.getLinkTarget(fileUID);
-					content = target.getUri();
+				//If the target is null, the item is not a link. Get the content uri from the fileUID's content
+				if (target == null) {
+					content = hAPI.getFileContent(listItem.fileUID).first;
 				}
-				else {
-					content = hAPI.getFileContent(fileUID).first;
+				//If the target is internal, get the content uri from that fileUID's content
+				else if (target instanceof LinkCache.InternalTarget) {
+					content = hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID()).first;
+				}
+				//If the target is external, get the content uri from the target
+				else {//if(target instanceof LinkCache.ExternalTarget) {
+					content = ((LinkCache.ExternalTarget) target).getUri();
 				}
 
 

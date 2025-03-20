@@ -49,16 +49,26 @@ public class ReorderSetup {
 
 				try {
 					UUID destinationUID = UUID.fromString(destination.getFileName().toString());
-					try {
-						LinkCache.LinkTarget target = LinkCache.getInstance().getLinkTarget(destinationUID);
+
+					LinkCache linkCache = LinkCache.getInstance();
+
+					//If the item is a link, follow that link
+					if(linkCache.isLink(destinationUID)) {
+						LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(destinationUID);
+
+						//If the link is to an internal file...
 						if(target instanceof LinkCache.InternalTarget) {
-							destinationUID = ((LinkCache.InternalTarget) target).getParentUID();
+							LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
+
+							//If the link is to a directory, use the target fileUID
+							if(linkCache.isDir(internalTarget.getFileUID()))
+								destinationUID = internalTarget.getFileUID();
+							//If the link is to a single file (like an image/divider), use the target parentUID
+							else
+								destinationUID = internalTarget.getParentUID();
 						}
 					}
-					catch (IllegalArgumentException e) {
 
-					}
-					destinationUID = LinkCache.getInstance().resolvePotentialLink(destinationUID);
 
 					System.out.println("Reordering: ");
 					System.out.println("Dest: "+destinationUID);

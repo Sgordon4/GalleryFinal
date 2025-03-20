@@ -266,7 +266,7 @@ public class TrashFullscreen extends DialogFragment {
 	private List<ListItem> traverseDir(UUID dirUID) {
 		try {
 			//If the item is a link to a directory, follow that link
-			dirUID = LinkCache.getInstance().resolvePotentialLink(dirUID);
+			dirUID = LinkCache.getInstance().getLinkDir(dirUID);
 
 			//Grab the current list of all files in this directory from the system
 			List<ListItem> newFileList = TraversalHelper.traverseDir(dirUID);

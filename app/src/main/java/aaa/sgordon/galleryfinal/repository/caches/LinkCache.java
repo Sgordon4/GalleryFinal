@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,7 +35,8 @@ public class LinkCache {
 
 	//Since, in our current implementation, files cannot change their nature (isDir/isLink), this works well
 	private final Set<UUID> isLink;
-	private final Set<UUID> isNotLink;
+	private final Set<UUID> isDir;
+	private final Set<UUID> isNormal;
 
 
 	public static LinkCache getInstance() {
@@ -52,7 +52,8 @@ public class LinkCache {
 		this.linkTargets = new HashMap<>();
 
 		this.isLink = new HashSet<>();
-		this.isNotLink = new HashSet<>();
+		this.isDir = new HashSet<>();
+		this.isNormal = new HashSet<>();
 
 
 		//Whenever any file we have cached is changed, update our data
@@ -69,17 +70,24 @@ public class LinkCache {
 	public boolean isLink(UUID fileUID) throws FileNotFoundException {
 		if(isLink.contains(fileUID))
 			return true;
-		if(isNotLink.contains(fileUID))
+		if(isDir.contains(fileUID))
+			return false;
+		if(isNormal.contains(fileUID))
 			return false;
 
-		boolean isFileLink = hAPI.getFileProps(fileUID).islink;
-
-		if(isFileLink)
+		HFile fileProps = hAPI.getFileProps(fileUID);
+		if(fileProps.islink)
 			isLink.add(fileUID);
+		else if(fileProps.isdir)
+			isDir.add(fileUID);
 		else
-			isNotLink.add(fileUID);
+			isNormal.add(fileUID);
 
-		return isFileLink;
+		return fileProps.islink;
+	}
+	public boolean isDir(UUID fileUID) throws FileNotFoundException {
+		isLink(fileUID);	//Get the above method to do the caching
+		return isDir.contains(fileUID);
 	}
 
 
@@ -91,7 +99,7 @@ public class LinkCache {
 	@NonNull
 	public LinkTarget getLinkTarget(UUID fileUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		if(!isLink(fileUID))
-			throw new IllegalArgumentException("File is not a link! FileUID="+fileUID);
+			throw new IllegalArgumentException("File is not a link!");
 
 		//If we have the target cached, just use that
 		if(linkTargets.containsKey(fileUID))
@@ -102,6 +110,89 @@ public class LinkCache {
 		linkTargets.put(fileUID, target);
 		return target;
 	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+	@Nullable
+	public LinkTarget getFinalTarget(UUID linkUID) {
+		try {
+			UUID finalLink = getFinalLink(linkUID);
+			return getLinkTarget(finalLink);
+		}
+		catch (Exception e) {
+			//If this fails for any reason, just pretend the link is broken
+			return null;
+		}
+	}
+
+
+
+	//UUID could be a normal file, or it could be a link.
+	//If its a link, we want to follow it down a potential link chain until the final target
+	//Thanks Sophia for the naming suggestion
+	@NonNull
+	public UUID getFinalLink(UUID bartholomew) {
+		try {
+			if(!isLink(bartholomew))
+				throw new IllegalArgumentException("File is not a link!");
+
+			LinkTarget newTarget = getLinkTarget(bartholomew);
+
+			//If the final link in the chain points to an external file, just return the last item
+			if(newTarget instanceof ExternalTarget)
+				return bartholomew;
+
+			InternalTarget internalTarget = (InternalTarget) newTarget;
+
+			//If the internal target is a link, follow it
+			if(isLink(internalTarget.fileUID))
+				return getFinalLink(internalTarget.fileUID);
+				//Else, return this link
+			else
+				return bartholomew;
+		}
+		catch (FileNotFoundException | ConnectException e) {
+			//If the file isn't found or we just can't reach it, just pretend the link is broken
+			return bartholomew;
+		}
+		catch (ContentsNotFoundException e) {
+			//If we can't find the link's contents, just pretend the link is broken
+			return bartholomew;
+		}
+	}
+
+
+	//File can also be not-found
+	public UUID getLinkDir(UUID fileUID) {
+		try {
+			//If the item is a link, follow that link
+			if(isLink(fileUID)) {
+				LinkTarget target = LinkCache.getInstance().getFinalTarget(fileUID);
+
+				//If the link is to an internal file...
+				if(target instanceof InternalTarget) {
+					InternalTarget internalTarget = (InternalTarget) target;
+
+					//If the link is to a directory, use the target fileUID
+					if(isDir(internalTarget.getFileUID()))
+						fileUID = internalTarget.getFileUID();
+						//If the link is to a single file (like an image/divider), use the target parentUID
+					else
+						fileUID = internalTarget.getParentUID();
+				}
+			}
+		} catch (FileNotFoundException e) {
+			//Do nothing
+		}
+
+		return fileUID;
+	}
+
+
+	//---------------------------------------------------------------------------------------------
+
 
 	private static LinkTarget readLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		Uri uri = HybridAPI.getInstance().getFileContent(linkUID).first;
@@ -131,35 +222,6 @@ public class LinkCache {
 	}
 
 
-
-	//UUID could be a normal file, or it could be a link.
-	//If its a link, we want to follow it down a potential link chain until the final target
-	//Thanks Sophia for the naming suggestion
-	@NonNull
-	public UUID resolvePotentialLink(UUID bartholomew) {
-		try {
-			while (isLink(bartholomew)) {
-				LinkTarget newTarget = getLinkTarget(bartholomew);
-
-				//If the final link in the chain points to an external file, just return the last item
-				if(newTarget instanceof ExternalTarget) {
-					return bartholomew;
-				}
-
-				//If the link points to an internal file, follow it
-				bartholomew = ((InternalTarget) newTarget).getFileUID();
-			}
-			return bartholomew;
-		}
-		catch (FileNotFoundException | ConnectException e) {
-			//If the file isn't found or we just can't reach it, just pretend the link is broken
-			return bartholomew;
-		}
-		catch (ContentsNotFoundException e) {
-			//If we can't find the link's contents, just pretend the link is broken
-			return bartholomew;
-		}
-	}
 
 
 

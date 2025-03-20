@@ -153,7 +153,8 @@ public class TraversalHelper {
 
 
 		//If the target is trashed, we don't want to follow it
-		UUID targetParent = linkCache.resolvePotentialLink(target.getParentUID());
+		//Note: We're looking at this target specifically, not any target further down the link chain
+		UUID targetParent = target.getParentUID();
 		List<Pair<UUID, String>> dirContents = dirCache.getDirContents(targetParent);
 		boolean exists = false;
 		for(Pair<UUID, String> pair : dirContents) {

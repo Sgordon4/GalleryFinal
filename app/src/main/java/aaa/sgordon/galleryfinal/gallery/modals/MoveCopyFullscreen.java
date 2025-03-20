@@ -176,8 +176,32 @@ public class MoveCopyFullscreen extends DialogFragment {
 		if(parentDirUID == null)
 			toolbar.setTitle("Root");
 		else {
+
+			//Note: If we click on a link to a divider, there is simply no easy way to know what the divider's parent dir's name is
+			// Therefore, if we click on a link to a divider, we're just using the divider name as the toolbar title
+
+			try {
+				LinkCache linkCache = LinkCache.getInstance();
+				if(linkCache.isLink(fileUID)) {
+					//Follow the link chain to the final target
+					LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(fileUID);
+
+					//If the target is internal...
+					if(target instanceof LinkCache.InternalTarget) {
+						//Use those fileUIDs to update the toolbar
+						LinkCache.InternalTarget internal = (LinkCache.InternalTarget) target;
+						parentDirUID = internal.getParentUID();
+						fileUID = internal.getFileUID();
+					}
+				}
+			}
+			catch (FileNotFoundException ignored) {}
+
+
+			final UUID fParentDirUID = parentDirUID;
+			final UUID fFileUID = fileUID;
 			Thread updateToolbarThread = new Thread(() -> {
-				String fileName = getFileNameFromDir(parentDirUID, fileUID);
+				String fileName = getFileNameFromDir(fParentDirUID, fFileUID);
 				Handler mainHandler = new Handler(getContext().getMainLooper());
 				mainHandler.post(() -> toolbar.setTitle(fileName));
 			});
@@ -218,7 +242,6 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 	private String getFileNameFromDir(UUID parentDirUID, UUID fileUID) {
 		try {
-			//TODO I bet with the new LinkCache.followLinkChain we could get the correct filename
 			return DirCache.getInstance().getDirContents(parentDirUID).stream()
 					.filter(item -> item.first.equals(fileUID))
 					.map(item -> item.second)
@@ -234,8 +257,8 @@ public class MoveCopyFullscreen extends DialogFragment {
 	@NonNull
 	private List<ListItem> traverseDir(UUID dirUID) {
 		try {
-			//If the item is a link to a directory, follow that link
-			dirUID = LinkCache.getInstance().resolvePotentialLink(dirUID);
+			//If the dirUID is a link, we need the target dir or target parent
+			dirUID = LinkCache.getInstance().getLinkDir(dirUID);
 
 			//Grab the current list of all files in this directory from the system
 			List<ListItem> newFileList = TraversalHelper.traverseDir(dirUID);
@@ -304,20 +327,26 @@ public class MoveCopyFullscreen extends DialogFragment {
 			holder.bind(list.get(position));
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
+					updateToolbar(currDirUID, item.fileUID);
+
+					/*
+					//If the item is a link...
 					if(item.isLink) {
-						try {
-							LinkCache.LinkTarget target = LinkCache.getInstance().getLinkTarget(item.fileUID);
-							if(target instanceof LinkCache.InternalTarget) {
-								LinkCache.InternalTarget internal = (LinkCache.InternalTarget) target;
-								updateToolbar(internal.getParentUID(), internal.getFileUID());
-							}
-						} catch (Exception e) {
-							//TODO Handle error
+						//Follow the link chain to the final target
+						LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(item.fileUID);
+
+						//If the target is internal...
+						if(target instanceof LinkCache.InternalTarget) {
+							//Use those fileUIDs to update the toolbar
+							LinkCache.InternalTarget internal = (LinkCache.InternalTarget) target;
+							updateToolbar(internal.getParentUID(), internal.getFileUID());
 						}
 					}
 					else {
 						updateToolbar(currDirUID, item.fileUID);
 					}
+
+					 */
 
 
 					changeDirectory(item.fileUID, currPath.resolve(item.fileUID.toString()));

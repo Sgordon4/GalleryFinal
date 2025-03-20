@@ -248,8 +248,8 @@ public class EditItemModal extends DialogFragment {
 			//Rename the file if the filename changed
 			if(!Objects.equals(props.fileName, newFilename)) {
 				try {
-					//DirUID could be a link to a directory, we need the directory itself
-					UUID dirUID = LinkCache.getInstance().resolvePotentialLink(props.dirUID);
+					//If dirUID is a link, we need the target dir or target parent
+					UUID dirUID = LinkCache.getInstance().getLinkDir(props.dirUID);
 
 					DirUtilities.renameFile(props.fileUID, dirUID, newFilename);
 				} catch (ContentsNotFoundException e) {
