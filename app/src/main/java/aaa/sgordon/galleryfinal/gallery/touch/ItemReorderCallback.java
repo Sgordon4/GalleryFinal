@@ -170,6 +170,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		}
 
 
+		System.out.println(".");
 		System.out.println("Dragged: "+draggedItem.fileUID+" "+draggedItem.name);
 		System.out.println("DraggedPos: "+draggedItemPos);
 		System.out.println("Next: "+nextItem);

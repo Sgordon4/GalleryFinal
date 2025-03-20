@@ -272,9 +272,10 @@ public class TraversalHelper {
 
 
 		//Find the next divider after the given dividerUID, or the end of the list
+		//Note: Divider's only stop at other '.div' files. This includes skipping links unless they're named 'Something.div'
 		int nextDividerIndex = dividerIndex + 1;
 		while (nextDividerIndex < parentContents.size()) {
-			if(!FilenameUtils.getExtension( parentContents.get(nextDividerIndex).second ).equals("div"))
+			if(FilenameUtils.getExtension( parentContents.get(nextDividerIndex).second ).equals("div"))
 				break;
 
 			nextDividerIndex++;

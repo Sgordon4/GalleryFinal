@@ -10,12 +10,12 @@ import androidx.annotation.NonNull;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
@@ -79,21 +79,19 @@ public class DirCache {
 
 
 		//Loop importing items for testing notifications
-		HandlerThread handlerThread = new HandlerThread("BackgroundThread");
+		HandlerThread handlerThread = new HandlerThread("FakeImportThread");
 		handlerThread.start();
 		Looper looper = handlerThread.getLooper();
 		Handler handler = new Handler(looper);
 		Runnable runnable = new Runnable() {
 			public void run() {
 				//Get a random fileUID from our list
-				Random random = new Random();
-				int randomIndex = random.nextInt(dirContents.size());
+				int randomIndex = new Random().nextInt(dirContents.size());
 				UUID randomDirUID = (UUID) dirContents.keySet().toArray()[randomIndex];
-
 				//randomDirUID = currDirUID;
 
-				//Import to that directory
-				DirSampleData.fakeImportFiles(randomDirUID, 2);
+				//'Import' to that directory
+				DirSampleData.fakeImportFiles(randomDirUID, 1);
 
 				//Do it again in a few seconds
 				handler.postDelayed(this, 3000);

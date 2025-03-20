@@ -49,6 +49,16 @@ public class ReorderSetup {
 
 				try {
 					UUID destinationUID = UUID.fromString(destination.getFileName().toString());
+					try {
+						LinkCache.LinkTarget target = LinkCache.getInstance().getLinkTarget(destinationUID);
+						if(target instanceof LinkCache.InternalTarget) {
+							destinationUID = ((LinkCache.InternalTarget) target).getParentUID();
+						}
+					}
+					catch (IllegalArgumentException e) {
+
+					}
+					destinationUID = LinkCache.getInstance().resolvePotentialLink(destinationUID);
 
 					System.out.println("Reordering: ");
 					System.out.println("Dest: "+destinationUID);

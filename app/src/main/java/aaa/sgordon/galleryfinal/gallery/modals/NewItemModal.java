@@ -215,12 +215,14 @@ public class NewItemModal extends DialogFragment {
 					return;
 				}
 
-				if(linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
+				String selectedType = dropdown.getSelectedItem().toString();
+
+				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
 					Toast.makeText(requireContext(), "Please select a link target!", Toast.LENGTH_SHORT).show();
 					return;
 				}
 
-				if(linkType.getCheckedRadioButtonId() == R.id.external_link) {
+				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.external_link) {
 					if(targetExternal.getText().toString().isEmpty()) {
 						Toast.makeText(requireContext(), "Please enter a target URL!", Toast.LENGTH_SHORT).show();
 						return;

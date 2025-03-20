@@ -11,6 +11,8 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -196,12 +198,18 @@ public class DirectoryViewModel extends ViewModel {
 			//Grab the current list of all files in this directory from the system
 			List<ListItem> newFileList = TraversalHelper.traverseDir(currDirUID);
 
-
 			/**/
 			if(!printed) {
 				System.out.println("NewFiles: ");
-				for(ListItem item : newFileList)
-					System.out.println(item.filePath+" "+item.type+" "+item.name);
+				for(ListItem item : newFileList) {
+					//Print only the first 8 digits of the UUID
+					Path printPath = Paths.get("");
+					for(Path path : item.filePath) {
+						printPath = printPath.resolve(path.getFileName().toString().substring(0, 8));
+					}
+					System.out.println(printPath+"   "+item.type+" "+item.name);
+				}
+
 				printed = true;
 			}
 			/**/

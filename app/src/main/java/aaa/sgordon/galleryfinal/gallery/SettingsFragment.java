@@ -25,7 +25,9 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 		passwordChange.setDependency("password_enabled");
 
 
+		/*
 		passwordEnabled.setOnPreferenceChangeListener((preference, newValue) -> {
 		});
+		 */
 	}
 }

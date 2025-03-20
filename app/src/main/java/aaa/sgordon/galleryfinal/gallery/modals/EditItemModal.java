@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -317,6 +318,7 @@ public class EditItemModal extends DialogFragment {
 				mainHandler.post(() -> EditItemModal.launch(dirFragment, props));
 
 			} catch (FileNotFoundException e) {
+				Looper.prepare();
 				Toast.makeText(dirFragment.getContext(), "Cannot edit, file not found!", Toast.LENGTH_SHORT).show();
 			}
 		});
