@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:key="folder_settings">
+
+    <PreferenceCategory
+        app:key="security_category"
+        app:title="Security">
+
+        <SwitchPreferenceCompat
+            app:key="password_enabled"
+            app:title="Folder Passcode Enabled"
+            app:persistent="false"/>
+
+        <Preference
+            app:key="password_change"
+            app:summary="Change the passcode upon opening the folder"
+            app:title="Change Folder Passcode"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
