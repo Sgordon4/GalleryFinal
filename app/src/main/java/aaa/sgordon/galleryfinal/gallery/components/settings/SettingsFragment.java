@@ -33,7 +33,6 @@ public class SettingsFragment extends Fragment {
 	private static SettingsViewModel viewModel;
 
 	public static SettingsFragment newInstance(UUID directoryUID, JsonObject startingProps) {
-		System.out.println("New instance");
 		SettingsFragment fragment = new SettingsFragment();
 		Bundle args = new Bundle();
 		args.putString("DIRECTORYUID", directoryUID.toString());
@@ -46,7 +45,6 @@ public class SettingsFragment extends Fragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		System.out.println("Creating");
 
 		Bundle args = getArguments();
 		UUID directoryUID = UUID.fromString(args.getString("DIRECTORYUID"));
@@ -92,6 +90,8 @@ public class SettingsFragment extends Fragment {
 
 
 			final EditTextPreference password = (EditTextPreference) findPreference("password");
+			if(viewModel.props.has("password"))
+				password.setSummary("Passcode set");
 
 			//When the preference is clicked, show the current password
 			password.setOnPreferenceClickListener(preference -> {
@@ -119,6 +119,9 @@ public class SettingsFragment extends Fragment {
 
 			//If the hidden preference is changed, save it
 			final SwitchPreferenceCompat hidden = (SwitchPreferenceCompat) findPreference("hidden");
+			if(viewModel.props.has("hidden"))
+				hidden.setChecked(true);
+
 			hidden.setOnPreferenceChangeListener((preference, newValue) -> {
 				boolean isHidden = (boolean) newValue;
 				if(isHidden)
@@ -148,10 +151,10 @@ public class SettingsFragment extends Fragment {
 			props = new JsonObject();
 
 			//Grab only the props we care about
-			if(startingProps.has("password")) {
+			if(startingProps.has("password"))
 				props.addProperty("password", startingProps.get("password").getAsString());
-				props.addProperty("password_enabled", true);
-			}
+			if(startingProps.has("hidden"))
+				props.addProperty("hidden", startingProps.get("hidden").getAsBoolean());
 		}
 
 		public void persistProps(Context context) {

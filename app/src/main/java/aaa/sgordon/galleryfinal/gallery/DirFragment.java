@@ -193,6 +193,8 @@ public class DirFragment extends Fragment {
 						UUID dirUID = dirViewModel.getDirUID();
 						JsonObject props = AttrCache.getInstance().getAttr(dirUID);
 
+						System.out.println("Sending props: "+props.toString());
+
 						//Launch a Settings fragment
 						Handler handler = new Handler(requireActivity().getMainLooper());
 						handler.post(() -> {
