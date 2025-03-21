@@ -41,7 +41,7 @@
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
 
-            android:background="?attr/colorSurfaceVariant"
+            android:background="?attr/colorSurfaceContainer"
             android:text="Unknown"
             android:gravity="center_vertical"
             android:textSize="16sp"

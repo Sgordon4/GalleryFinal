@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +16,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -31,8 +34,10 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.gson.JsonObject;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,6 +54,7 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
+import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class DirFragment extends Fragment {
@@ -180,6 +186,28 @@ public class DirFragment extends Fragment {
 
 			else if (item.getItemId() == R.id.settings) {
 				System.out.println("Clicked settings");
+
+				Thread getProps = new Thread(() -> {
+					try {
+						//Get the props of the directory
+						UUID dirUID = dirViewModel.getDirUID();
+						JsonObject props = AttrCache.getInstance().getAttr(dirUID);
+
+						//Launch a Settings fragment
+						Handler handler = new Handler(requireActivity().getMainLooper());
+						handler.post(() -> {
+							SettingsFragment settingsFragment = SettingsFragment.newInstance(dirUID, props);
+							getChildFragmentManager().beginTransaction()
+									.replace(R.id.dir_child_container, settingsFragment)
+									.addToBackStack("Settings")
+									.commit();
+						});
+					} catch (FileNotFoundException e) {
+						Looper.prepare();
+						Toast.makeText(getContext(), "Could not open settings, file not found!", Toast.LENGTH_SHORT).show();
+					}
+				});
+				getProps.start();
 			}
 			return false;
 		});
@@ -259,8 +287,13 @@ public class DirFragment extends Fragment {
 		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
 			@Override
 			public void handleOnBackPressed() {
+				//If we have child fragments, close those first
+				if (getChildFragmentManager().getBackStackEntryCount() > 0) {
+					getChildFragmentManager().popBackStack();
+				}
+
 				//If the filter menu is open, close that first
-				if(binding.galleryAppbar.filterBar.getRoot().getVisibility() == View.VISIBLE) {
+				else if(binding.galleryAppbar.filterBar.getRoot().getVisibility() == View.VISIBLE) {
 					binding.galleryAppbar.filterBar.getRoot().setVisibility(View.GONE);
 
 					//Hide the keyboard

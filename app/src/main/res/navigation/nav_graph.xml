@@ -27,6 +27,12 @@
             android:id="@+id/action_toViewPagerFragment"
             app:destination="@id/ViewPagerFragment" />
 
+        <!--
+        <action
+            android:id="@+id/action_toSettingsFragment"
+            app:destination="@id/SettingsFragment" />
+            -->
+
     </fragment>
 
     <fragment
@@ -43,9 +49,21 @@
             app:argType="integer"
             android:defaultValue="0" />
 
-        <action
-            android:id="@+id/action_toDirectoryFragment"
-            app:destination="@id/DirectoryFragment" />
+    </fragment>
+
+    <!--
+    <fragment
+        android:id="@+id/SettingsFragment"
+        android:name="aaa.sgordon.galleryfinal.gallery.SettingsFragment"
+        android:label="Settings">
+
+        <argument
+            android:name="directoryUID"
+            app:argType="java.util.UUID" />
+        <argument
+            android:name="startingProps"
+            app:argType="com.google.gson.JsonObject" />
 
     </fragment>
+    -->
 </navigation>

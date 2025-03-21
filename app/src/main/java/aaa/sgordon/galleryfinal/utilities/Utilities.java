@@ -57,16 +57,20 @@ public class Utilities {
 		int[] attrs = new int[]{
 				com.google.android.material.R.attr.colorSurface,
 				com.google.android.material.R.attr.colorSurfaceVariant,
+				com.google.android.material.R.attr.colorSurfaceContainer,
 				com.google.android.material.R.attr.colorBackgroundFloating,
 				com.google.android.material.R.attr.colorOnSurface,
+				com.google.android.material.R.attr.colorPrimary,
 				com.google.android.material.R.attr.colorPrimaryContainer
 		};
 
 		String[] attrNames = {
 				"colorSurface",
 				"colorSurfaceVariant",
+				"colorSurfaceContainer",
 				"colorBackgroundFloating",
 				"colorOnSurface",
+				"colorPrimary",
 				"colorPrimaryContainer"
 		};
 
