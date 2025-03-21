@@ -167,19 +167,51 @@ public class SelectionSetup {
 				Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
 				MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
 
+					//Passing a fake item to move/copy will place the items at the start when the function can't find it
+					UUID nextItem = UUID.randomUUID();
+
+					LinkCache linkCache = LinkCache.getInstance();
+					LinkCache.LinkTarget target = linkCache.getFinalTarget(destinationUID);
+
+					//Find the next item in the list if we can
+					try {
+						if (target instanceof LinkCache.InternalTarget) {
+							LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
+
+							//If the target is a single item, we want to find the item directly after it
+							if(!linkCache.isDir(internalTarget.getFileUID())) {
+								List<Pair<UUID, String>> dirList = DirCache.getInstance().getDirContents(internalTarget.getParentUID());
+
+								//Find the index of the target
+								int targetIndex = -1;
+								for(int i = 0; i < dirList.size(); i++) {
+									//If we find the link target...
+									if (dirList.get(i).first.equals(internalTarget.getFileUID())) {
+										targetIndex = i+1;	//Point to the next item
+										break;
+									}
+								}
+
+								//If we found the target, grab the next item
+								if(targetIndex != -1 && targetIndex < dirList.size())
+									nextItem = dirList.get(targetIndex).first;
+							}
+						}
+					} catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+						//If anything goes wrong, just don't update the next item
+					}
+
+
 					//Get the selected items
 					List<ListItem> toMove = getSelected(dirFragment, selectionController);
-
+					UUID fNextItem = nextItem;
 					Thread operation = new Thread(() -> {
 						try {
-							//Passing a fake item to move/copy will place the items at the start when the function can't find it
-							UUID fakeItem = UUID.randomUUID();
-
 							//Given the move/copy destination, perform the move/copy
 							if(isMove)
-								DirUtilities.moveFiles(toMove, destinationUID, fakeItem);
+								DirUtilities.moveFiles(toMove, destinationUID, fNextItem);
 							else /*(isCopy)*/
-								DirUtilities.copyFiles(toMove, destinationUID, fakeItem);
+								DirUtilities.copyFiles(toMove, destinationUID, fNextItem);
 						} catch (FileNotFoundException | ContentsNotFoundException | ConnectException | NotDirectoryException e) {
 							throw new RuntimeException(e);
 						}
