@@ -45,6 +45,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
+import aaa.sgordon.galleryfinal.gallery.components.settings.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
@@ -55,7 +56,6 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
-import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;

@@ -7,15 +7,21 @@
         app:key="security_category"
         app:title="Security">
 
-        <SwitchPreferenceCompat
-            app:key="password_enabled"
-            app:title="Folder Passcode Enabled"
+
+        <EditTextPreference
+            app:key="password"
+            app:title="Directory Passcode"
+            app:summary="No passcode set"
+            app:icon="@drawable/icon_password"
             app:persistent="false"/>
 
-        <Preference
-            app:key="password_change"
-            app:summary="Change the passcode upon opening the folder"
-            app:title="Change Folder Passcode"/>
+
+        <SwitchPreferenceCompat
+            app:key="hidden"
+            app:title="Hide Directory"
+            app:summary="Hide from the gallery unless specifically searched for"
+            app:icon="@drawable/icon_visibility_off"
+            app:persistent="false"/>
 
     </PreferenceCategory>
 

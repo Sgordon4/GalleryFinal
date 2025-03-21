@@ -1,16 +1,19 @@
-package aaa.sgordon.galleryfinal.gallery;
+package aaa.sgordon.galleryfinal.gallery.components.settings;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.preference.Preference;
+import androidx.preference.EditTextPreference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
@@ -18,12 +21,16 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import java.io.FileNotFoundException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
+//Note: The hidden preference will not be respected by links, who need to be hidden as well
 public class SettingsFragment extends Fragment {
-	private SettingsViewModel viewModel;
+	private static SettingsViewModel viewModel;
 
 	public static SettingsFragment newInstance(UUID directoryUID, JsonObject startingProps) {
 		System.out.println("New instance");
@@ -84,15 +91,45 @@ public class SettingsFragment extends Fragment {
 			super.onViewCreated(view, savedInstanceState);
 
 
-			final SwitchPreferenceCompat passwordEnabled = (SwitchPreferenceCompat) findPreference("password_enabled");
-			final Preference passwordChange = findPreference("password_change");
-			passwordChange.setDependency("password_enabled");
+			final EditTextPreference password = (EditTextPreference) findPreference("password");
 
-
-			/*
-			passwordEnabled.setOnPreferenceChangeListener((preference, newValue) -> {
+			//When the preference is clicked, show the current password
+			password.setOnPreferenceClickListener(preference -> {
+				if(viewModel.props.has("password"))
+					password.setText(viewModel.props.get("password").getAsString());
+				return true;
 			});
-			 */
+
+			//When the password is changed, save it
+			password.setOnPreferenceChangeListener((preference, newValue) -> {
+				if(newValue.toString().isEmpty()) {
+					password.setSummary("No passcode set");
+					viewModel.props.remove("password");
+				}
+				else {
+					password.setSummary("Passcode set");
+					viewModel.props.addProperty("password", newValue.toString());
+				}
+
+				viewModel.persistProps(requireContext());
+
+				return true;
+			});
+
+
+			//If the hidden preference is changed, save it
+			final SwitchPreferenceCompat hidden = (SwitchPreferenceCompat) findPreference("hidden");
+			hidden.setOnPreferenceChangeListener((preference, newValue) -> {
+				boolean isHidden = (boolean) newValue;
+				if(isHidden)
+					viewModel.props.addProperty("hidden", true);
+				else
+					viewModel.props.remove("hidden");
+
+				viewModel.persistProps(requireContext());
+
+				return true;
+			});
 		}
 	}
 
@@ -115,6 +152,33 @@ public class SettingsFragment extends Fragment {
 				props.addProperty("password", startingProps.get("password").getAsString());
 				props.addProperty("password_enabled", true);
 			}
+		}
+
+		public void persistProps(Context context) {
+			Thread persist = new Thread(() -> {
+				HybridAPI hAPI = HybridAPI.getInstance();
+				try {
+					hAPI.lockLocal(dirUID);
+					HFile fileProps = hAPI.getFileProps(dirUID);
+					JsonObject currentAttr = fileProps.userattr;
+
+					//Overwrite any properties in the current attributes with our new settings
+					for(String key : props.keySet())
+						currentAttr.addProperty(key, props.get(key).getAsString());
+
+					hAPI.setAttributes(dirUID, currentAttr, fileProps.attrhash);
+				}
+				catch (FileNotFoundException e) {
+					Looper.prepare();
+					Toast.makeText(context, "Could not persist properties, file not found!", Toast.LENGTH_SHORT).show();
+					//We don't actually have to do anything else, like revert properties, because the file not found means it was just deleted
+					//Though we should probably pop backstack...
+				}
+				finally {
+					hAPI.unlockLocal(dirUID);
+				}
+			});
+			persist.start();
 		}
 
 
