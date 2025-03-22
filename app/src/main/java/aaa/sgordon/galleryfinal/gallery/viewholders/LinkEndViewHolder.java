@@ -16,20 +16,15 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class LinkEndViewHolder extends BaseViewHolder {
-	public TextView name;
 
 	public LinkEndViewHolder(@NonNull View itemView) {
 		super(itemView);
 
-		name = itemView.findViewById(R.id.name);
 	}
 
 	@Override
 	public void bind(ListItem listItem) {
 		super.bind(listItem);
-
-		String fileName = FilenameUtils.removeExtension(listItem.name);
-		name.setText(fileName);
 
 		if(listItem.attr.has("color")) {
 			//color.setBackgroundColor(listItem.attr.get("color").getAsInt());

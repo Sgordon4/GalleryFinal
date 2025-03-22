@@ -127,16 +127,18 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public int getItemViewType(int position) {
 		ListItem item = list.get(position);
 
-		if(item.type.equals(ListItem.ListItemType.LINKDIRECTORY)
-		|| item.type.equals(ListItem.ListItemType.LINKDIVIDER)
-		|| item.type.equals(ListItem.ListItemType.LINKBROKEN)
-		|| item.type.equals(ListItem.ListItemType.LINKCYCLE)
-		|| item.type.equals(ListItem.ListItemType.LINKUNREACHABLE)) {
-			return 6;
-		}
-
-		else if(item.type.equals(ListItem.ListItemType.LINKEND)) {
+		if(item.type.equals(ListItem.ListItemType.LINKDIRECTORY))
 			return 5;
+		else if(item.type.equals(ListItem.ListItemType.LINKDIVIDER))
+			return 6;
+		else if(item.type.equals(ListItem.ListItemType.LINKBROKEN))
+			return 7;
+		else if(item.type.equals(ListItem.ListItemType.LINKCYCLE))
+			return 8;
+		else if(item.type.equals(ListItem.ListItemType.LINKUNREACHABLE))
+			return 9;
+		else if(item.type.equals(ListItem.ListItemType.LINKEND)) {
+			return 10;
 		}
 
 		if(item.isDir)
@@ -179,7 +181,15 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				break;
 			case 5: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
 				break;
-			case 6: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
+			case 6: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_divider, parent, false));
+				break;
+			case 7: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_broken, parent, false));
+				break;
+			case 8: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+				break;
+			case 9: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+				break;
+			case 10: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
 				break;
 			case -1:
 			default: holder = new UnknownViewHolder(inflater.inflate(R.layout.dir_vh_unknown, parent, false));

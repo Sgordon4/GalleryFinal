@@ -56,6 +56,7 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
@@ -289,7 +290,7 @@ public class DirFragment extends Fragment {
 		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
 			@Override
 			public void handleOnBackPressed() {
-				//If we have child fragments, close those first
+				//If we have a child fragment, close that first
 				if (getChildFragmentManager().getBackStackEntryCount() > 0) {
 					getChildFragmentManager().popBackStack();
 				}
