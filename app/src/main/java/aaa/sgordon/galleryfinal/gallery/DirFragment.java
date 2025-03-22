@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
@@ -46,6 +47,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
+import aaa.sgordon.galleryfinal.gallery.components.RightSpaceDecoration;
 import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
 import aaa.sgordon.galleryfinal.gallery.components.settings.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
@@ -124,6 +126,7 @@ public class DirFragment extends Fragment {
 			}
 		};
 		recyclerView.setLayoutManager(layoutManager);
+		//recyclerView.addItemDecoration(new RightSpaceDecoration(Color.RED));
 
 		postponeEnterTransition(); // Pause the transition
 		recyclerView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
