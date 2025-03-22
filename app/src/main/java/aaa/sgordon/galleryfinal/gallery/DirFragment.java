@@ -69,14 +69,15 @@ public class DirFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		MainViewModel mainViewModel = new ViewModelProvider(getActivity()).get(MainViewModel.class);
+		MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
 
 		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
-		dirViewModel = new ViewModelProvider(getParentFragment(),
+		dirViewModel = new ViewModelProvider(this,
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
+
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
 			if (result.getResultCode() == Activity.RESULT_OK) {
@@ -265,8 +266,8 @@ public class DirFragment extends Fragment {
 
 
 
-		DirRVAdapter.AdapterCallbacks adapterCallbacks = AdapterTouchSetup.setupAdapterCallbacks(dirViewModel, selectionController,
-				reorderCallback, dragSelectCallback, getContext(), reorderHelper, dragSelectHelper, navController);
+		DirRVAdapter.AdapterCallbacks adapterCallbacks = AdapterTouchSetup.setupAdapterCallbacks(this, selectionController,
+				reorderCallback, dragSelectCallback, requireContext(), reorderHelper, dragSelectHelper, navController);
 		adapter.setCallbacks(adapterCallbacks);
 
 
@@ -354,13 +355,7 @@ public class DirFragment extends Fragment {
 			}
 			else if (actionItem.getId() == R.id.take_photo) {
 				System.out.println("Clicked take photo");
-
-				PasswordModal.launch(this, "DirName", "1234", new PasswordModal.PasswordCallback() {
-					@Override
-					public void onSuccess() {
-
-					}
-				});
+				Toast.makeText(requireContext(), "No worky :)", Toast.LENGTH_SHORT).show();
 			}
 			binding.fab.close();
 			return true;

@@ -14,20 +14,24 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 
 public class AdapterTouchSetup {
-	public static DirRVAdapter.AdapterCallbacks setupAdapterCallbacks(DirectoryViewModel dirViewModel, SelectionController selectionController,
+	public static DirRVAdapter.AdapterCallbacks setupAdapterCallbacks(DirFragment dirFragment, SelectionController selectionController,
 																	  ItemReorderCallback reorderCallback, DragSelectCallback dragSelectCallback, Context context,
 																	  ItemTouchHelper reorderHelper, ItemTouchHelper dragSelectHelper, NavController navController) {
 		return new DirRVAdapter.AdapterCallbacks() {
@@ -68,7 +72,7 @@ public class AdapterTouchSetup {
 						isDoubleTapInProgress = false;
 
 						//If the list is not currently filtered, the user is free to drag
-						FilterController.FilterRegistry fRegistry = dirViewModel.getFilterRegistry();
+						FilterController.FilterRegistry fRegistry = dirFragment.dirViewModel.getFilterRegistry();
 						if(fRegistry.activeQuery.getValue().isEmpty() && fRegistry.activeTags.getValue().isEmpty())
 							reorderHelper.startDrag(holder);
 						else
@@ -87,8 +91,38 @@ public class AdapterTouchSetup {
 						selectionController.toggleSelectItem(fileUID);
 
 					//If we're not selecting, launch a new fragment
+
+					else if(holder instanceof DirectoryViewHolder) {
+						ListItem listItem = holder.getListItem();
+
+						if(listItem.attr.has("password")) {
+							String password = listItem.attr.get("password").getAsString();
+
+							if(!password.isEmpty()) {
+								PasswordModal.launch(dirFragment, listItem.name, password, () -> {
+									//Upon successful password entry, launch the directory fragment
+									DirFragmentDirections.ActionToDirectoryFragment action =
+											DirFragmentDirections.actionToDirectoryFragment(listItem.fileUID);
+
+									action.setDirectoryName(listItem.name);
+									navController.navigate(action);
+								});
+							}
+						}
+						//If there is no password, launch the directory fragment
+						else {
+							DirFragmentDirections.ActionToDirectoryFragment action =
+									DirFragmentDirections.actionToDirectoryFragment(listItem.fileUID);
+
+							action.setDirectoryName(listItem.name);
+							navController.navigate(action);
+						}
+					}
+
+
 					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
-						int pos = holder.getAdapterPosition();
+						//int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
+						int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
 
 						//Transition is causing visual problems I don't like, and Google photos
 						// doesn't even use an exit transition, so I'm disabling it
@@ -105,7 +139,7 @@ public class AdapterTouchSetup {
 
 
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
-								.actionToViewPagerFragment(dirViewModel.getDirUID());
+								.actionToViewPagerFragment(dirFragment.dirViewModel.getDirUID());
 						action.setFromPosition(pos);
 
 						View mediaView = holder.itemView.findViewById(R.id.media);

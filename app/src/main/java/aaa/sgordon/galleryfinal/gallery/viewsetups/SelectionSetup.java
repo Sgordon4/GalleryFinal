@@ -87,6 +87,7 @@ public class SelectionSetup {
 				//For any visible item, update the item selection status to change its appearance
 				//There may be more than one item in the list with the same fileUID due to links
 				//Non-visible items will have their selection status set later when they are bound by the adapter
+				//TODO This isn't catching items just off the screen, fix this garbage
 				for(int i = 0; i < recyclerView.getChildCount(); i++) {
 					View itemView = recyclerView.getChildAt(i);
 					if(itemView != null) {
