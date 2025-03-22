@@ -32,10 +32,13 @@ public class FilterController {
 
 
 	public void onListUpdated(List<ListItem> fileList) {
-		//Filter the list of files based on the current query
-		List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
-		filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
-		registry.filteredList.postValue(filtered);
+		Thread filter = new Thread(() -> {
+			//Filter the list of files based on the current query
+			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
+			filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+			registry.filteredList.postValue(filtered);
+		});
+		filter.start();
 	}
 
 	public void onTagsUpdated(Map<String, Set<UUID>> newTags) {
@@ -61,17 +64,23 @@ public class FilterController {
 	public void onActiveQueryChanged(String newActiveQuery, List<ListItem> fullList) {
 		registry.activeQuery.postValue(newActiveQuery);
 
-		List<ListItem> filtered = filterListByQuery(newActiveQuery, fullList);
-		filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
-		registry.filteredList.postValue(filtered);
+		Thread filter = new Thread(() -> {
+			List<ListItem> filtered = filterListByQuery(newActiveQuery, fullList);
+			filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+			registry.filteredList.postValue(filtered);
+		});
+		filter.start();
 	}
 
 	public void onActiveTagsChanged(Set<String> newActiveTags, List<ListItem> fullList) {
 		registry.activeTags.postValue(newActiveTags);
 
-		List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
-		filtered = filterListByTags(newActiveTags, filtered, attrCache);
-		registry.filteredList.postValue(filtered);
+		Thread filter = new Thread(() -> {
+			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
+			filtered = filterListByTags(newActiveTags, filtered, attrCache);
+			registry.filteredList.postValue(filtered);
+		});
+		filter.start();
 	}
 
 

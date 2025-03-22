@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -45,9 +46,10 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
+import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
 import aaa.sgordon.galleryfinal.gallery.components.settings.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
-import aaa.sgordon.galleryfinal.gallery.modals.TrashFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -56,7 +58,6 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
-import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
@@ -353,6 +354,13 @@ public class DirFragment extends Fragment {
 			}
 			else if (actionItem.getId() == R.id.take_photo) {
 				System.out.println("Clicked take photo");
+
+				PasswordModal.launch(this, "DirName", "1234", new PasswordModal.PasswordCallback() {
+					@Override
+					public void onSuccess() {
+
+					}
+				});
 			}
 			binding.fab.close();
 			return true;

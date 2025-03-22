@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.modals;
+package aaa.sgordon.galleryfinal.gallery.components.trash;
 
 import android.app.Dialog;
 import android.os.Bundle;

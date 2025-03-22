@@ -121,7 +121,8 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 
 	private boolean isFullSpan(int viewType) {
-		return viewType == 4 || viewType == 5 || viewType == 6;
+		return viewType == 4 || viewType == 5 || viewType == 6 || viewType == 7 ||
+				viewType == 8 || viewType == 9 || viewType == 10;
 	}
 	@Override
 	public int getItemViewType(int position) {

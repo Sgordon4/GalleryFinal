@@ -10,9 +10,10 @@
 
         <EditTextPreference
             app:key="password"
-            app:title="Directory Passcode"
-            app:summary="No passcode set"
+            app:title="Directory PIN"
+            app:summary="No PIN set"
             app:icon="@drawable/icon_password"
+            app:dialogTitle="New PIN"
             app:persistent="false"/>
 
 

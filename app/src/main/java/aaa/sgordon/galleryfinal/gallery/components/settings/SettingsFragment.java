@@ -3,12 +3,13 @@ package aaa.sgordon.galleryfinal.gallery.components.settings;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Looper;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -23,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -47,7 +49,7 @@ public class SettingsFragment extends Fragment {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Bundle args = getArguments();
+		Bundle args = requireArguments();
 		UUID directoryUID = UUID.fromString(args.getString("DIRECTORYUID"));
 		JsonObject startingProps = new Gson().fromJson(args.getString("STARTINGPROPS"), JsonObject.class);
 
@@ -90,25 +92,36 @@ public class SettingsFragment extends Fragment {
 			super.onViewCreated(view, savedInstanceState);
 
 
-			final EditTextPreference password = (EditTextPreference) findPreference("password");
-			if(viewModel.props.has("password"))
-				password.setSummary("Passcode set");
 
-			//When the preference is clicked, show the current password
+			final EditTextPreference password = Objects.requireNonNull(findPreference("password"));
+			if(viewModel.props.has("password"))
+				password.setSummary("PIN set");
+
+			//Set the password input type to number password, and limit it to 16 digits
+			password.setOnBindEditTextListener(editText -> {
+				editText.setInputType(InputType.TYPE_CLASS_NUMBER);
+				//editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+				editText.setFilters(new InputFilter[] {new InputFilter.LengthFilter(16)});
+			});
+
+
+			//When the preference is clicked, show nothing
 			password.setOnPreferenceClickListener(preference -> {
-				if(viewModel.props.has("password"))
-					password.setText(viewModel.props.get("password").getAsString());
+				//if(viewModel.props.has("password"))
+				//	password.setText(viewModel.props.get("password").getAsString());
+				password.setText("");
 				return true;
 			});
+
 
 			//When the password is changed, save it
 			password.setOnPreferenceChangeListener((preference, newValue) -> {
 				if(newValue.toString().isEmpty()) {
-					password.setSummary("No passcode set");
+					password.setSummary("No PIN set");
 					viewModel.props.remove("password");
 				}
 				else {
-					password.setSummary("Passcode set");
+					password.setSummary("PIN set");
 					viewModel.props.addProperty("password", newValue.toString());
 				}
 
@@ -118,8 +131,11 @@ public class SettingsFragment extends Fragment {
 			});
 
 
+
+
+
 			//If the hidden preference is changed, save it
-			final SwitchPreferenceCompat hidden = (SwitchPreferenceCompat) findPreference("hidden");
+			final SwitchPreferenceCompat hidden = Objects.requireNonNull(findPreference("hidden"));
 			if(viewModel.props.has("hidden"))
 				hidden.setChecked(true);
 
