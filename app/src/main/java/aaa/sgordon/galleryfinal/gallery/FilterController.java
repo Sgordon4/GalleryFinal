@@ -86,6 +86,10 @@ public class FilterController {
 
 
 
+	//TODO Exclude tags for hidden items?
+	//TODO Exclude hidden items unless specifically filtered for
+
+
 	private Map<String, Set<UUID>> filterTagsByQuery(String query, Map<String, Set<UUID>> tags) {
 		Map<String, Set<UUID>> filtered = new HashMap<>();
 		for(Map.Entry<String, Set<UUID>> entry : tags.entrySet()) {
@@ -98,13 +102,25 @@ public class FilterController {
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
 	public static List<ListItem> filterListByQuery(String filterQuery, List<ListItem> list) {
+		System.out.println("Filtering list");
+		list = list.stream().filter(item -> {
+			//If the file is hidden...
+			if(item.attr.has("hidden") && item.attr.get("hidden").getAsBoolean()) {
+				System.out.println(item.name+" is hidden");
+				//Make sure the filename matches the filter query exactly
+				return item.name.equalsIgnoreCase(filterQuery);
+			}
+			//Otherwise, continue
+			return true;
+		}).collect(Collectors.toList());
+
+
 		if(filterQuery.isEmpty())
 			return list;
 
-		return list.stream().filter(pathStringPair -> {
+		return list.stream().filter(item -> {
 			//Make sure the fileName contains the query string
-			String fileName = pathStringPair.name;
-			return fileName.toLowerCase().contains(filterQuery.toLowerCase());
+			return item.name.toLowerCase().contains(filterQuery.toLowerCase());
 		}).collect(Collectors.toList());
 	}
 

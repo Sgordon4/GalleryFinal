@@ -74,6 +74,9 @@ public class AttrCache {
 				JsonArray tags = attrs.getAsJsonArray("tags");
 				if(tags == null) continue;
 
+				//Skip compiling tags for files that are hidden
+				if(attrs.has("hidden") && attrs.get("hidden").getAsBoolean()) continue;
+
 				for(JsonElement tag : tags) {
 					compiled.putIfAbsent(tag.getAsString(), new HashSet<>());
 					compiled.get(tag.getAsString()).add(file);
