@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcelable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -80,7 +82,7 @@ public class DirFragment extends Fragment {
 
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			if (result.getResultCode() == Activity.RESULT_OK) {
+			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
 				List<Uri> uris = ImportHelper.getUrisFromIntent(result.getData());
 				Map<Uri, DocumentFile> fileInfo = ImportHelper.getFileInfoForUris(getContext(), uris);
 
@@ -346,10 +348,11 @@ public class DirFragment extends Fragment {
 				System.out.println("Clicked import image");
 
 				//Launch the file picker intent
-				Intent filePicker = new Intent(Intent.ACTION_GET_CONTENT);
+				Intent filePicker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
 				//filePicker.setType("image/*");
 				filePicker.setType("*/*");
 				filePicker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+				filePicker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 				filePicker = Intent.createChooser(filePicker, "Select Items to Import");
 
 				filePickerLauncher.launch(filePicker);

@@ -75,7 +75,12 @@ public class ImportHelper {
 		//Import in reverse to preserve ordering
 		for(int i = urisToImport.size()-1; i >= 0; i--) {
 			Uri uri = urisToImport.get(i);
-			DocumentFile documentFile = fileInfo.get(uri);
+
+			context.getContentResolver().takePersistableUriPermission(uri,
+					Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+			//DocumentFile documentFile = fileInfo.get(uri);
+			DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
 			if(documentFile == null) continue;
 
 			System.out.println(documentFile.getName()+" "+documentFile.lastModified());
