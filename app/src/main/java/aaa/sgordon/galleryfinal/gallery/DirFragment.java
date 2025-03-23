@@ -47,8 +47,6 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
-import aaa.sgordon.galleryfinal.gallery.components.RightSpaceDecoration;
-import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
 import aaa.sgordon.galleryfinal.gallery.components.settings.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;

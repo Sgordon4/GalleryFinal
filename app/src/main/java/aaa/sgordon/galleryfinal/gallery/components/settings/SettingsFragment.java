@@ -183,6 +183,8 @@ public class SettingsFragment extends Fragment {
 					JsonObject currentAttr = fileProps.userattr;
 
 					//Overwrite any properties in the current attributes with our new settings
+					currentAttr.remove("password");
+					currentAttr.remove("hidden");
 					for(String key : props.keySet())
 						currentAttr.addProperty(key, props.get(key).getAsString());
 

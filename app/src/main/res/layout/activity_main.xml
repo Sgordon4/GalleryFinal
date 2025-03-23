@@ -16,4 +16,9 @@
         app:defaultNavHost="true"
         />
 
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/app_password_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

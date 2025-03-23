@@ -1,25 +1,15 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.Handler;
 import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
-import org.apache.commons.io.FilenameUtils;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -28,13 +18,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
@@ -43,18 +30,14 @@ import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
-import aaa.sgordon.galleryfinal.gallery.modals.EditItemModal;
+import aaa.sgordon.galleryfinal.gallery.components.edit.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
 import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
-import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class SelectionSetup {
 

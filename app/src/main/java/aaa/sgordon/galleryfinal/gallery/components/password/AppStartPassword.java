@@ -1,40 +1,41 @@
 package aaa.sgordon.galleryfinal.gallery.components.password;
 
-import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModel;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import aaa.sgordon.galleryfinal.R;
 
-public class PasswordModal extends DialogFragment {
+public class AppStartPassword extends Fragment {
 	private PasswordViewModel viewModel;
 	private PasswordViewModel.PasswordCallback callback;
+
 	private EditText passwordField;
 
-
-	public static void launch(@NonNull Fragment fragment, @NonNull String fileName, @NonNull String password, PasswordViewModel.PasswordCallback callback) {
-		PasswordModal dialog = PasswordModal.newInstance(fileName, password, callback);
-		dialog.show(fragment.getChildFragmentManager(), "password");
+	public static void launch(@NonNull Fragment parent, @NonNull String fileName, @NonNull String password, PasswordViewModel.PasswordCallback callback) {
+		AppStartPassword fragment = AppStartPassword.newInstance(fileName, password, callback);
+		parent.getChildFragmentManager().beginTransaction()
+				.add(fragment, "start_password")
+				.commit();
 	}
-	public static PasswordModal newInstance(@NonNull String fileName, @NonNull String password, PasswordViewModel.PasswordCallback callback) {
+	public static AppStartPassword newInstance(@NonNull String fileName, @NonNull String password, PasswordViewModel.PasswordCallback callback) {
 		if(password.isEmpty())
 			throw new IllegalArgumentException("Password cannot be empty!");
 
-		PasswordModal fragment = new PasswordModal();
+		AppStartPassword fragment = new AppStartPassword();
 		Bundle args = new Bundle();
 		args.putString("FILENAME", fileName);
 		args.putString("PASSWORD", password);
@@ -42,8 +43,6 @@ public class PasswordModal extends DialogFragment {
 		fragment.callback = callback;
 		return fragment;
 	}
-
-
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -58,16 +57,18 @@ public class PasswordModal extends DialogFragment {
 				.get(PasswordViewModel.class);
 	}
 
-	@NonNull
+
+	@Nullable
 	@Override
-	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.modal_password, null);
-		builder.setView(view);
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.frag_app_password, container, false);
+		passwordField = view.findViewById(R.id.password);
+		return view;
+	}
 
-		builder.setTitle("Opening "+viewModel.fileName);
-
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
 
 		passwordField = view.findViewById(R.id.password);
 		passwordField.setText(viewModel.currentPassword);
@@ -82,27 +83,17 @@ public class PasswordModal extends DialogFragment {
 				//When the passwords are equivalent, close the dialog
 				if(s.toString().equals(viewModel.password)) {
 					viewModel.callback.onSuccess();
-					dismiss();
+
+					//Remove the fragment
+					FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+					transaction.remove(AppStartPassword.this);
+					transaction.commit();
 				}
 			}
 
 			@Override
 			public void afterTextChanged(Editable s) {}
 		});
-
-
-
-		builder.setPositiveButton("Clear", null);
-		builder.setNegativeButton(android.R.string.cancel, null);
-
-		AlertDialog dialog = builder.create();
-		dialog.setOnShowListener(dialogInterface -> {
-			//The dialog will auto-close on successful password entry, so this button will just be to clear the text
-			Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-			button.setOnClickListener(v -> passwordField.setText(""));
-		});
-
-		return dialog;
 	}
 
 	@Override
@@ -110,11 +101,15 @@ public class PasswordModal extends DialogFragment {
 		super.onStart();
 
 		//Ensure the dialog window requests focus and opens the soft keyboard
-		if (getDialog() != null && getDialog().getWindow() != null) {
-			getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-		}
+		requireActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
 
 		//Try to give the password field focus
 		passwordField.requestFocus();
+
+		// Ensure the keyboard is shown
+		InputMethodManager inputMethodManager = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+		if (inputMethodManager != null) {
+			inputMethodManager.showSoftInput(passwordField, InputMethodManager.SHOW_IMPLICIT);
+		}
 	}
 }
