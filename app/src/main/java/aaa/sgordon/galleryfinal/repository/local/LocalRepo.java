@@ -1,6 +1,5 @@
 package aaa.sgordon.galleryfinal.repository.local;
 
-import android.content.Context;
 import android.net.Uri;
 import android.os.Looper;
 import android.os.NetworkOnMainThreadException;
@@ -18,36 +17,24 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
-import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.repository.local.types.LAccount;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 import aaa.sgordon.galleryfinal.repository.local.types.LFile;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class LocalRepo {
 	private static final String TAG = "Hyb.Local";
 
 	private static LocalRepo instance;
 	private final LocalDatabase database;
-	private LContentHelper contentHelper;
+	private final LContentHelper contentHelper;
 
 	private UUID currentAccount;
 	private final Map<UUID, ReentrantLock> locks;
 
-	public static LocalRepo getInstance() {
-		if (instance == null)
-			throw new IllegalStateException("LocalRepo is not initialized. Call initialize() first.");
-		return instance;
-	}
-
-	public static synchronized void initialize(Context context) {
-		if (instance == null) {
-			LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(context);
-			instance = new LocalRepo(db, context.getApplicationInfo().dataDir);
-		}
-	}
 	public static synchronized void initialize(LocalDatabase database, String storageDir) {
 		if (instance == null) instance = new LocalRepo(database, storageDir);
 	}
@@ -57,6 +44,14 @@ public class LocalRepo {
 		this.contentHelper = new LContentHelper(storageDir);
 	}
 
+	public static LocalRepo getInstance() {
+		if (instance == null)
+			throw new IllegalStateException("LocalRepo is not initialized. Call initialize() first.");
+		return instance;
+	}
+	public static void destroyInstance() {
+		instance = null;
+	}
 
 
 

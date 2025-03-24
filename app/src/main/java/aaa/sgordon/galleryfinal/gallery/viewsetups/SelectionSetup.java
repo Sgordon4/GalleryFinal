@@ -148,6 +148,7 @@ public class SelectionSetup {
 			else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
 				boolean isMove = menuItem.getItemId() == R.id.move;
 
+				//TODO Make actual path from root
 				Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
 				MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
 

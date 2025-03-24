@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.utilities;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.repository.StorageHandler;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -26,6 +28,8 @@ import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 
 public class DirSampleData {
+	private static final String TAG = "Gal.Sample";
+
 	private static final Uri externalUri_Jpg_1MB = Uri.parse("https://sample-videos.com/img/Sample-jpg-image-1mb.jpg");
 	private static final String externalUri_Jpg_1MB_Checksum = "35C461DEE98AAD4739707C6CCA5D251A1617BFD928E154995CA6F4CE8156CFFC";
 
@@ -61,8 +65,12 @@ public class DirSampleData {
 
 	//Returns the UUID of the root file
 	public static UUID setupDatabase(Context context) throws FileNotFoundException {
+		Log.i(TAG, "Setting up in-memory database...");
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
-		LocalRepo.initialize(db, context.getCacheDir().toString());
+		Uri storageDir = StorageHandler.getGalleryStorageUri(MyApplication.getAppContext());
+		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
+		LocalRepo.initialize(db, storageDir.toString());
+		//LocalRepo.initialize(db, context.getCacheDir().toString());
 		HybridAPI hapi = HybridAPI.getInstance();
 
 		//Fake creating the account
@@ -191,6 +199,7 @@ public class DirSampleData {
 
 		//-----------------------------------------------------------------------------------------
 
+		Log.i(TAG, "Finished setting up in-memory database!");
 
 		return root;
 	}

@@ -34,15 +34,13 @@ import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 //https://developer.android.com/guide/navigation/use-graph/animate-transitions
 
 public class MainActivity extends AppCompatActivity {
+	private final String TAG = "Gal.Main";
 	private ActivityMainBinding binding;
 	private MainViewModel viewModel;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-		viewModel.testInt += 1;
 
 
 		EdgeToEdge.enable(this);
@@ -58,13 +56,39 @@ public class MainActivity extends AppCompatActivity {
 		});
 
 
+		//If the storage directory is not accessible...
+		if(!StorageHandler.isStorageAccessible(this)) {
+			System.out.println("Launching");
+			Log.w(TAG, "Storage directory is inaccessible. Prompting user to reselect.");
 
-		
+			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
+		} else {
+			Log.i(TAG, "Using saved directory.");
+
+			launchEverything();
+		}
+	}
+
+	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(),
+			result -> {
+				StorageHandler.onStorageLocationPicked(this, result);
+				launchEverything();
+			});
+
+
+
+	private void launchEverything() {
 		//Go off main thread to setup the database and root dir
 		// Later this will be done in a login activity before this one, so this won't be necessary
 		Thread thread = new Thread(() -> {
 			try {
+				//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
+				// or an actual database will be created.
 				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
+
+				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+				viewModel.testInt += 1;
 
 				//Use the directoryUID returned to start the first fragment
 				Handler mainHandler = new Handler(getMainLooper());
@@ -99,31 +123,16 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
-
-	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
-			new ActivityResultContracts.StartActivityForResult(),
-			result -> StorageHandler.onStorageLocationPicked(this, result));
-
-
 	@Override
 	protected void onStart() {
 		super.onStart();
+		System.out.println("Starting");
+
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 		System.out.println("Resuming");
-
-
-		System.out.println("Starting");
-		//If the storage directory is not accessible...
-		if(!StorageHandler.isStorageAccessible(this)) {
-			System.out.println("Launching");
-			Log.w("DirectoryPicker", "Storage directory is inaccessible. Prompting user to reselect.");
-			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
-		} else {
-			Log.d("DirectoryPicker", "Using saved directory.");
-		}
 	}
 }
