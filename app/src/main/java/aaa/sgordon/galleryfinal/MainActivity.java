@@ -1,28 +1,31 @@
 package aaa.sgordon.galleryfinal;
 
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
-
-import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
-import aaa.sgordon.galleryfinal.gallery.components.password.AppStartPassword;
-import aaa.sgordon.galleryfinal.gallery.components.password.PasswordViewModel;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.repository.StorageHandler;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
@@ -93,5 +96,34 @@ public class MainActivity extends AppCompatActivity {
 		bundle.putSerializable("directoryUID", rootDirectoryUID);
 		bundle.putString("directoryName", rootDirectoryUID.toString());
 		navController.setGraph(R.navigation.nav_graph, bundle);
+	}
+
+
+
+	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(),
+			result -> StorageHandler.onStorageLocationPicked(this, result));
+
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		System.out.println("Resuming");
+
+
+		System.out.println("Starting");
+		//If the storage directory is not accessible...
+		if(!StorageHandler.isStorageAccessible(this)) {
+			System.out.println("Launching");
+			Log.w("DirectoryPicker", "Storage directory is inaccessible. Prompting user to reselect.");
+			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
+		} else {
+			Log.d("DirectoryPicker", "Using saved directory.");
+		}
 	}
 }

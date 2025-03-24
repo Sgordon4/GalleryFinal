@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -325,16 +326,10 @@ public class DirFragment extends Fragment {
 
 		//Temporary button for testing
 		binding.buttonDrilldown.setOnClickListener(view1 -> {
-			DirFragmentDirections.ActionToDirectoryFragment action =
-					DirFragmentDirections.actionToDirectoryFragment(dirViewModel.getDirUID());
-			action.setDirectoryName("AAAAAA");
-			NavHostFragment.findNavController(this).navigate(action);
+			//Remove the storage location from the shared prefs
+			SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+			prefs.edit().remove("device_storage_location").apply();
 		});
-		//Button is kinda not useful now that we've hooked things up to the database, but I'm keeping this code for ref
-		//Note: Using this button will make another fragment using the same directoryID, meaning that if we import things
-		// in any of the child frags those things will show up in the previous frags too.
-		//This is NOT a bug, and is actually the intended use case lmao. Pretty neat that it works though.
-		//binding.buttonDrilldown.setVisibility(View.GONE);
 
 
 		binding.fab.inflate(R.menu.gallery_menu_fab);
