@@ -142,6 +142,7 @@ public class ImportHelper {
 	}
 
 
+	//TODO Make sure this is put in the cache dir since we changed up how we're accessing files. I didn't check this one.
 	//Returns filehash
 	private static String importToTempFile(Context context, Path tempFile, Uri uri) throws IOException {
 		if(!tempFile.toFile().exists()) {

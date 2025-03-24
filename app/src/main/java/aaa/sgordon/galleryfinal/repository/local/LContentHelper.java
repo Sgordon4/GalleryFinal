@@ -1,8 +1,10 @@
 package aaa.sgordon.galleryfinal.repository.local;
 
+import android.content.Context;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,6 +14,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -24,15 +28,17 @@ import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 
 public class LContentHelper {
 	private static final String TAG = "Hyb.Local.Cont";
+	private static final String mainDir = ".Gallery";
 	private static final String contentDir = "content";
-	private final String storageDir;
+	private final Uri storageDir;
 
-	public LContentHelper(@NonNull String storageDir) {
+	public LContentHelper(@NonNull Uri storageDir) {
 		//Contents are stored in the app's data directory
 		this.storageDir = storageDir;
 	}
 
 
+	/*
 	//WARNING: This method does not create the file or parent directory, it only provides the location
 	@NonNull
 	private File getContentLocationOnDisk(@NonNull String hash) {
@@ -42,6 +48,7 @@ public class LContentHelper {
 		//With each content file named by its SHA256 hash
 		return new File(contentRoot, hash);
 	}
+	 */
 
 
 	//---------------------------------------------------------------------------------------------
@@ -50,8 +57,12 @@ public class LContentHelper {
 	//WARNING: The file at the end of this uri may not exist
 	@NonNull
 	public Uri getContentUri(@NonNull String name) {
-		File contents = getContentLocationOnDisk(name);
-		return Uri.fromFile(contents);
+		//File contents = getContentLocationOnDisk(name);
+		//return Uri.fromFile(contents);
+
+		Path path = Paths.get(mainDir, contentDir, name);
+		DocumentFile file = SAFFileHelper.getOrCreateFile(MyApplication.getAppContext(), storageDir, path.toString(), "text/plain");
+		return file.getUri();
 	}
 
 
