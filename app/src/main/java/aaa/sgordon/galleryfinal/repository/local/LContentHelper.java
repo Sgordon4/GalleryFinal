@@ -32,23 +32,24 @@ public class LContentHelper {
 	private static final String contentDir = "content";
 	private final Uri storageDir;
 
-	public LContentHelper(@NonNull Uri storageDir) {
+	public LContentHelper(@NonNull String storageDir) {
 		//Contents are stored in the app's data directory
-		this.storageDir = storageDir;
+		this.storageDir = Uri.parse(storageDir);
 	}
 
 
-	/*
+	/**/
 	//WARNING: This method does not create the file or parent directory, it only provides the location
 	@NonNull
 	private File getContentLocationOnDisk(@NonNull String hash) {
 		//Content is stored in a content subdirectory
-		File contentRoot = new File(storageDir, contentDir);
+		File contentRoot = new File(storageDir.getPath(), contentDir);
 
 		//With each content file named by its SHA256 hash
 		return new File(contentRoot, hash);
 	}
-	 */
+	/**/
+
 
 
 	//---------------------------------------------------------------------------------------------

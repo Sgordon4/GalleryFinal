@@ -26,9 +26,8 @@ public class SAFFileHelper {
 		for (int i = 0; i < parts.length - 1; i++) {
 			String folderName = parts[i];
 			DocumentFile nextDir = findFile(currentDir, folderName);
-			if (nextDir == null) {
+			if (nextDir == null)
 				nextDir = currentDir.createDirectory(folderName);
-			}
 			if (nextDir == null) {
 				Log.e("SAFFileHelper", "Failed to create/access directory: " + folderName);
 				return null;

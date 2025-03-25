@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.repository;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -14,12 +13,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.app.ActivityCompat;
 import androidx.documentfile.provider.DocumentFile;
 
-import java.nio.file.Paths;
-
 public class StorageHandler {
+	private static final String TAG = "Gal.Storage";
 	private static final String PREFCATEGORY = "AppPrefs";
 	private static final String PREFTAG = "device_storage_location";
 
@@ -29,21 +26,27 @@ public class StorageHandler {
 			return null;
 
 
-		String storageUri = getStorageUri(context);
+		String storageUri = getStorageTreeUri(context);
 		Uri savedUri = Uri.parse(storageUri);
 		DocumentFile pickedDir = DocumentFile.fromTreeUri(context, savedUri);
+		return pickedDir.getUri();
 
-		return pickedDir.getUri().buildUpon().appendPath(".Gallery").build();
+		//return pickedDir.getUri().buildUpon().appendPath(".Gallery").build();
 	}
 
 
 	public static boolean isStorageAccessible(@NonNull Context context) {
-		String storageUri = getStorageUri(context);
+		String storageUri = getStorageTreeUri(context);
+		System.out.println("StorageUri: "+storageUri);
 		if (storageUri == null)
 			return false;
 
-		Uri savedUri = Uri.parse(storageUri);
+		Uri savedUri = Uri.parse(Uri.decode(storageUri));
+		System.out.println("Uri uri: "+savedUri);
 		DocumentFile pickedDir = DocumentFile.fromTreeUri(context, savedUri);
+		System.out.println("DocUri: "+pickedDir.getUri().toString());
+		System.out.println(pickedDir.exists());
+		System.out.println(pickedDir.canWrite());
 
 		return pickedDir != null && pickedDir.exists() && pickedDir.canWrite();
 	}
@@ -63,7 +66,7 @@ public class StorageHandler {
 			SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
 			prefs.edit().putString(PREFTAG, treeUri.toString()).apply();
 
-			Log.d("DirectoryPicker", "Directory selected: " + treeUri);
+			Log.d(TAG, "Directory selected: " + treeUri);
 		}
 	}
 
@@ -92,7 +95,7 @@ public class StorageHandler {
 
 
 	@Nullable
-	private static String getStorageUri(@NonNull Context context) {
+	public static String getStorageTreeUri(@NonNull Context context) {
 		SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
 		return prefs.getString(PREFTAG, null);
 	}

@@ -1,13 +1,13 @@
 package aaa.sgordon.galleryfinal;
 
-import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.DocumentsContract;
 import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
@@ -17,14 +17,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import java.io.FileNotFoundException;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
+import aaa.sgordon.galleryfinal.repository.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.StorageHandler;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
@@ -56,6 +59,17 @@ public class MainActivity extends AppCompatActivity {
 		});
 
 
+
+		if(StorageHandler.getStorageTreeUri(this) == null) {
+			System.out.println("Storage Uri is null!");
+			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
+		}
+		else {
+			System.out.println("Storage Uri is NOT null!");
+			testBullshit();
+		}
+
+
 		//If the storage directory is not accessible...
 		if(!StorageHandler.isStorageAccessible(this)) {
 			System.out.println("Launching");
@@ -73,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
 				StorageHandler.onStorageLocationPicked(this, result);
-				launchEverything();
+				testBullshit();
+				//launchEverything();
 			});
 
 
@@ -123,16 +138,73 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
-	@Override
-	protected void onStart() {
-		super.onStart();
+
+
+	private void testBullshit() {
+		System.out.println("Inside");
+		SharedPreferences prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+		String uriString = prefs.getString("device_storage_location", null);
+		System.out.println(uriString);
+		Uri rootUri = Uri.parse(Uri.decode(uriString));
+		System.out.println(rootUri);
+
+
 		System.out.println("Starting");
+		DocumentFile rootTreeDoc = DocumentFile.fromTreeUri(this, rootUri);
 
+		String rootTreeID = DocumentsContract.getTreeDocumentId(rootUri);
+		Uri fuck = rootUri.buildUpon()
+				.appendPath("document")
+				.appendPath(rootTreeID)
+				.appendPath("NewFile")
+				.build();
+
+
+		//DocumentFile newFile = rootTreeDoc.createFile("text/plain", "NewFile");
+		DocumentFile newFileDoc = rootTreeDoc.createDirectory("NewFile");
+		System.out.println(Uri.decode(newFileDoc.getUri().toString()));
+		System.out.println(Uri.decode(fuck.toString()));
+
+		DocumentFile fuckDoc = DocumentFile.fromSingleUri(this, fuck);
+		System.out.println(Uri.decode(fuckDoc.getUri().toString()));
+		System.out.println(fuckDoc.getUri().equals(fuck));
+		System.out.println(fuckDoc.getUri().toString());
+		System.out.println(fuck.toString());
+
+		//Why are these different types of documentFiles.
+		// Why does the fucking encode have to be special???
+		// What in the fuck is this actual garbage???????
+		System.out.println("???????");
+		System.out.println(fuckDoc.getUri().equals(newFileDoc.getUri()));
+		System.out.println(fuckDoc.getUri().toString());
+		System.out.println(newFileDoc.getUri().toString());
+		//SingleDocumentFile vs TreeDocumentFile bullshit
+
+
+
+
+		try (Cursor cursor = getContentResolver().query(
+				fuckDoc.getUri(),
+				new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID},
+				null, null, null)) {
+			System.out.println(cursor != null && cursor.getCount() > 0);
+		}
+
+
+
+
+
+
+
+
+
+		Uri parentDir = SAFGoFuckYourself.findOrCreateDirectory(rootUri, "Parent", this);
+		Uri childDir = SAFGoFuckYourself.findOrCreateDirectory(parentDir, "Child", this);
+
+
+		fuckShitUp();
 	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		System.out.println("Resuming");
+	private void fuckShitUp() {
+		throw new RuntimeException();
 	}
 }
