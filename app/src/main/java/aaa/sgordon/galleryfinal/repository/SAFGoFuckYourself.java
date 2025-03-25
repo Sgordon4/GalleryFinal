@@ -6,15 +6,19 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.file.FileAlreadyExistsException;
 
 
 /*
@@ -28,135 +32,122 @@ Also, why the FUCK does contentResolver's query not fucking work. Legitimately u
 
 public class SAFGoFuckYourself {
 
-	public static Uri createFile(Uri parentUri, String mimeType, String fileName, Context context) {
-		try {
-			return DocumentsContract.createDocument(
-					context.getContentResolver(), parentUri, mimeType, fileName);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+
+	public static Uri makeDocUriFromRoot(@NonNull Uri rootTreeUri, String... segments) {
+		String rootTreeDocID = DocumentsContract.getTreeDocumentId(rootTreeUri);
+
+		String name = "";
+		if(segments.length > 0)
+			name = "/"+String.join("/", segments);
+
+		return DocumentsContract.buildDocumentUriUsingTree(rootTreeUri, rootTreeDocID + name);
 	}
-	public static Uri findOrCreateDirectory(Uri parentUri, String dirName, Context context) {
-		Uri existingDir = findFileUri(parentUri, dirName, context);
-		return (existingDir != null) ? existingDir : createDirectory(parentUri, dirName, context);
+	@Nullable
+	public static Uri getParentFromDocUri(@NonNull Uri documentUri) {
+		String documentID = DocumentsContract.getDocumentId(documentUri);
+
+		//Get the last index of '/'. If there is none, this is a top-level folder
+		int lastSlashIndex = documentID.lastIndexOf('/');
+		if (lastSlashIndex == -1) return null;
+
+		String parentDocumentId = documentID.substring(0, lastSlashIndex);
+		return DocumentsContract.buildDocumentUriUsingTree(documentUri, parentDocumentId);
 	}
-	public static Uri createDirectory(Uri parentUri, String dirName, Context context) {
-		try {
-			return DocumentsContract.createDocument(
-					context.getContentResolver(), parentUri,
-					DocumentsContract.Document.MIME_TYPE_DIR, dirName);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+	@Nullable
+	public static String getNameFromDocUri(@NonNull Uri documentUri) {
+		String documentID = DocumentsContract.getDocumentId(documentUri);
+
+		//Get the last index of '/'. If there is none, this is a top-level folder
+		int lastSlashIndex = documentID.lastIndexOf('/');
+		if (lastSlashIndex == -1) return null;
+
+		return documentID.substring(lastSlashIndex+1);
+	}
+
+
+
+	public static void createFile(Context context, Uri fileDocUri) throws FileNotFoundException {
+		if(fileExists(context, fileDocUri)) return;
+
+		//If there is no parent, we're trying to create a top-level file, which we can't do
+		Uri parentUri = getParentFromDocUri(fileDocUri);
+		if(parentUri == null) throw new IllegalArgumentException("Cannot create top-level file: "+fileDocUri);
+
+		//If the parent doesn't exist, create that
+		if(!directoryExists(context, parentUri))
+			createDirectory(context, parentUri);
+
+		String fileName = getNameFromDocUri(fileDocUri);
+		Uri uri = createFile(context, parentUri, fileName);
+	}
+	private static Uri createFile(Context context, Uri parentUri, String dirName) throws FileNotFoundException {
+		return DocumentsContract.createDocument(
+				context.getContentResolver(), parentUri,
+				"*/*", dirName);
+	}
+
+
+
+	public static void createDirectory(Context context, Uri directoryDocUri) throws FileNotFoundException {
+		if(directoryExists(context, directoryDocUri)) return;
+
+		//If there is no parent, we're trying to create a top-level directory, which we can't do
+		Uri parentUri = getParentFromDocUri(directoryDocUri);
+		if(parentUri == null) throw new IllegalArgumentException("Cannot create top-level dir: "+directoryDocUri);
+
+		//If the parent doesn't exist, create that
+		if(!directoryExists(context, parentUri))
+			createDirectory(context, parentUri);
+
+		String fileName = getNameFromDocUri(directoryDocUri);
+		Uri uri = createDirectory(context, parentUri, fileName);
+	}
+	private static Uri createDirectory(Context context, Uri parentUri, String dirName) throws FileNotFoundException {
+		return DocumentsContract.createDocument(
+				context.getContentResolver(), parentUri,
+				DocumentsContract.Document.MIME_TYPE_DIR, dirName);
 	}
 
 
 
 
-	public static Uri guessFileUri(Uri directoryUri, String fileName) {
-		String dirDocId = DocumentsContract.getDocumentId(directoryUri);
-		String fileDocId = dirDocId + "/" + fileName; // This assumes standard ID formatting
-		return DocumentsContract.buildDocumentUriUsingTree(directoryUri, fileDocId);
-	}
-	/*
-	public static boolean fileExists(Uri fileUri, Context context) {
-		try (InputStream ignored = context.getContentResolver().openInputStream(fileUri)) {
-			return true;
-		} catch (IllegalArgumentException | IOException e) {
-			return false;
-		}
-	}
-	 */
 
 
-	public static Uri findFileUri(Uri parentUri, String fileName, Context context) {
-		Uri guessedUri = guessFileUri(parentUri, fileName);
-		return fileExists(guessedUri, context) ? guessedUri : null;
+	public static boolean fileExists(Context context, Uri fileUri) {
+		return getFileType(context, fileUri) == 2;
 	}
-	public static boolean fileExists(Uri fileUri, Context context) {
-		// If the cursor has data, the directory exists
+	public static boolean directoryExists(Context context, Uri fileUri) {
+		return getFileType(context, fileUri) == 1;
+	}
+	private static int getFileType(Context context, Uri fileUri) {
 		try (Cursor cursor = context.getContentResolver().query(
 				fileUri,
-				new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID},
+				new String[]{DocumentsContract.Document.COLUMN_MIME_TYPE},
 				null, null, null)) {
-			return cursor != null && cursor.getCount() > 0;
-		}
-	}
-
-
-
-
-
-
-
-
-	//------------------------------------------------------
-
-
-
-
-	public static boolean directoryExists(Uri directoryUri, Context context) {
-		ContentResolver resolver = context.getContentResolver();
-
-		try (Cursor cursor = resolver.query(
-				directoryUri,
-				new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID},
-				null, null, null)) {
-			return cursor != null && cursor.getCount() > 0; // If the cursor has data, the directory exists
-		}
-	}
-
-
-
-	public static DocumentFile getFileDirectly(Uri directoryUri, String fileName, Context context) {
-		ContentResolver resolver = context.getContentResolver();
-		Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(directoryUri,
-				DocumentsContract.getDocumentId(directoryUri));
-
-		try (Cursor cursor = resolver.query(childrenUri,
-				new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME},
-				null, null, null)) {
-
-			if (cursor != null) {
-				while (cursor.moveToNext()) {
-					String documentId = cursor.getString(0);
-					String name = cursor.getString(1);
-
-					if (fileName.equals(name)) {
-						Uri fileUri = DocumentsContract.buildDocumentUriUsingTree(directoryUri, documentId);
-						return DocumentFile.fromSingleUri(context, fileUri);
-					}
-				}
-			}
-		}
-		return null;
-	}
-
-
-
-
-
-	public static DocumentFile findFileInDirectory(Uri directoryUri, String fileName, Context context) {
-		ContentResolver resolver = context.getContentResolver();
-		Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(directoryUri, DocumentsContract.getDocumentId(directoryUri));
-
-		try (Cursor cursor = resolver.query(
-				childrenUri,
-				new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME},
-				DocumentsContract.Document.COLUMN_DISPLAY_NAME + " = ?",
-				new String[]{fileName},
-				null)) {
 
 			if (cursor != null && cursor.moveToFirst()) {
-				String documentId = cursor.getString(0);
-				Uri fileUri = DocumentsContract.buildDocumentUriUsingTree(directoryUri, documentId);
-				return DocumentFile.fromSingleUri(context, fileUri);
+				String mimeType = cursor.getString(0);
+				if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)) {
+					return 1; // Directory
+				} else {
+					return 2; // Regular file
+				}
 			}
+		} catch (IllegalArgumentException e) {
+			return 0; // File does not exist
 		}
-		return null;
+		return 0; // Default to non-existing
 	}
+
+
+
+
+
+
+
+
+
+
 
 
 

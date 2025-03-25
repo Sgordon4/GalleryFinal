@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,13 +16,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import java.io.FileNotFoundException;
-import java.nio.file.Paths;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
@@ -66,7 +63,11 @@ public class MainActivity extends AppCompatActivity {
 		}
 		else {
 			System.out.println("Storage Uri is NOT null!");
-			testBullshit();
+			try {
+				testBullshit();
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 
@@ -87,7 +88,11 @@ public class MainActivity extends AppCompatActivity {
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
 				StorageHandler.onStorageLocationPicked(this, result);
-				testBullshit();
+				try {
+					testBullshit();
+				} catch (FileNotFoundException e) {
+					throw new RuntimeException(e);
+				}
 				//launchEverything();
 			});
 
@@ -140,55 +145,61 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-	private void testBullshit() {
+	private void testBullshit() throws FileNotFoundException {
 		System.out.println("Inside");
 		SharedPreferences prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
 		String uriString = prefs.getString("device_storage_location", null);
-		System.out.println(uriString);
-		Uri rootUri = Uri.parse(Uri.decode(uriString));
-		System.out.println(rootUri);
+		Uri rootTreeUri = Uri.parse(Uri.decode(uriString));
+		System.out.println("RootTreeUri: "+rootTreeUri);
+		String rootTreeDocID = DocumentsContract.getTreeDocumentId(rootTreeUri);
+		System.out.println("RootTreeDoc: "+rootTreeDocID);
+
+		Uri rootDocUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri);
+		System.out.println(rootDocUri.toString());
 
 
-		System.out.println("Starting");
-		DocumentFile rootTreeDoc = DocumentFile.fromTreeUri(this, rootUri);
+		System.out.println("Dirs ----------------------------------------------------------------");
+		//Try making a new directory
+		System.out.println("Creating directory: ");
+		Uri newDirUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "NewDir");
+		System.out.println(newDirUri.toString());
+		System.out.println(SAFGoFuckYourself.directoryExists(this, newDirUri));
+		SAFGoFuckYourself.createDirectory(this, newDirUri);
+		System.out.println(SAFGoFuckYourself.directoryExists(this, newDirUri));
+		assert SAFGoFuckYourself.directoryExists(this, newDirUri);
 
-		String rootTreeID = DocumentsContract.getTreeDocumentId(rootUri);
-		Uri fuck = rootUri.buildUpon()
-				.appendPath("document")
-				.appendPath(rootTreeID)
-				.appendPath("NewFile")
-				.build();
 
-
-		//DocumentFile newFile = rootTreeDoc.createFile("text/plain", "NewFile");
-		DocumentFile newFileDoc = rootTreeDoc.createDirectory("NewFile");
-		System.out.println(Uri.decode(newFileDoc.getUri().toString()));
-		System.out.println(Uri.decode(fuck.toString()));
-
-		DocumentFile fuckDoc = DocumentFile.fromSingleUri(this, fuck);
-		System.out.println(Uri.decode(fuckDoc.getUri().toString()));
-		System.out.println(fuckDoc.getUri().equals(fuck));
-		System.out.println(fuckDoc.getUri().toString());
-		System.out.println(fuck.toString());
-
-		//Why are these different types of documentFiles.
-		// Why does the fucking encode have to be special???
-		// What in the fuck is this actual garbage???????
-		System.out.println("???????");
-		System.out.println(fuckDoc.getUri().equals(newFileDoc.getUri()));
-		System.out.println(fuckDoc.getUri().toString());
-		System.out.println(newFileDoc.getUri().toString());
-		//SingleDocumentFile vs TreeDocumentFile bullshit
+		//Try making a nested directory in a directory that doesn't exist
+		System.out.println("Creating nested dir: ");
+		Uri nestedDirUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "DirParent", "Inside Dir");
+		System.out.println(nestedDirUri.toString());
+		System.out.println(SAFGoFuckYourself.directoryExists(this, nestedDirUri));
+		SAFGoFuckYourself.createDirectory(this, nestedDirUri);
+		System.out.println(SAFGoFuckYourself.directoryExists(this, nestedDirUri));
+		assert SAFGoFuckYourself.directoryExists(this, nestedDirUri);
 
 
 
 
-		try (Cursor cursor = getContentResolver().query(
-				fuckDoc.getUri(),
-				new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID},
-				null, null, null)) {
-			System.out.println(cursor != null && cursor.getCount() > 0);
-		}
+		System.out.println("Files ---------------------------------------------------------------");
+		//Try making a new file
+		System.out.println("Creating File: ");
+		Uri newFileUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "NewText.txt");
+		System.out.println(newFileUri.toString());
+		System.out.println(SAFGoFuckYourself.fileExists(this, newFileUri));
+		SAFGoFuckYourself.createFile(this, newFileUri);
+		System.out.println(SAFGoFuckYourself.fileExists(this, newFileUri));
+		assert SAFGoFuckYourself.fileExists(this, newFileUri);
+
+
+		//Try making a nested file in a directory that doesn't exist
+		System.out.println("Creating nested file: ");
+		Uri nestedFileUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "FileParent", "InsideFile.jpg");
+		System.out.println(nestedFileUri.toString());
+		System.out.println(SAFGoFuckYourself.fileExists(this, nestedFileUri));
+		SAFGoFuckYourself.createFile(this, nestedFileUri);
+		System.out.println(SAFGoFuckYourself.fileExists(this, nestedFileUri));
+		assert SAFGoFuckYourself.fileExists(this, nestedFileUri);
 
 
 
@@ -198,10 +209,13 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-		Uri parentDir = SAFGoFuckYourself.findOrCreateDirectory(rootUri, "Parent", this);
-		Uri childDir = SAFGoFuckYourself.findOrCreateDirectory(parentDir, "Child", this);
 
 
+		//Uri parentDir = SAFGoFuckYourself.findOrCreateDirectory(rootTreeUri, "Parent", this);
+		//Uri childDir = SAFGoFuckYourself.findOrCreateDirectory(parentDir, "Child", this);
+
+
+		System.out.println("Actual total success... Huh...");
 		fuckShitUp();
 	}
 	private void fuckShitUp() {
