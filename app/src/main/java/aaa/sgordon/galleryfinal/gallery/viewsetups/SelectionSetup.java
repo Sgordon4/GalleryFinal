@@ -1,10 +1,14 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -30,10 +34,11 @@ import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.components.edit.EditItemModal;
-import aaa.sgordon.galleryfinal.gallery.modals.MoveCopyFullscreen;
-import aaa.sgordon.galleryfinal.gallery.modals.TagFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
+import aaa.sgordon.galleryfinal.gallery.components.modals.MoveCopyFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -100,6 +105,9 @@ public class SelectionSetup {
 
 
 
+
+
+
 	public static void setupSelectionToolbar(DirFragment dirFragment, SelectionController selectionController) {
 		FragDirBinding binding = dirFragment.binding;
 
@@ -107,6 +115,9 @@ public class SelectionSetup {
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
 
 		DirRVAdapter adapter = (DirRVAdapter) binding.recyclerview.getAdapter();
+
+
+
 
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
@@ -207,6 +218,20 @@ public class SelectionSetup {
 
 			else if(menuItem.getItemId() == R.id.export) {
 				System.out.println("Export!");
+
+				//If the storage directory is not accessible...
+				if(!ExportStorageHandler.isStorageAccessible(dirFragment.requireContext())) {
+					System.out.println("Launching");
+					Log.w("Gal.Export", "Export directory is inaccessible. Prompting user to reselect.");
+					ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), exportPickerLauncher);
+				}
+				else {
+					Log.i("Gal.Export", "Using saved directory.");
+					System.out.println("Exporting!");
+
+					List<ListItem> toMove = getSelected(dirFragment, selectionController);
+				}
+
 			}
 
 			else if(menuItem.getItemId() == R.id.trash) {

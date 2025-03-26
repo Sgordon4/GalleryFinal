@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.modals;
+package aaa.sgordon.galleryfinal.gallery.components.modals;
 
 import android.app.Dialog;
 import android.os.Bundle;
@@ -10,7 +10,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -44,7 +43,6 @@ import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class LinkTargetModal extends DialogFragment {
 	private final LinkTargetViewModel viewModel;

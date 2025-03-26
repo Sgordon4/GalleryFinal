@@ -3,24 +3,18 @@ package aaa.sgordon.galleryfinal.repository.local;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
-import androidx.documentfile.provider.DocumentFile;
 
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.URL;
-import java.nio.file.Files;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import aaa.sgordon.galleryfinal.repository.SAFGoFuckYourself;
-import aaa.sgordon.galleryfinal.repository.StorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
@@ -29,7 +23,6 @@ import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 
 public class LContentHelper {
 	private static final String TAG = "Hyb.Local.Cont";
-	private static final String mainDir = ".Gallery";
 	private static final String contentDir = "content";
 	private final Uri storageDir;
 
@@ -62,7 +55,7 @@ public class LContentHelper {
 		//File contents = getContentLocationOnDisk(name);
 		//return Uri.fromFile(contents);
 
-		Uri rootUri = StorageHandler.getStorageTreeUri(MyApplication.getAppContext());
+		Uri rootUri = MainStorageHandler.getStorageTreeUri(MyApplication.getAppContext());
 
 		//Since we're using SHA-256 hashes for the content, and we'll have a lot of them, split them into subfolders for efficiency
 		String subFolder = name.substring(0, 2);

@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.modals;
+package aaa.sgordon.galleryfinal.gallery.components.modals;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;

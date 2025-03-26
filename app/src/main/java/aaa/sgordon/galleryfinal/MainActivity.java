@@ -21,8 +21,8 @@ import java.io.FileNotFoundException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
-import aaa.sgordon.galleryfinal.repository.SAFGoFuckYourself;
-import aaa.sgordon.galleryfinal.repository.StorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
@@ -54,10 +54,10 @@ public class MainActivity extends AppCompatActivity {
 
 
 		//If the storage directory is not accessible...
-		if(!StorageHandler.isStorageAccessible(this)) {
+		if(!MainStorageHandler.isStorageAccessible(this)) {
 			System.out.println("Launching");
 			Log.w(TAG, "Storage directory is inaccessible. Prompting user to reselect.");
-			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
+			MainStorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
 		}
 		else {
 			Log.i(TAG, "Using saved directory.");
@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
-				StorageHandler.onStorageLocationPicked(this, result);
+				MainStorageHandler.onStorageLocationPicked(this, result);
 				launchEverything();
 			});
 
@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
 	private void testBullshit() throws FileNotFoundException {
 		System.out.println("Inside");
-		Uri rootDocUri = StorageHandler.getStorageTreeUri(this);
+		Uri rootDocUri = MainStorageHandler.getStorageTreeUri(this);
 
 		Uri actualRoot = SAFGoFuckYourself.makeDocUriFromTreeUri(rootDocUri, ".Gallery");
 		System.out.println(rootDocUri);

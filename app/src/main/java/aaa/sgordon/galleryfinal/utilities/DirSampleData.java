@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import aaa.sgordon.galleryfinal.repository.StorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -67,7 +67,7 @@ public class DirSampleData {
 	public static UUID setupDatabase(Context context) throws FileNotFoundException {
 		Log.i(TAG, "Setting up in-memory database...");
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
-		Uri storageDir = StorageHandler.getStorageTreeUri(context);
+		Uri storageDir = MainStorageHandler.getStorageTreeUri(context);
 		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
 		LocalRepo.initialize(db, storageDir.toString());
 		//LocalRepo.initialize(db, context.getCacheDir().toString());

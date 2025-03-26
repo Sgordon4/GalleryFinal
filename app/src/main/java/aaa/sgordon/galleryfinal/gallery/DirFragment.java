@@ -2,18 +2,15 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,11 +26,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
-import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -50,8 +45,8 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
-import aaa.sgordon.galleryfinal.gallery.components.settings.SettingsFragment;
-import aaa.sgordon.galleryfinal.gallery.modals.NewItemModal;
+import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
+import aaa.sgordon.galleryfinal.gallery.components.properties.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
@@ -67,6 +62,7 @@ public class DirFragment extends Fragment {
 	public DirectoryViewModel dirViewModel;
 
 	ActivityResultLauncher<Intent> filePickerLauncher;
+	private ActivityResultLauncher<Intent> intentLauncher;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -81,6 +77,10 @@ public class DirFragment extends Fragment {
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
 
+
+		intentLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			//Send off result
+		});
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
 			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {

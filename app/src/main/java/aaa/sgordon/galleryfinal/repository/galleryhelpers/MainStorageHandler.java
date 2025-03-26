@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository;
+package aaa.sgordon.galleryfinal.repository.galleryhelpers;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -15,12 +15,11 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.documentfile.provider.DocumentFile;
 
-import java.io.FileNotFoundException;
-
-public class StorageHandler {
+public class MainStorageHandler {
 	private static final String TAG = "Gal.Storage";
 	private static final String PREFCATEGORY = "AppPrefs";
 	private static final String PREFTAG = "device_storage_location";
+	private static final String SUBDIR = ".Gallery";
 
 
 
@@ -51,17 +50,21 @@ public class StorageHandler {
 			int takeFlags = (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 			contentResolver.takePersistableUriPermission(treeUri, takeFlags);
 
-			//Make a .Gallery subdirectory
-			Uri galUri = SAFGoFuckYourself.makeDocUriFromTreeUri(treeUri, ".Gallery");
-			SAFGoFuckYourself.createDirectory(context, galUri);
+			Log.d(TAG, "Directory selected: " + treeUri);
 
-			// Store the URI in SharedPreferences for later use
-			SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
-			prefs.edit().putString(PREFTAG, galUri.toString()).apply();
-
-			Log.d(TAG, "Directory selected: " + galUri);
+			saveStorageLocation(context, treeUri);
 		}
 	}
+	private static void saveStorageLocation(Context context, Uri treeUri) {
+		//Make a .Gallery subdirectory
+		Uri galUri = SAFGoFuckYourself.makeDocUriFromTreeUri(treeUri, SUBDIR);
+		SAFGoFuckYourself.createDirectory(context, galUri);
+
+		//Store the URI in SharedPreferences for later use
+		SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
+		prefs.edit().putString(PREFTAG, galUri.toString()).apply();
+	}
+
 
 	public static void showPickStorageDialog(Activity activity, ActivityResultLauncher<Intent> launcher) {
 		AlertDialog dialog = new AlertDialog.Builder(activity)

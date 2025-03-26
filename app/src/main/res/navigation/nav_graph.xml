@@ -54,7 +54,7 @@
     <!--
     <fragment
         android:id="@+id/SettingsFragment"
-        android:name="aaa.sgordon.galleryfinal.gallery.components.settings.SettingsFragment"
+        android:name="aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment"
         android:label="Settings">
 
         <argument

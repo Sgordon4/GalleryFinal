@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.components.settings;
+package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.content.Context;
 import android.os.Bundle;

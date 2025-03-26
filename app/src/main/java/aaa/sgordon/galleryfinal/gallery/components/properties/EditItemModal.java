@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.components.edit;
+package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.app.Dialog;
 import android.graphics.Color;
@@ -29,7 +29,6 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.modals.ColorPickerModal;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;

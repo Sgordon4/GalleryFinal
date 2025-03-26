@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.modals;
+package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.app.AlertDialog;
 import android.app.Dialog;

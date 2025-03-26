@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.repository.StorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
@@ -61,7 +61,7 @@ public class HybridAPI {
 		//TODO Change database storage location
 		LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
 		//String storageDir = MyApplication.getAppContext().getApplicationInfo().dataDir;
-		Uri storageDir = StorageHandler.getStorageTreeUri(MyApplication.getAppContext());
+		Uri storageDir = MainStorageHandler.getStorageTreeUri(MyApplication.getAppContext());
 		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
 		LocalRepo.initialize(db, storageDir.toString());
 
