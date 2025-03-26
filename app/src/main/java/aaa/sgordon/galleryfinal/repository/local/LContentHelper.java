@@ -1,25 +1,26 @@
 package aaa.sgordon.galleryfinal.repository.local;
 
-import android.content.Context;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import aaa.sgordon.galleryfinal.repository.SAFGoFuckYourself;
+import aaa.sgordon.galleryfinal.repository.StorageHandler;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
@@ -38,7 +39,7 @@ public class LContentHelper {
 	}
 
 
-	/**/
+	/*
 	//WARNING: This method does not create the file or parent directory, it only provides the location
 	@NonNull
 	private File getContentLocationOnDisk(@NonNull String hash) {
@@ -55,29 +56,25 @@ public class LContentHelper {
 	//---------------------------------------------------------------------------------------------
 
 
-	//WARNING: The file at the end of this uri may not exist
+	//WARNING: This method does not create the file or parent directories, it only provides the location
 	@NonNull
 	public Uri getContentUri(@NonNull String name) {
 		//File contents = getContentLocationOnDisk(name);
 		//return Uri.fromFile(contents);
 
-		Path path = Paths.get(mainDir, contentDir, name);
-		DocumentFile file = SAFFileHelper.getOrCreateFile(MyApplication.getAppContext(), storageDir, path.toString(), "text/plain");
-		return file.getUri();
+		Uri rootUri = StorageHandler.getStorageTreeUri(MyApplication.getAppContext());
+		return SAFGoFuckYourself.makeDocUriFromDocUri(rootUri, contentDir, name);
 	}
 
 
 	public LContent writeContents(@NonNull String name, @NonNull byte[] contents) throws IOException {
-		File destinationFile = getContentLocationOnDisk(name);
+		Uri contentUri = getContentUri(name);
 
-		if(!destinationFile.exists()) {
-			Files.createDirectories(destinationFile.toPath().getParent());
-			Files.createFile(destinationFile.toPath());
-		}
+		//Create the file if it does not already exist, along with all parent directories
+		SAFGoFuckYourself.createFile(MyApplication.getAppContext(), contentUri);
 
-
-		try(OutputStream out = Files.newOutputStream(destinationFile.toPath());
-			DigestOutputStream dos = new DigestOutputStream(out, MessageDigest.getInstance("SHA-256"))) {
+		try (OutputStream out = MyApplication.getAppContext().getContentResolver().openOutputStream(contentUri);
+			 DigestOutputStream dos = new DigestOutputStream(out, MessageDigest.getInstance("SHA-256"))) {
 
 			dos.write(contents);
 			String fileHash = Utilities.bytesToHex(dos.getMessageDigest().digest());
@@ -89,12 +86,10 @@ public class LContentHelper {
 
 
 	public LContent writeContents(@NonNull String name, @NonNull Uri source) throws IOException {
-		File destinationFile = getContentLocationOnDisk(name);
+		Uri contentUri = getContentUri(name);
 
-		if(!destinationFile.exists()) {
-			Files.createDirectories(destinationFile.toPath().getParent());
-			Files.createFile(destinationFile.toPath());
-		}
+		//Create the file if it does not already exist, along with all parent directories
+		SAFGoFuckYourself.createFile(MyApplication.getAppContext(), contentUri);
 
 
 		InputStream in = null;
@@ -107,7 +102,7 @@ public class LContentHelper {
 			}
 
 			//Write the source data to the destination file
-			try (FileOutputStream out = new FileOutputStream(destinationFile);
+			try (OutputStream out = MyApplication.getAppContext().getContentResolver().openOutputStream(contentUri);
 				 DigestOutputStream dos = new DigestOutputStream(out, MessageDigest.getInstance("SHA-256"))) {
 
 				byte[] dataBuffer = new byte[1024];
@@ -117,7 +112,7 @@ public class LContentHelper {
 				}
 
 				String fileHash = Utilities.bytesToHex(dos.getMessageDigest().digest());
-				int fileSize = (int) destinationFile.length();
+				int fileSize = SAFGoFuckYourself.getFileSize(MyApplication.getAppContext(), contentUri);
 
 				return new LContent(name, fileHash, fileSize);
 			}
@@ -130,7 +125,7 @@ public class LContentHelper {
 
 
 	public void deleteContents(@NonNull String name) {
-		File contentFile = getContentLocationOnDisk(name);
-		boolean del = contentFile.delete();
+		Uri contentUri = getContentUri(name);
+		boolean del = SAFGoFuckYourself.delete(MyApplication.getAppContext(), contentUri);
 	}
 }

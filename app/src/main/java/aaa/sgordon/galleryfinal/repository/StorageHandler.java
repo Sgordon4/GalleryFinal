@@ -15,39 +15,28 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.documentfile.provider.DocumentFile;
 
+import java.io.FileNotFoundException;
+
 public class StorageHandler {
 	private static final String TAG = "Gal.Storage";
 	private static final String PREFCATEGORY = "AppPrefs";
 	private static final String PREFTAG = "device_storage_location";
 
 
-	public static Uri getGalleryStorageUri(@NonNull Context context) {
-		if(!isStorageAccessible(context))
-			return null;
 
-
-		String storageUri = getStorageTreeUri(context);
-		Uri savedUri = Uri.parse(storageUri);
-		DocumentFile pickedDir = DocumentFile.fromTreeUri(context, savedUri);
-		return pickedDir.getUri();
-
-		//return pickedDir.getUri().buildUpon().appendPath(".Gallery").build();
+	@Nullable
+	public static Uri getStorageTreeUri(@NonNull Context context) {
+		SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
+		String saved = prefs.getString(PREFTAG, null);
+		return (saved != null) ? Uri.parse(saved) : null;
 	}
 
 
 	public static boolean isStorageAccessible(@NonNull Context context) {
-		String storageUri = getStorageTreeUri(context);
-		System.out.println("StorageUri: "+storageUri);
-		if (storageUri == null)
-			return false;
+		Uri storageUri = getStorageTreeUri(context);
+		if (storageUri == null) return false;
 
-		Uri savedUri = Uri.parse(Uri.decode(storageUri));
-		System.out.println("Uri uri: "+savedUri);
-		DocumentFile pickedDir = DocumentFile.fromTreeUri(context, savedUri);
-		System.out.println("DocUri: "+pickedDir.getUri().toString());
-		System.out.println(pickedDir.exists());
-		System.out.println(pickedDir.canWrite());
-
+		DocumentFile pickedDir = DocumentFile.fromSingleUri(context, storageUri);
 		return pickedDir != null && pickedDir.exists() && pickedDir.canWrite();
 	}
 
@@ -62,11 +51,15 @@ public class StorageHandler {
 			int takeFlags = (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 			contentResolver.takePersistableUriPermission(treeUri, takeFlags);
 
+			//Make a .Gallery subdirectory
+			Uri galUri = SAFGoFuckYourself.makeDocUriFromTreeUri(treeUri, ".Gallery");
+			SAFGoFuckYourself.createDirectory(context, galUri);
+
 			// Store the URI in SharedPreferences for later use
 			SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
-			prefs.edit().putString(PREFTAG, treeUri.toString()).apply();
+			prefs.edit().putString(PREFTAG, galUri.toString()).apply();
 
-			Log.d(TAG, "Directory selected: " + treeUri);
+			Log.d(TAG, "Directory selected: " + galUri);
 		}
 	}
 
@@ -90,13 +83,5 @@ public class StorageHandler {
 		dialog.setCancelable(false);  // Prevents dismissing via back button
 		dialog.setCanceledOnTouchOutside(false);  // Prevents dismissing via outside click
 		dialog.show();
-	}
-
-
-
-	@Nullable
-	public static String getStorageTreeUri(@NonNull Context context) {
-		SharedPreferences prefs = context.getSharedPreferences(PREFCATEGORY, Context.MODE_PRIVATE);
-		return prefs.getString(PREFTAG, null);
 	}
 }

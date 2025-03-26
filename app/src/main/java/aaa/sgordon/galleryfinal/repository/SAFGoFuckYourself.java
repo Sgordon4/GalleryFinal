@@ -4,9 +4,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -30,14 +32,23 @@ Also, why the FUCK does contentResolver's query not fucking work. Legitimately u
 public class SAFGoFuckYourself {
 
 
-	public static Uri makeDocUriFromRoot(@NonNull Uri rootTreeUri, String... segments) {
-		String rootTreeDocID = DocumentsContract.getTreeDocumentId(rootTreeUri);
+	public static Uri makeDocUriFromTreeUri(@NonNull Uri treeUri, String... segments) {
+		String rootTreeID = DocumentsContract.getTreeDocumentId(treeUri);
 
 		String name = "";
 		if(segments.length > 0)
 			name = "/"+String.join("/", segments);
 
-		return DocumentsContract.buildDocumentUriUsingTree(rootTreeUri, rootTreeDocID + name);
+		return DocumentsContract.buildDocumentUriUsingTree(treeUri, rootTreeID + name);
+	}
+	public static Uri makeDocUriFromDocUri(@NonNull Uri docUri, String... segments) {
+		String documentID = DocumentsContract.getDocumentId(docUri);
+
+		String name = "";
+		if(segments.length > 0)
+			name = "/"+String.join("/", segments);
+
+		return DocumentsContract.buildDocumentUriUsingTree(docUri, documentID + name);
 	}
 	@Nullable
 	public static Uri getParentFromDocUri(@NonNull Uri documentUri) {
@@ -62,8 +73,8 @@ public class SAFGoFuckYourself {
 	}
 
 
-
-	public static void createFile(Context context, Uri fileDocUri) throws FileNotFoundException {
+	//Will not create the file if it already exists. Creates all parent directories
+	public static void createFile(Context context, Uri fileDocUri) {
 		if(fileExists(context, fileDocUri)) return;
 
 		//If there is no parent, we're trying to create a top-level file, which we can't do
@@ -75,7 +86,11 @@ public class SAFGoFuckYourself {
 			createDirectory(context, parentUri);
 
 		String fileName = getNameFromDocUri(fileDocUri);
-		Uri uri = createFile(context, parentUri, fileName);
+		try {
+			Uri uri = createFile(context, parentUri, fileName);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	private static Uri createFile(Context context, Uri parentUri, String dirName) throws FileNotFoundException {
 		return DocumentsContract.createDocument(
@@ -85,7 +100,8 @@ public class SAFGoFuckYourself {
 
 
 
-	public static void createDirectory(Context context, Uri directoryDocUri) throws FileNotFoundException {
+	//Will not create the directory if it already exists. Creates all parent directories
+	public static void createDirectory(Context context, Uri directoryDocUri) {
 		if(directoryExists(context, directoryDocUri)) return;
 
 		//If there is no parent, we're trying to create a top-level directory, which we can't do
@@ -97,12 +113,26 @@ public class SAFGoFuckYourself {
 			createDirectory(context, parentUri);
 
 		String fileName = getNameFromDocUri(directoryDocUri);
-		Uri uri = createDirectory(context, parentUri, fileName);
+		try {
+			Uri uri = createDirectory(context, parentUri, fileName);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	private static Uri createDirectory(Context context, Uri parentUri, String dirName) throws FileNotFoundException {
 		return DocumentsContract.createDocument(
 				context.getContentResolver(), parentUri,
 				DocumentsContract.Document.MIME_TYPE_DIR, dirName);
+	}
+
+
+	//Since DocumentsContract FOR SOME REASON doesn't allow a directory/file with the same names, this works on both
+	public static boolean delete(Context context, Uri fileDocUri) {
+		try {
+			return DocumentsContract.deleteDocument(context.getContentResolver(), fileDocUri);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 
@@ -130,40 +160,26 @@ public class SAFGoFuckYourself {
 					return 2; // Regular file
 				}
 			}
-		} catch (IllegalArgumentException e) {
-			return 0; // File does not exist
+		} catch (IllegalArgumentException | UnsupportedOperationException e) {
+			return -1; // File does not exist
 		}
-		return 0; // Default to non-existing
+		return -1; // Default to non-existing
 	}
 
 
 
+	public static int getFileSize(Context context, Uri fileUri) {
+		try (Cursor cursor = context.getContentResolver().query(
+				fileUri,
+				new String[]{DocumentsContract.Document.COLUMN_SIZE},
+				null, null, null)) {
 
-
-
-
-
-
-
-
-
-
-	public static String readFromFile(Uri fileUri, Context context) throws IOException {
-		StringBuilder content = new StringBuilder();
-		try (InputStream inputStream = context.getContentResolver().openInputStream(fileUri);
-			 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-			String line;
-			while ((line = reader.readLine()) != null) {
-				content.append(line).append("\n");
+			if (cursor != null && cursor.moveToFirst()) {
+				return cursor.getInt(0); // File size in bytes
 			}
+		} catch (IllegalArgumentException e) {
+			Log.e("FileSizeCheck", "Invalid file URI: " + fileUri, e);
 		}
-		return content.toString();
-	}
-
-	public static void writeToFile(Uri fileUri, String content, Context context) throws IOException {
-		try (OutputStream outputStream = context.getContentResolver().openOutputStream(fileUri);
-			 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream))) {
-			writer.write(content);
-		}
+		return -1; // Return -1 if file does not exist or size cannot be determined
 	}
 }

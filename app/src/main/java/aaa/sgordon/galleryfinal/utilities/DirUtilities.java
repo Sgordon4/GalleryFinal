@@ -42,20 +42,36 @@ public class DirUtilities {
 
 		//Read the directory into a list of UUID::FileName pairs
 		List<Pair<UUID, String>> dirList = new ArrayList<>();
-		try (InputStream inputStream = new URL(uri.toString()).openStream();
-			 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
-			String line;
-			while ((line = reader.readLine()) != null) {
-				//TODO Handle invalid filenames
-				//Split each line into UUID::FileName and add it to our list
-				String[] parts = line.trim().split(" ", 2);
-				//System.out.println(Arrays.toString(parts));
-				Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
-				dirList.add(entry);
+		InputStream in = null;
+		try {
+			//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
+			try {
+				in = MyApplication.getAppContext().getContentResolver().openInputStream(uri);
+			} catch (FileNotFoundException e) {
+				in = new URL(uri.toString()).openStream();
+			}
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					//TODO Handle invalid filenames
+					//Split each line into UUID::FileName and add it to our list
+					String[] parts = line.trim().split(" ", 2);
+					//System.out.println(Arrays.toString(parts));
+					Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
+					dirList.add(entry);
+				}
 			}
 		}
 		catch (IOException e) { throw new RuntimeException(e); }
+		finally {
+			try {
+				if(in != null) in.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
 
 		return dirList;
 	}

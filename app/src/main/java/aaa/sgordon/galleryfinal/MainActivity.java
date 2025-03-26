@@ -1,12 +1,9 @@
 package aaa.sgordon.galleryfinal;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.DocumentsContract;
 import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
@@ -56,30 +53,14 @@ public class MainActivity extends AppCompatActivity {
 		});
 
 
-
-		if(StorageHandler.getStorageTreeUri(this) == null) {
-			System.out.println("Storage Uri is null!");
-			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
-		}
-		else {
-			System.out.println("Storage Uri is NOT null!");
-			try {
-				testBullshit();
-			} catch (FileNotFoundException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-
 		//If the storage directory is not accessible...
 		if(!StorageHandler.isStorageAccessible(this)) {
 			System.out.println("Launching");
 			Log.w(TAG, "Storage directory is inaccessible. Prompting user to reselect.");
-
 			StorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
-		} else {
+		}
+		else {
 			Log.i(TAG, "Using saved directory.");
-
 			launchEverything();
 		}
 	}
@@ -88,12 +69,7 @@ public class MainActivity extends AppCompatActivity {
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
 				StorageHandler.onStorageLocationPicked(this, result);
-				try {
-					testBullshit();
-				} catch (FileNotFoundException e) {
-					throw new RuntimeException(e);
-				}
-				//launchEverything();
+				launchEverything();
 			});
 
 
@@ -145,23 +121,25 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
 	private void testBullshit() throws FileNotFoundException {
 		System.out.println("Inside");
-		SharedPreferences prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
-		String uriString = prefs.getString("device_storage_location", null);
-		Uri rootTreeUri = Uri.parse(Uri.decode(uriString));
-		System.out.println("RootTreeUri: "+rootTreeUri);
-		String rootTreeDocID = DocumentsContract.getTreeDocumentId(rootTreeUri);
-		System.out.println("RootTreeDoc: "+rootTreeDocID);
+		Uri rootDocUri = StorageHandler.getStorageTreeUri(this);
 
-		Uri rootDocUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri);
-		System.out.println(rootDocUri.toString());
+		Uri actualRoot = SAFGoFuckYourself.makeDocUriFromTreeUri(rootDocUri, ".Gallery");
+		System.out.println(rootDocUri);
+		System.out.println(actualRoot);
+
+
+		Uri deepUri = SAFGoFuckYourself.makeDocUriFromTreeUri(rootDocUri, ".Gallery", "Superduper", "Innit");
+		System.out.println(deepUri);
+		System.out.println(SAFGoFuckYourself.getParentFromDocUri(deepUri));
 
 
 		System.out.println("Dirs ----------------------------------------------------------------");
 		//Try making a new directory
 		System.out.println("Creating directory: ");
-		Uri newDirUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "NewDir");
+		Uri newDirUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "NewDir");
 		System.out.println(newDirUri.toString());
 		System.out.println(SAFGoFuckYourself.directoryExists(this, newDirUri));
 		SAFGoFuckYourself.createDirectory(this, newDirUri);
@@ -171,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
 
 		//Try making a nested directory in a directory that doesn't exist
 		System.out.println("Creating nested dir: ");
-		Uri nestedDirUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "DirParent", "Inside Dir");
+		Uri nestedDirUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "DirParent", "Inside Dir");
 		System.out.println(nestedDirUri.toString());
 		System.out.println(SAFGoFuckYourself.directoryExists(this, nestedDirUri));
 		SAFGoFuckYourself.createDirectory(this, nestedDirUri);
@@ -179,12 +157,10 @@ public class MainActivity extends AppCompatActivity {
 		assert SAFGoFuckYourself.directoryExists(this, nestedDirUri);
 
 
-
-
 		System.out.println("Files ---------------------------------------------------------------");
 		//Try making a new file
 		System.out.println("Creating File: ");
-		Uri newFileUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "NewText.txt");
+		Uri newFileUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "NewText.txt");
 		System.out.println(newFileUri.toString());
 		System.out.println(SAFGoFuckYourself.fileExists(this, newFileUri));
 		SAFGoFuckYourself.createFile(this, newFileUri);
@@ -194,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
 
 		//Try making a nested file in a directory that doesn't exist
 		System.out.println("Creating nested file: ");
-		Uri nestedFileUri = SAFGoFuckYourself.makeDocUriFromRoot(rootTreeUri, "FileParent", "InsideFile.jpg");
+		Uri nestedFileUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "FileParent", "InsideFile.jpg");
 		System.out.println(nestedFileUri.toString());
 		System.out.println(SAFGoFuckYourself.fileExists(this, nestedFileUri));
 		SAFGoFuckYourself.createFile(this, nestedFileUri);
@@ -202,17 +178,6 @@ public class MainActivity extends AppCompatActivity {
 		assert SAFGoFuckYourself.fileExists(this, nestedFileUri);
 
 
-
-
-
-
-
-
-
-
-
-		//Uri parentDir = SAFGoFuckYourself.findOrCreateDirectory(rootTreeUri, "Parent", this);
-		//Uri childDir = SAFGoFuckYourself.findOrCreateDirectory(parentDir, "Child", this);
 
 
 		System.out.println("Actual total success... Huh...");

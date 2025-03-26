@@ -67,7 +67,7 @@ public class DirSampleData {
 	public static UUID setupDatabase(Context context) throws FileNotFoundException {
 		Log.i(TAG, "Setting up in-memory database...");
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
-		Uri storageDir = StorageHandler.getGalleryStorageUri(MyApplication.getAppContext());
+		Uri storageDir = StorageHandler.getStorageTreeUri(context);
 		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
 		LocalRepo.initialize(db, storageDir.toString());
 		//LocalRepo.initialize(db, context.getCacheDir().toString());

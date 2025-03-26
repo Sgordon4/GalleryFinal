@@ -61,7 +61,7 @@ public class HybridAPI {
 		//TODO Change database storage location
 		LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
 		//String storageDir = MyApplication.getAppContext().getApplicationInfo().dataDir;
-		Uri storageDir = StorageHandler.getGalleryStorageUri(MyApplication.getAppContext());
+		Uri storageDir = StorageHandler.getStorageTreeUri(MyApplication.getAppContext());
 		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
 		LocalRepo.initialize(db, storageDir.toString());
 

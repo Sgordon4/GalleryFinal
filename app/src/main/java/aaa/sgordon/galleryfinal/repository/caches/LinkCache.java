@@ -23,6 +23,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 
 //WARNING: This object should live as long as the Application is running. Keep in Activity ViewModel.
 public class LinkCache {
@@ -197,28 +198,44 @@ public class LinkCache {
 	private static LinkTarget readLink(UUID linkUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		Uri uri = HybridAPI.getInstance().getFileContent(linkUID).first;
 
-		try (InputStream inputStream = new URL(uri.toString()).openStream();
-			 BufferedReader reader = new BufferedReader( new InputStreamReader(inputStream) )) {
-			String firstLine = reader.readLine();
-
-			//TODO Handle empty links and malformed link targets.
-			Uri linkUri = Uri.parse(firstLine);
-
-			//If the uri scheme starts with "gallery", it's an internal link
-			//TODO We're currently doing "gallery:/" instead of "gallery://"
-			if ("gallery".equals(linkUri.getScheme())) {
-				String[] uuidParts = linkUri.getPath().split("/");
-				UUID dirUID = UUID.fromString(uuidParts[1]);
-				UUID fileUID = UUID.fromString(uuidParts[2]);
-
-				return new InternalTarget(dirUID, fileUID);
+		InputStream in = null;
+		try {
+			//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
+			try {
+				in = MyApplication.getAppContext().getContentResolver().openInputStream(uri);
+			} catch (FileNotFoundException e) {
+				in = new URL(uri.toString()).openStream();
 			}
-			//Otherwise this points to somewhere on the internet
-			else {
-				return new ExternalTarget(Uri.parse(firstLine));
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+				String firstLine = reader.readLine();
+
+				//TODO Handle empty links and malformed link targets.
+				Uri linkUri = Uri.parse(firstLine);
+
+				//If the uri scheme starts with "gallery", it's an internal link
+				//TODO We're currently doing "gallery:/" instead of "gallery://"
+				if ("gallery".equals(linkUri.getScheme())) {
+					String[] uuidParts = linkUri.getPath().split("/");
+					UUID dirUID = UUID.fromString(uuidParts[1]);
+					UUID fileUID = UUID.fromString(uuidParts[2]);
+
+					return new InternalTarget(dirUID, fileUID);
+				}
+				//Otherwise this points to somewhere on the internet
+				else {
+					return new ExternalTarget(Uri.parse(firstLine));
+				}
 			}
 		}
 		catch (IOException e) { throw new RuntimeException(e); }
+		finally {
+			try {
+				if(in != null) in.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 
