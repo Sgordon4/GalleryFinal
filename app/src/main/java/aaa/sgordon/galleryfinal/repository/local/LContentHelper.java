@@ -63,7 +63,11 @@ public class LContentHelper {
 		//return Uri.fromFile(contents);
 
 		Uri rootUri = StorageHandler.getStorageTreeUri(MyApplication.getAppContext());
-		return SAFGoFuckYourself.makeDocUriFromDocUri(rootUri, contentDir, name);
+
+		//Since we're using SHA-256 hashes for the content, and we'll have a lot of them, split them into subfolders for efficiency
+		String subFolder = name.substring(0, 2);
+
+		return SAFGoFuckYourself.makeDocUriFromDocUri(rootUri, contentDir, subFolder, name);
 	}
 
 
