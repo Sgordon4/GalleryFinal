@@ -1,0 +1,231 @@
+package aaa.sgordon.galleryfinal.gallery.cooking;
+
+import android.content.Intent;
+import android.os.Looper;
+import android.util.Pair;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.modals.MoveCopyFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
+import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
+
+public class ToolbarHelper {
+	DirFragment dirFragment;
+	DirRVAdapter adapter;
+
+	//TODO Move SelectionController definition to onCreate in DirFragment
+	SelectionController selectionController;
+
+	ActivityResultLauncher<Intent> exportPickerLauncher;
+
+
+	//Prob just replace this with a constructor
+	public void onCreate() {
+		exportPickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			ExportStorageHandler.onStorageLocationPicked(dirFragment.requireActivity(), result);
+			onExport();
+		});
+	}
+
+
+
+	public boolean onSelectionToolbarClicked(MenuItem menuItem) {
+		if(menuItem.getItemId() == R.id.select_all) {
+			onSelectAll();
+			return true;
+		}
+		else if (menuItem.getItemId() == R.id.filter) {
+			onFilter();
+			return true;
+		}
+		else if(menuItem.getItemId() == R.id.edit) {
+			return EditItemModal.launchHelper(dirFragment, selectionController, adapter.list);
+		}
+		else if(menuItem.getItemId() == R.id.tag) {
+			TagFullscreen.launch(dirFragment);
+			return true;
+		}
+		else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
+			boolean isMove = menuItem.getItemId() == R.id.move;
+
+			//TODO Make actual path from root
+			Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
+			MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
+				onMoveCopy(destinationUID, isMove);
+			});
+			return true;
+		}
+		else if(menuItem.getItemId() == R.id.export) {
+			if(!ExportStorageHandler.isStorageAccessible(dirFragment.requireContext()))
+				ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), exportPickerLauncher);
+			else
+				onExport();
+			return true;
+		}
+		else if(menuItem.getItemId() == R.id.trash) {
+			onTrash();
+			return true;
+		}
+		else if(menuItem.getItemId() == R.id.share) {
+			onShare();
+			return true;
+		}
+
+		return false;
+	}
+
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+
+	private void onSelectAll() {
+		//Grab all UUIDs in the adapter list
+		Set<UUID> toSelect = adapter.list.stream().map(item -> item.fileUID).collect(Collectors.toSet());
+
+		//Grab the list of currently selected UUIDs
+		Set<UUID> currSelected = selectionController.getSelectedList();
+
+		//If all adapter items are currently selected, we want to deselect all instead
+		toSelect.removeAll(currSelected);
+		if(!toSelect.isEmpty())
+			selectionController.selectAll(toSelect);
+		else
+			selectionController.deselectAll();
+	}
+
+
+
+	private void onFilter() {
+		View filterView = dirFragment.binding.galleryAppbar.filterBar.getRoot();
+		if(filterView.getVisibility() == View.GONE)
+			filterView.setVisibility(View.VISIBLE);
+		else
+			dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
+	}
+
+
+	private void onMoveCopy(UUID destinationUID, boolean isMove) {
+		//Passing a fake item to move/copy will place the items at the start when the function can't find it
+		UUID nextItem = UUID.randomUUID();
+
+		//If the destination is an internal target...
+		LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(destinationUID);
+		if (target instanceof LinkCache.InternalTarget) {
+			try {
+				LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
+
+				//If the target is a single item, we want to find the item directly after it
+				if(!LinkCache.getInstance().isDir(internalTarget.getFileUID()))
+					nextItem = getNextItem(internalTarget.getParentUID(), internalTarget.getFileUID());
+			}
+			catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+				//If anything goes wrong, just don't update the next item
+			}
+		}
+
+
+		//Get the selected items
+		List<ListItem> toMove = getSelected();
+
+		try {
+			if(isMove)
+				DirUtilities.moveFiles(toMove, destinationUID, nextItem);
+			else
+				DirUtilities.copyFiles(toMove, destinationUID, nextItem);
+		} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
+			Looper.prepare();
+			Toast.makeText(dirFragment.requireContext(), "Operation failed!", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+
+
+	private void onExport() {
+
+	}
+
+
+
+	private void onTrash() {
+		//Get the selected items
+		List<ListItem> toTrash = getSelected();
+
+		//Update each item's name with a 'trashed' suffix
+		String suffix = ".trashed_"+ Instant.now().getEpochSecond();
+		List<ListItem> renamed = toTrash.stream()
+				.map(item -> new ListItem.Builder(item).setName(item.name + suffix).build())
+				.collect(Collectors.toList());
+
+		//And 'trash' them
+		new Thread(() -> {
+			DirUtilities.renameFiles(renamed);
+		}).start();
+
+		selectionController.stopSelecting();
+	}
+
+
+
+	private void onShare() {
+
+	}
+
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+
+	private UUID getNextItem(UUID parentDirUID, UUID targetUID)
+			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+
+		//For each item in the parent directory...
+		List<Pair<UUID, String>> dirList = DirCache.getInstance().getDirContents(parentDirUID);
+		for(int i = 0; i < dirList.size(); i++) {
+			//If we find the target, return the next item (or null)
+			if (dirList.get(i).first.equals(targetUID))
+				return (i+1 < dirList.size()) ? dirList.get(i+1).first : null;
+		}
+		throw new FileNotFoundException("Target not found! \nParent='"+parentDirUID+"', \nTarget='"+targetUID+"'");
+	}
+
+
+	private List<ListItem> getSelected() {
+		//Excluding duplicates...			(set returns true if the item is new, false if it already exists)
+		Set<UUID> isDuplicate = new HashSet<>();
+
+		//Grab each selected item in the adapter list
+		return adapter.list.stream()
+				.filter(item -> isDuplicate.add(item.fileUID) && selectionController.isSelected(item.fileUID))
+				.collect(Collectors.toList());
+	}
+}

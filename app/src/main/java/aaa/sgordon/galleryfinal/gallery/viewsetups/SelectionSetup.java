@@ -122,138 +122,31 @@ public class SelectionSetup {
 
 		selectionToolbar.setOnMenuItemClickListener(menuItem -> {
 			if(menuItem.getItemId() == R.id.select_all) {
-				Set<UUID> toSelect = new HashSet<>();
-				for(ListItem item : adapter.list) {
-					UUID itemUID = item.fileUID;
 
-					toSelect.add(itemUID);
-				}
-
-				//If all items are currently selected, we want to deselect all instead
-				Set<UUID> currSelected = selectionController.getSelectedList();
-				toSelect.removeAll(currSelected);
-				if(!toSelect.isEmpty())
-					selectionController.selectAll(toSelect);
-				else
-					selectionController.deselectAll();
 			}
 
 			else if (menuItem.getItemId() == R.id.filter) {
-				View filterView = binding.galleryAppbar.filterBar.getRoot();
-				if(filterView.getVisibility() == View.GONE)
-					filterView.setVisibility(View.VISIBLE);
-				else
-					dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
+
 			}
 
 			else if(menuItem.getItemId() == R.id.edit) {
-				System.out.println("Edit!");
-				return EditItemModal.launchHelper(dirFragment, selectionController, adapter.list);
+
 			}
 
 			else if(menuItem.getItemId() == R.id.tag) {
-				System.out.println("Clicked tags");
-				TagFullscreen.launch(dirFragment);
+
 			}
 
 			else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
-				boolean isMove = menuItem.getItemId() == R.id.move;
 
-				//TODO Make actual path from root
-				Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
-				MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
-
-					//Passing a fake item to move/copy will place the items at the start when the function can't find it
-					UUID nextItem = UUID.randomUUID();
-
-					LinkCache linkCache = LinkCache.getInstance();
-					LinkCache.LinkTarget target = linkCache.getFinalTarget(destinationUID);
-
-					//Find the next item in the list if we can
-					try {
-						if (target instanceof LinkCache.InternalTarget) {
-							LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
-
-							//If the target is a single item, we want to find the item directly after it
-							if(!linkCache.isDir(internalTarget.getFileUID())) {
-								List<Pair<UUID, String>> dirList = DirCache.getInstance().getDirContents(internalTarget.getParentUID());
-
-								//Find the index of the target
-								int targetIndex = -1;
-								for(int i = 0; i < dirList.size(); i++) {
-									//If we find the link target...
-									if (dirList.get(i).first.equals(internalTarget.getFileUID())) {
-										targetIndex = i+1;	//Point to the next item
-										break;
-									}
-								}
-
-								//If we found the target, grab the next item
-								if(targetIndex != -1 && targetIndex < dirList.size())
-									nextItem = dirList.get(targetIndex).first;
-							}
-						}
-					} catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-						//If anything goes wrong, just don't update the next item
-					}
-
-
-					//Get the selected items
-					List<ListItem> toMove = getSelected(dirFragment, selectionController);
-					UUID fNextItem = nextItem;
-					Thread operation = new Thread(() -> {
-						try {
-							//Given the move/copy destination, perform the move/copy
-							if(isMove)
-								DirUtilities.moveFiles(toMove, destinationUID, fNextItem);
-							else /*(isCopy)*/
-								DirUtilities.copyFiles(toMove, destinationUID, fNextItem);
-						} catch (FileNotFoundException | ContentsNotFoundException | ConnectException | NotDirectoryException e) {
-							throw new RuntimeException(e);
-						}
-					});
-					operation.start();
-				});
 			}
 
 			else if(menuItem.getItemId() == R.id.export) {
-				System.out.println("Export!");
-
-				//If the storage directory is not accessible...
-				if(!ExportStorageHandler.isStorageAccessible(dirFragment.requireContext())) {
-					System.out.println("Launching");
-					Log.w("Gal.Export", "Export directory is inaccessible. Prompting user to reselect.");
-					ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), dirFragment.exportPickerLauncher);
-				}
-				else {
-					Log.i("Gal.Export", "Using saved directory.");
-					System.out.println("Exporting!");
-
-					List<ListItem> toMove = getSelected(dirFragment, selectionController);
-				}
 
 			}
 
 			else if(menuItem.getItemId() == R.id.trash) {
-				//Get the selected items
-				List<ListItem> toTrash = getSelected(dirFragment, selectionController);
 
-				//Update each item's name with a 'trashed' suffix
-				String suffix = ".trashed_"+Instant.now().getEpochSecond();
-				List<ListItem> renamed = new ArrayList<>();
-				for(ListItem item : toTrash) {
-					renamed.add(new ListItem.Builder(item)
-							.setName(item.name + suffix)
-							.build());
-				}
-
-				//And 'trash' them
-				Thread trashThread = new Thread(() -> {
-					DirUtilities.renameFiles(renamed);
-				});
-				trashThread.start();
-
-				selectionController.stopSelecting();
 			}
 
 			else if(menuItem.getItemId() == R.id.share) {
@@ -339,7 +232,7 @@ public class SelectionSetup {
 
 
 
-	public static List<ListItem> getSelected(DirFragment dirFragment, SelectionController selectionController) {
+	private static List<ListItem> getSelected(DirFragment dirFragment, SelectionController selectionController) {
 		//Get the selected items from the viewModel's list
 		Set<UUID> selectedItems = new HashSet<>(selectionController.getSelectedList());
 

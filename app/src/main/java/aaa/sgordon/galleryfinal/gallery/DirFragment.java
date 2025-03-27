@@ -56,8 +56,6 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.FileMovement;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
@@ -65,7 +63,6 @@ public class DirFragment extends Fragment {
 
 	private SelectionController selectionController;
 	public ActivityResultLauncher<Intent> filePickerLauncher;
-	public ActivityResultLauncher<Intent> exportPickerLauncher;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -81,12 +78,6 @@ public class DirFragment extends Fragment {
 				.get(DirectoryViewModel.class);
 
 
-		exportPickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			ExportStorageHandler.onStorageLocationPicked(requireActivity(), result);
-			//Send off result
-			List<ListItem> toExport = SelectionSetup.getSelected(this, selectionController);
-			FileMovement.exportFiles(requireActivity(), );
-		});
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
 			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
