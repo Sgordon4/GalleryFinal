@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Pair;
 import android.view.MenuItem;
@@ -9,6 +10,8 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -23,40 +26,96 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.modals.MoveCopyFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
+import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
+import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
-public class ToolbarHelper {
-	DirFragment dirFragment;
-	DirRVAdapter adapter;
+public class MenuItemHelper {
+	private DirFragment dirFragment;
+	private ActivityResultLauncher<Intent> exportPickerLauncher;
 
 	//TODO Move SelectionController definition to onCreate in DirFragment
-	SelectionController selectionController;
+	private DirRVAdapter adapter;
+	private SelectionController selectionController;
 
-	ActivityResultLauncher<Intent> exportPickerLauncher;
 
+	public void onCreate(DirFragment dirFragment) {
+		this.dirFragment = dirFragment;
 
-	//Prob just replace this with a constructor
-	public void onCreate() {
 		exportPickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
 			ExportStorageHandler.onStorageLocationPicked(dirFragment.requireActivity(), result);
 			onExport();
 		});
 	}
 
+	public void onViewCreated(DirRVAdapter adapter, SelectionController selectionController) {
+		this.adapter = adapter;
+		this.selectionController = selectionController;
+	}
 
 
-	public boolean onSelectionToolbarClicked(MenuItem menuItem) {
+	//---------------------------------------------------------------------------------------------
+
+
+	public boolean onMainItemClicked(MenuItem menuItem) {
+		if (menuItem.getItemId() == R.id.filter) {
+			onFilter();
+			return true;
+		}
+		else if (menuItem.getItemId() == R.id.trashed) {
+			TrashFullscreen.launch(dirFragment, dirFragment.dirViewModel.getDirUID());
+			return true;
+		}
+		//TODO Clean up
+		else if (menuItem.getItemId() == R.id.settings) {
+			System.out.println("Clicked settings");
+
+			Thread getProps = new Thread(() -> {
+				try {
+					//Get the props of the directory
+					UUID dirUID = dirFragment.dirViewModel.getDirUID();
+					JsonObject props = AttrCache.getInstance().getAttr(dirUID);
+
+					System.out.println("Sending props: "+props.toString());
+
+					//Launch a Settings fragment
+					Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
+					handler.post(() -> {
+						SettingsFragment settingsFragment = SettingsFragment.newInstance(dirUID, props);
+						dirFragment.getChildFragmentManager().beginTransaction()
+								.replace(R.id.dir_child_container, settingsFragment)
+								.addToBackStack("Settings")
+								.commit();
+					});
+				} catch (FileNotFoundException e) {
+					Looper.prepare();
+					Toast.makeText(dirFragment.requireContext(),
+							"Could not open settings, file not found!", Toast.LENGTH_SHORT).show();
+				}
+			});
+			getProps.start();
+		}
+		return false;
+	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+	public boolean onSelectionItemClicked(MenuItem menuItem) {
 		if(menuItem.getItemId() == R.id.select_all) {
 			onSelectAll();
 			return true;
@@ -102,9 +161,7 @@ public class ToolbarHelper {
 	}
 
 
-
 	//---------------------------------------------------------------------------------------------
-
 
 
 	private void onSelectAll() {
@@ -131,6 +188,7 @@ public class ToolbarHelper {
 		else
 			dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
 	}
+
 
 
 	private void onMoveCopy(UUID destinationUID, boolean isMove) {
@@ -200,9 +258,7 @@ public class ToolbarHelper {
 	}
 
 
-
 	//---------------------------------------------------------------------------------------------
-
 
 
 	private UUID getNextItem(UUID parentDirUID, UUID targetUID)

@@ -8,8 +8,6 @@ import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,35 +32,34 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.gson.JsonObject;
 import com.leinardi.android.speeddial.SpeedDialView;
 
-import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
-import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.components.properties.NewItemModal;
-import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;
+import aaa.sgordon.galleryfinal.gallery.cooking.MenuItemHelper;
+import aaa.sgordon.galleryfinal.gallery.cooking.ToolbarStyler;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
-import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
-import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
 	public DirectoryViewModel dirViewModel;
 
-	private SelectionController selectionController;
 	public ActivityResultLauncher<Intent> filePickerLauncher;
+
+	private MenuItemHelper menuItemHelper;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -77,6 +74,9 @@ public class DirFragment extends Fragment {
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
 
+
+		menuItemHelper = new MenuItemHelper();
+		menuItemHelper.onCreate(this);
 
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -153,70 +153,90 @@ public class DirFragment extends Fragment {
 			}
 		}
 
+
 		//-----------------------------------------------------------------------------------------
 
+
 		MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
+		toolbar.setOnMenuItemClickListener(menuItemHelper::onMainItemClicked);
+
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
-
-		NavController navController = Navigation.findNavController(view);
-		toolbar.setNavigationOnClickListener(view4 -> navController.popBackStack());
-
-		//Hide the navigation icon when we're at the top-level
-		navController.addOnDestinationChangedListener((navController1, navDestination, bundle) -> {
-			if(navController1.getPreviousBackStackEntry() == null)
-				toolbar.setNavigationIcon(null);
-		});
-
-		//Must set title after configuration
-		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
-		String directoryName = args.getDirectoryName();
-		toolbar.setTitle(directoryName);
+		selectionToolbar.setOnMenuItemClickListener(menuItemHelper::onSelectionItemClicked);
 
 
 
-		toolbar.setOnMenuItemClickListener(item -> {
-			if (item.getItemId() == R.id.filter) {
-				View filterView = binding.galleryAppbar.filterBar.getRoot();
-				if(filterView.getVisibility() == View.GONE)
-					filterView.setVisibility(View.VISIBLE);
-				else
-					requireActivity().getOnBackPressedDispatcher().onBackPressed();
+		ToolbarStyler toolbarStyler = new ToolbarStyler();
+
+		SelectionController.SelectionCallbacks selectionCallbacks = new SelectionController.SelectionCallbacks() {
+			@Override
+			public void onSelectionStarted() {
+				toolbarStyler.onSelectionStarted();
+			}
+			@Override
+			public void onSelectionStopped() {
+				toolbarStyler.onSelectionStopped();
+			}
+			@Override
+			public void onNumSelectedChanged(int numSelected) {
+				toolbarStyler.onNumSelectedChanged(numSelected);
+			}
+			@Override
+			public UUID getUUIDAtPos(int pos) {
+				return adapter.list.get(pos).fileUID;
 			}
 
-			else if (item.getItemId() == R.id.trashed) {
-				System.out.println("Clicked trashed");
-				TrashFullscreen.launch(this, dirViewModel.getDirUID());
-			}
+			@Override
+			public void onSelectionChanged(UUID fileUID, boolean isSelected) {
+				//For any visible item, update the item selection status to change its appearance
+				//There may be more than one item in the list with the same fileUID due to links
+				//Non-visible items will have their selection status set later when they are bound by the adapter
+				//TODO This isn't catching items just off the screen, fix this garbage
+				for(int i = 0; i < recyclerView.getChildCount(); i++) {
+					View itemView = recyclerView.getChildAt(i);
+					if(itemView != null) {
+						int adapterPos = recyclerView.getChildAdapterPosition(itemView);
 
-			else if (item.getItemId() == R.id.settings) {
-				System.out.println("Clicked settings");
-
-				Thread getProps = new Thread(() -> {
-					try {
-						//Get the props of the directory
-						UUID dirUID = dirViewModel.getDirUID();
-						JsonObject props = AttrCache.getInstance().getAttr(dirUID);
-
-						System.out.println("Sending props: "+props.toString());
-
-						//Launch a Settings fragment
-						Handler handler = new Handler(requireActivity().getMainLooper());
-						handler.post(() -> {
-							SettingsFragment settingsFragment = SettingsFragment.newInstance(dirUID, props);
-							getChildFragmentManager().beginTransaction()
-									.replace(R.id.dir_child_container, settingsFragment)
-									.addToBackStack("Settings")
-									.commit();
-						});
-					} catch (FileNotFoundException e) {
-						Looper.prepare();
-						Toast.makeText(getContext(), "Could not open settings, file not found!", Toast.LENGTH_SHORT).show();
+						DirRVAdapter adapter = (DirRVAdapter) recyclerView.getAdapter();
+						if(fileUID.equals( adapter.list.get(adapterPos).fileUID ) )
+							itemView.setSelected(isSelected);
 					}
-				});
-				getProps.start();
+				}
 			}
-			return false;
+		};
+		SelectionController selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
+
+		toolbarStyler.onViewCreated(this, selectionController);
+
+		menuItemHelper.onViewCreated(adapter, selectionController);
+
+
+
+
+		//Deselect any items that were removed from the list
+		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
+			if(selectionController.isSelecting()) {
+				//Grab all UUIDs from the full list
+				Set<UUID> inAdapter = dirViewModel.fileList.getValue().stream()
+						.map(item -> item.fileUID)
+						.collect(Collectors.toSet());
+
+				//Grab all UUIDs from the new list
+				Set<UUID> inNewList = list.stream()
+						.map(item -> item.fileUID)
+						.collect(Collectors.toSet());
+
+				//Directly deselect any missing items (no need to worry about visuals, the items don't exist anymore)
+				inAdapter.removeAll(inNewList);
+				for(UUID itemUID : inAdapter)
+					dirViewModel.getSelectionRegistry().deselectItem(itemUID);
+
+				selectionCallbacks.onNumSelectedChanged(dirViewModel.getSelectionRegistry().getNumSelected());
+			}
 		});
+
+		//-----------------------------------------------------------------------------------------
+
+
 
 
 		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry(), dirViewModel.getAttrCache());
@@ -230,18 +250,6 @@ public class DirFragment extends Fragment {
 			filterController.onTagsUpdated(tags);
 		});
 
-
-		//-----------------------------------------------------------------------------------------
-
-		SelectionController.SelectionCallbacks selectionCallbacks = SelectionSetup.makeSelectionCallbacks(toolbar, selectionToolbar, recyclerView);
-		selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
-
-		SelectionSetup.setupSelectionToolbar(this, selectionController);
-
-		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
-			if(selectionController.isSelecting())
-				SelectionSetup.deselectAnyRemoved(list, dirViewModel, selectionCallbacks);
-		});
 
 		//-----------------------------------------------------------------------------------------
 
@@ -266,7 +274,7 @@ public class DirFragment extends Fragment {
 
 
 
-
+		NavController navController = Navigation.findNavController(view);
 		DirRVAdapter.AdapterCallbacks adapterCallbacks = AdapterTouchSetup.setupAdapterCallbacks(this, selectionController,
 				reorderCallback, dragSelectCallback, requireContext(), reorderHelper, dragSelectHelper, navController);
 		adapter.setCallbacks(adapterCallbacks);
@@ -282,13 +290,6 @@ public class DirFragment extends Fragment {
 
 
 
-
-
-
-
-		selectionToolbar.setNavigationOnClickListener(view2 -> {
-			selectionController.stopSelecting();
-		});
 
 		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
 			@Override
