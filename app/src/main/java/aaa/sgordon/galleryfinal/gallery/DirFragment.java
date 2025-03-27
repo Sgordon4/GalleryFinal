@@ -56,13 +56,16 @@ import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.SelectionSetup;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.FileMovement;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
 	public DirectoryViewModel dirViewModel;
 
-	ActivityResultLauncher<Intent> filePickerLauncher;
-	private ActivityResultLauncher<Intent> intentLauncher;
+	private SelectionController selectionController;
+	public ActivityResultLauncher<Intent> filePickerLauncher;
+	public ActivityResultLauncher<Intent> exportPickerLauncher;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,8 +81,11 @@ public class DirFragment extends Fragment {
 				.get(DirectoryViewModel.class);
 
 
-		intentLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+		exportPickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			ExportStorageHandler.onStorageLocationPicked(requireActivity(), result);
 			//Send off result
+			List<ListItem> toExport = SelectionSetup.getSelected(this, selectionController);
+			FileMovement.exportFiles(requireActivity(), );
 		});
 
 		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -237,7 +243,7 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 		SelectionController.SelectionCallbacks selectionCallbacks = SelectionSetup.makeSelectionCallbacks(toolbar, selectionToolbar, recyclerView);
-		SelectionController selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
+		selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
 
 		SelectionSetup.setupSelectionToolbar(this, selectionController);
 

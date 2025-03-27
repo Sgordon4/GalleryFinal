@@ -223,7 +223,7 @@ public class SelectionSetup {
 				if(!ExportStorageHandler.isStorageAccessible(dirFragment.requireContext())) {
 					System.out.println("Launching");
 					Log.w("Gal.Export", "Export directory is inaccessible. Prompting user to reselect.");
-					ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), exportPickerLauncher);
+					ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), dirFragment.exportPickerLauncher);
 				}
 				else {
 					Log.i("Gal.Export", "Using saved directory.");
@@ -339,7 +339,7 @@ public class SelectionSetup {
 
 
 
-	private static List<ListItem> getSelected(DirFragment dirFragment, SelectionController selectionController) {
+	public static List<ListItem> getSelected(DirFragment dirFragment, SelectionController selectionController) {
 		//Get the selected items from the viewModel's list
 		Set<UUID> selectedItems = new HashSet<>(selectionController.getSelectedList());
 

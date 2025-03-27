@@ -14,17 +14,6 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class FileMovement {
 
-	public static final ActivityResultLauncher<Intent> exportPickerLauncher;
-
-	public void initialize(Activity activity) {
-		exportPickerLauncher = activity.registerForActivityResult(
-				new ActivityResultContracts.StartActivityForResult(),
-				result -> {
-					ExportStorageHandler.onStorageLocationPicked(dirFragment.requireContext(), result);
-					System.out.println("Exporting!");
-				});
-	}
-
 	public static void exportFiles(Activity activity, List<ListItem> toExport) {
 
 		//If the storage directory is not accessible...
