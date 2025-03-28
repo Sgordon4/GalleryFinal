@@ -302,11 +302,6 @@ public class DirUtilities {
 
 
 
-
-
-
-
-
 	//TODO Cut this up into pieces (this is my last resort)
 	public static boolean moveFiles(@NonNull List<ListItem> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException, NotDirectoryException {
@@ -319,32 +314,23 @@ public class DirUtilities {
 
 
 		//If the destination is a link, we need the target dir or target parent
-		//TODO If the destination is a divider, move the files to under the divider
 		UUID destinationDirUID = LinkCache.getInstance().getLinkDir(destinationUID);
 
 
-
-		//Group each file by its parent directory so we know where to remove them from
-		//Exclude links being moved inside themselves
-		Map<UUID, List<UUID>> dirMap = new HashMap<>();
+		//We do not want to move links directly inside themselves or things will visually disappear. Exclude any.
 		Iterator<ListItem> iterator = toMove.iterator();
 		while (iterator.hasNext()) {
-			ListItem itemToMove = iterator.next();
-			UUID parentUID = itemToMove.parentUID;
-			UUID fileUID = itemToMove.fileUID;
-
+			UUID fileUID = iterator.next().fileUID;
 			if(destinationUID.equals(fileUID) || destinationDirUID.equals(fileUID)) {
 				Log.d(TAG, "Not allowed to move links inside themselves");
 				iterator.remove();
-				continue;
 			}
-
-			//If the item's parent is a link, we need the target dir or target parent
-			parentUID = LinkCache.getInstance().getLinkDir(parentUID);
-
-			dirMap.putIfAbsent(parentUID, new ArrayList<>());
-			dirMap.get(parentUID).add(fileUID);
 		}
+
+
+		//Group each file by its parent directory so we know where to remove them from
+		Map<UUID, List<UUID>> dirMap = mapToParent(toMove);
+
 
 		//-----------------------------------------------------------------------------------------
 
@@ -434,6 +420,24 @@ public class DirUtilities {
 
 		return true;
 	}
+
+	private static Map<UUID, List<UUID>> mapToParent(List<ListItem> toMap) {
+		Map<UUID, List<UUID>> dirMap = new HashMap<>();
+		for (ListItem itemToMove : toMap) {
+			UUID parentUID = itemToMove.parentUID;
+			UUID fileUID = itemToMove.fileUID;
+
+			//If the item's parent is a link, we need the targeted item if dir, or its parent if not
+			parentUID = LinkCache.getInstance().getLinkDir(parentUID);
+
+			dirMap.putIfAbsent(parentUID, new ArrayList<>());
+			dirMap.get(parentUID).add(fileUID);
+		}
+
+		return dirMap;
+	}
+
+
 
 
 	public static boolean copyFiles(@NonNull List<ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)

@@ -139,7 +139,7 @@ public class MenuItemHelper {
 			//TODO Make actual path from root
 			Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
 			MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
-				onMoveCopy(destinationUID, isMove);
+				new Thread(() -> onMoveCopy(destinationUID, isMove)).start();
 			});
 			return true;
 		}
