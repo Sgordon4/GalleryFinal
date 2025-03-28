@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Pair;
@@ -40,6 +41,7 @@ import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
@@ -228,6 +230,14 @@ public class MenuItemHelper {
 
 
 	private void onExport() {
+		//Get the selected items, which should be in order
+		List<ListItem> toExport = getSelected();
+
+		Uri exportDocUri = ExportStorageHandler.getStorageTreeUri(dirFragment.requireContext());
+		for(ListItem item : toExport) {
+			Uri nestedFileUri = SAFGoFuckYourself.makeDocUriFromDocUri(exportDocUri, item.name);
+
+		}
 
 	}
 
