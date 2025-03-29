@@ -421,4 +421,19 @@ public class HybridAPI {
 	public void exportFile(@NonNull UUID fileUID, @NonNull Uri destination) {
 		throw new RuntimeException("Stub!");
 	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+	public HZone getZoningInfo(@NonNull UUID fileUID) {
+		return Sync.getInstance().zoningDAO.get(fileUID);
+	}
+
+	public void updateZoning(@NonNull UUID fileUID, boolean shouldBeLocal, boolean shouldBeRemote) {
+		Sync.getInstance().updateZoning(fileUID, shouldBeLocal, shouldBeRemote);
+	}
+
+
+
 }

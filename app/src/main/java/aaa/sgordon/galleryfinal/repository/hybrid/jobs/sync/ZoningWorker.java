@@ -64,7 +64,7 @@ public class ZoningWorker extends Worker {
 		if((!currentZones.isLocal && shouldBeLocal) || (!currentZones.isRemote && shouldBeRemote))
 			constraints.setRequiredNetworkType(NetworkType.UNMETERED);
 
-		//If we're copying  data onto device, require storage not to be low
+		//If we're copying data onto device, require storage not to be low
 		if(!currentZones.isLocal && shouldBeLocal)
 			constraints.setRequiresStorageNotLow(true);
 
