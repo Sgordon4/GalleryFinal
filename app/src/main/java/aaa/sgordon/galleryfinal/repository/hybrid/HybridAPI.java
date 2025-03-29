@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.ZoningWorker;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
@@ -427,13 +428,18 @@ public class HybridAPI {
 
 
 	public HZone getZoningInfo(@NonNull UUID fileUID) {
+		//Since this method is really just to show the user what zones a file is in,
+		// try to get zoning data from any enqueued workers first
+		HZone zoning = ZoningWorker.getActiveWorkZoning(fileUID);
+		if(zoning != null) return zoning;
+
+		//Get the true zoning data from our DB
 		return Sync.getInstance().zoningDAO.get(fileUID);
 	}
 
-	public void updateZoning(@NonNull UUID fileUID, boolean shouldBeLocal, boolean shouldBeRemote) {
-		Sync.getInstance().updateZoning(fileUID, shouldBeLocal, shouldBeRemote);
+	public void setZoning(@NonNull UUID fileUID, boolean shouldBeLocal, boolean shouldBeRemote) {
+		ZoningWorker.enqueue(fileUID, shouldBeLocal, shouldBeRemote);
 	}
-
 
 
 }

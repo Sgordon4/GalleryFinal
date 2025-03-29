@@ -45,7 +45,7 @@ public class Sync {
 	public final HZoningDAO zoningDAO;
 	public static Sync getInstance() {
 		if (instance == null)
-			throw new IllegalStateException("LocalRepo is not initialized. Call initialize() first.");
+			throw new IllegalStateException("Sync is not initialized. Call initialize() first.");
 		return instance;
 	}
 

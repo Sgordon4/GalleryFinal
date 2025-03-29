@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<RadioGroup
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/zone_group"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingVertical="8dp"
     android:paddingHorizontal="16dp"
     android:layout_marginHorizontal="16dp">
 
-    <TextView
-        android:id="@+id/zoningbs"
-        android:layout_width="match_parent"
+    <RadioButton
+        android:id="@+id/zone_local"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"/>
+        android:text="Device Only"/>
 
-</FrameLayout>
+    <RadioButton
+        android:id="@+id/zone_remote"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cloud Only"/>
+
+    <RadioButton
+        android:id="@+id/zone_both"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Device &amp; Cloud"/>
+
+</RadioGroup>

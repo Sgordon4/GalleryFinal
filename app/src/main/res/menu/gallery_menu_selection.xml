@@ -30,6 +30,12 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/trash"
+        android:title="Trash"
+        android:icon="@drawable/icon_trash"
+        app:showAsAction="ifRoom"/>
+
+    <item
         android:id="@+id/move"
         android:title="Move to"
         android:icon="@drawable/icon_move"
@@ -42,22 +48,16 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/zoning"
-        android:title="Backup Status"
-        android:icon="@drawable/icon_cloud"
-        app:showAsAction="ifRoom" />
-
-    <item
         android:id="@+id/export"
         android:title="Export"
         android:icon="@drawable/icon_export"
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/trash"
-        android:title="Trash"
-        android:icon="@drawable/icon_trash"
-        app:showAsAction="ifRoom"/>
+        android:id="@+id/zoning"
+        android:title="Manage Backups"
+        android:icon="@drawable/icon_cloud"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/select_all"

@@ -3,13 +3,16 @@ package aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -18,8 +21,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.FileAlreadyExistsException;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
@@ -77,12 +85,13 @@ public class ZoningWorker extends Worker {
 		OneTimeWorkRequest worker = new OneTimeWorkRequest.Builder(ZoningWorker.class)
 				.setConstraints(constraints.build())
 				.setInputData(data.build())
-				.setInitialDelay(3, TimeUnit.SECONDS)	//User is most likely to requeue requests immediately after enqueuing one
+				//.setInitialDelay(10, TimeUnit.SECONDS)	//User is most likely to requeue requests immediately after enqueuing one
 				.addTag(fileUID.toString()).addTag("ZONING")
 				.addTag("LOCAL_"+shouldBeLocal)
 				.addTag("REMOTE_"+shouldBeRemote)
 				.build();
 
+		Log.i(TAG, "Enqueued zoning worker for fileUID='"+fileUID+"'");
 		WorkManager workManager = WorkManager.getInstance(MyApplication.getAppContext());
 		workManager.enqueueUniqueWork("zoning_"+fileUID, ExistingWorkPolicy.REPLACE, worker);
 
@@ -96,21 +105,77 @@ public class ZoningWorker extends Worker {
 
 
 
+	@Nullable
+	public static HZone getActiveWorkZoning(@NonNull UUID fileUID) {
+		//Query WorkManager for all ZONING workers
+		WorkManager workManager = WorkManager.getInstance(MyApplication.getAppContext());
+		List<WorkInfo> workInfo = null;
+		try {
+			workInfo = workManager.getWorkInfosByTag("ZONING").get();
+		} catch (ExecutionException | InterruptedException e) {
+			return null;
+		}
+
+		//Grab the workers that match the fileUID
+		workInfo = workInfo.stream()
+				.filter(item -> item.getTags().contains(fileUID.toString()))
+				.collect(Collectors.toList());
+
+
+		//Get any queued workers
+		List<WorkInfo> queued = workInfo.stream()
+				.filter(item -> item.getState().equals(WorkInfo.State.ENQUEUED))
+				.collect(Collectors.toList());
+		//There should only ever be one or less queued worker for a given fileUID
+		if(queued.size() > 1)
+			Log.w(TAG, "Multiple zoning workers found queued for fileUID='"+fileUID+"'");
+
+		//If there is a queued zoning worker, we want to provide those tags as the latest information
+		for(WorkInfo info : queued) {
+			boolean shouldBeLocal = info.getTags().contains("LOCAL_true");
+			boolean shouldBeRemote = info.getTags().contains("REMOTE_true");
+			return new HZone(fileUID, shouldBeLocal, shouldBeRemote);
+		}
+
+
+		//Get any running worker
+		List<WorkInfo> running = workInfo.stream()
+				.filter(item -> item.getState().equals(WorkInfo.State.RUNNING))
+				.collect(Collectors.toList());
+		//There should only ever be one or less running worker for a given fileUID
+		if(running.size() > 1)
+			Log.w(TAG, "Multiple zoning workers found running for fileUID='"+fileUID+"'");
+
+		//If there is no queued worker, but there is a running worker, provide those tags as the latest information
+		for(WorkInfo info : running) {
+			boolean shouldBeLocal = info.getTags().contains("LOCAL_true");
+			boolean shouldBeRemote = info.getTags().contains("REMOTE_true");
+			return new HZone(fileUID, shouldBeLocal, shouldBeRemote);
+		}
+
+
+		//If there is no queued or running worker, return null
+		return null;
+	}
+
+
+
 
 	@NonNull
 	@Override
 	public Result doWork() {
-		String fileUIDString = getInputData().getString("FILEUID");
+		System.out.println("Doing work: ");
+		Map<String, Object> data = getInputData().getKeyValueMap();
+
+		String fileUIDString = (String) data.get("FILEUID");
 		assert fileUIDString != null;
 		UUID fileUID = UUID.fromString(fileUIDString);
 
-		String localString = getInputData().getString("LOCAL");
-		assert localString != null;
-		boolean shouldBeLocal = Boolean.parseBoolean(localString);
+		Boolean shouldBeLocal = (Boolean) data.get("LOCAL");
+		assert shouldBeLocal != null;
 
-		String remoteString = getInputData().getString("REMOTE");
-		assert remoteString != null;
-		boolean shouldBeRemote = Boolean.parseBoolean(remoteString);
+		Boolean shouldBeRemote = (Boolean) data.get("REMOTE");
+		assert shouldBeRemote != null;
 
 		if(!shouldBeLocal && !shouldBeRemote) {
 			Log.e(TAG, "Cannot set both zones to false! FileUID='"+fileUID+"'");
@@ -118,7 +183,16 @@ public class ZoningWorker extends Worker {
 		}
 
 
-		HZoningDAO dao =  Sync.getInstance().zoningDAO;
+		//TODO Resolve the workers running before the app initializes.
+		// Not actually sure if there will be a better way to do this than what we're doing here...
+		try {
+			Sync.getInstance();
+		} catch (IllegalStateException e) {
+			Log.e(TAG, "App is still starting! Fix this somehow!");
+			return Result.retry();
+		}
+
+		HZoningDAO dao = Sync.getInstance().zoningDAO;
 		HZone currentZones = dao.get(fileUID);
 		if(currentZones == null) {
 			Log.e(TAG, "Zoning data not found for fileUID='"+fileUID+"'");
@@ -276,6 +350,11 @@ public class ZoningWorker extends Worker {
 	private Result uploadToRemote(UUID fileUID) {
 		LocalRepo localRepo = LocalRepo.getInstance();
 		RemoteRepo remoteRepo = RemoteRepo.getInstance();
+
+		if(!localRepo.doesFileExist(fileUID)) {
+			Log.w(TAG, "Local file props not found when copying to remote, something went wrong! FileUID='"+fileUID+"'");
+			return Result.failure();
+		}
 
 		try {
 			//We only want to create/upload the file if the file does not already exist on Remote. Check just in case the zones are out of date.
