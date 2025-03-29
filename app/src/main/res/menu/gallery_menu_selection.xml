@@ -41,6 +41,11 @@
         android:icon="@drawable/icon_copy"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/zoning"
+        android:title="Backup Status"
+        android:icon="@drawable/icon_cloud"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/export"

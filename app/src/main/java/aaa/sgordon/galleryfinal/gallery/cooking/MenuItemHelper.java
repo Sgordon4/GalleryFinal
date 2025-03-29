@@ -33,6 +33,7 @@ import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.modals.MoveCopyFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.modals.ZoningModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;
@@ -141,6 +142,10 @@ public class MenuItemHelper {
 			MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
 				new Thread(() -> onMoveCopy(destinationUID, isMove)).start();
 			});
+			return true;
+		}
+		else if(menuItem.getItemId() == R.id.zoning) {
+			ZoningModal.launch(dirFragment, getSelected().stream().map(item -> item.fileUID).collect(Collectors.toList()));
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.export) {
