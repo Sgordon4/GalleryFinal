@@ -2,10 +2,13 @@ package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.net.Uri;
 import android.os.Handler;
+import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.signature.ObjectKey;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -45,17 +48,24 @@ public class GifViewHolder extends BaseViewHolder {
 				LinkCache linkCache = LinkCache.getInstance();
 				LinkCache.LinkTarget target = linkCache.getFinalTarget(listItem.fileUID);
 
+				String cacheKey;
+
 				//If the target is null, the item is not a link. Get the content uri from the fileUID's content
 				if (target == null) {
-					content = hAPI.getFileContent(listItem.fileUID).first;
+					Pair<Uri, String> contentInfo = hAPI.getFileContent(listItem.fileUID);
+					content = contentInfo.first;
+					cacheKey = "THUMB_"+contentInfo.second;
 				}
 				//If the target is internal, get the content uri from that fileUID's content
 				else if (target instanceof LinkCache.InternalTarget) {
-					content = hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID()).first;
+					Pair<Uri, String> contentInfo = hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID());
+					content = contentInfo.first;
+					cacheKey = "THUMB_"+contentInfo.second;
 				}
 				//If the target is external, get the content uri from the target
 				else {//if(target instanceof LinkCache.ExternalTarget) {
 					content = ((LinkCache.ExternalTarget) target).getUri();
+					cacheKey = "THUMB_"+content;
 				}
 
 
@@ -65,6 +75,8 @@ public class GifViewHolder extends BaseViewHolder {
 						//.asBitmap()
 						.asGif()		//TODO Remove
 						.load(content)
+						.signature(new ObjectKey(cacheKey))
+						.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
 						.centerCrop()
 						.override(150, 150)
 						.placeholder(R.drawable.ic_launcher_foreground)
