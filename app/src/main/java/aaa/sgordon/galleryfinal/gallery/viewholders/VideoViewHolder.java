@@ -69,6 +69,7 @@ public class VideoViewHolder extends BaseViewHolder {
 				}
 
 
+				//TODO Figure out if this is downloading the entire video from external uris or not
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() ->
 					Glide.with(image.getContext())
