@@ -237,13 +237,7 @@ public class MenuItemHelper {
 	private void onExport() {
 		//Get the selected items, which should be in order
 		List<ListItem> toExport = getSelected();
-
-		Uri exportDocUri = ExportStorageHandler.getStorageTreeUri(dirFragment.requireContext());
-		for(ListItem item : toExport) {
-			Uri nestedFileUri = SAFGoFuckYourself.makeDocUriFromDocUri(exportDocUri, item.name);
-
-		}
-
+		new Thread(() -> DirUtilities.export(toExport)).start();
 	}
 
 

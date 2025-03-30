@@ -66,8 +66,8 @@ public class SAFGoFuckYourself {
 
 
 	//Will not create the file if it already exists. Creates all parent directories
-	public static void createFile(Context context, Uri fileDocUri) {
-		if(fileExists(context, fileDocUri)) return;
+	public static Uri createFile(Context context, Uri fileDocUri) {
+		if(fileExists(context, fileDocUri)) return fileDocUri;
 
 		//If there is no parent, we're trying to create a top-level file, which we can't do
 		Uri parentUri = getParentFromDocUri(fileDocUri);
@@ -79,15 +79,16 @@ public class SAFGoFuckYourself {
 
 		String fileName = getNameFromDocUri(fileDocUri);
 		try {
-			Uri uri = createFile(context, parentUri, fileName);
+			return createFile(context, parentUri, fileName);
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	private static Uri createFile(Context context, Uri parentUri, String dirName) throws FileNotFoundException {
+	private static Uri createFile(Context context, Uri parentUri, String fileName) throws FileNotFoundException {
+		//THIS SHIT replaces all spaces with underscores with no method to avoid that. Genuinely fuck off.
 		return DocumentsContract.createDocument(
 				context.getContentResolver(), parentUri,
-				"*/*", dirName);
+				"*/*", fileName);
 	}
 
 

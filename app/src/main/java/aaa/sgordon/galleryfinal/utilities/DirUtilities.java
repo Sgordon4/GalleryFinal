@@ -1,17 +1,25 @@
 package aaa.sgordon.galleryfinal.utilities;
 
+import android.content.Context;
 import android.net.Uri;
+import android.os.Looper;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.apache.commons.io.FilenameUtils;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.file.NotDirectoryException;
@@ -25,8 +33,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.MainActivity;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
@@ -522,6 +533,92 @@ public class DirUtilities {
 		finally {
 			hAPI.unlockLocal(destinationDirUID);
 		}
+
+		return true;
+	}
+
+
+
+	public static boolean export(@NonNull List<ListItem> toExport) {
+		Context context = MyApplication.getAppContext();
+		HybridAPI hAPI = HybridAPI.getInstance();
+
+		if(toExport.isEmpty()) {
+			Log.w(TAG, "Export was called with no files to export!");
+			return false;
+		}
+
+		Uri exportDocUri = ExportStorageHandler.getStorageTreeUri(context);
+		if(exportDocUri == null)
+			throw new RuntimeException("Export document URI is null!");
+
+		//Add all the files in order to the export directory
+		for(int i = toExport.size()-1; i >= 0; i--) {
+			ListItem item = toExport.get(i);
+
+			//Skip directories and links
+			if(item.isDir || item.isLink) {
+				toExport.remove(i);
+				continue;
+			}
+
+			//Create the file Uri to export, with an incremented filename if necessary
+			Uri exportUri;
+			int count = 0;
+			//Fucking SAF replaces all spaces with underscores so we're just doing that here to avoid catastrophic failure
+			//What a shitty fucking joke of an API
+			String underscored = item.name.replaceAll("\\s", "_");
+			do {
+				String fileName = FilenameUtils.removeExtension(underscored);
+				String extension = FilenameUtils.getBaseName(underscored);
+				String name = (count == 0) ? underscored : fileName+"("+count+")"+extension;
+				count++;
+				exportUri = SAFGoFuckYourself.makeDocUriFromDocUri(exportDocUri, name);
+			} while(SAFGoFuckYourself.fileExists(context, exportUri));
+
+			SAFGoFuckYourself.createFile(context, exportUri);
+
+
+			//Actually export the file
+			try {
+				Pair<Uri, String> contentInfo = hAPI.getFileContent(item.fileUID);
+
+				try (InputStream in = context.getContentResolver().openInputStream(contentInfo.first);
+					 BufferedInputStream bin = new BufferedInputStream(in);
+
+					 OutputStream out = context.getContentResolver().openOutputStream(exportUri);
+					 BufferedOutputStream bout = new BufferedOutputStream(out)) {
+
+					byte[] buffer = new byte[8192]; // Buffer size can be adjusted
+					int bytesRead;
+					while ((bytesRead = bin.read(buffer)) != -1) {
+						bout.write(buffer, 0, bytesRead);
+					}
+
+					// Ensure that the data is written to the file
+					bout.flush();
+
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+				toExport.remove(i);
+				Looper.prepare();
+				//TODO Maybe make different toasts for each error type. Except contents, that one means it's just broke.
+				Toast.makeText(context, "A file was unable to be exported!", Toast.LENGTH_SHORT).show();
+			}
+		}
+
+
+
+		//Finally, delete all files that were successfully exported
+		List<ListItem> failedItems = deleteFiles(toExport);
+		if(!failedItems.isEmpty()) {
+			Looper.prepare();
+			Toast.makeText(context, "Some items failed to be removed!", Toast.LENGTH_SHORT).show();
+		}
+
+
 
 		return true;
 	}
