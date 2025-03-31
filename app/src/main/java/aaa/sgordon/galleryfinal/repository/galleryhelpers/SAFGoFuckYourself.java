@@ -24,6 +24,11 @@ Also, why the FUCK does contentResolver's query not fucking work. Legitimately u
 public class SAFGoFuckYourself {
 
 
+	public static String sanitizeFilename(String filename) {
+		//Regular expression to match invalid characters in filenames
+		return filename.replaceAll("[/\\:*?\"<>|]", "_");
+	}
+
 	public static Uri makeDocUriFromTreeUri(@NonNull Uri treeUri, String... segments) {
 		String rootTreeID = DocumentsContract.getTreeDocumentId(treeUri);
 

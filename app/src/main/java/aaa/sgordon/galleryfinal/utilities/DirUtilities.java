@@ -567,11 +567,11 @@ public class DirUtilities {
 			int count = 0;
 			//Fucking SAF replaces all spaces with underscores so we're just doing that here to avoid catastrophic failure
 			//What a shitty fucking joke of an API
-			String underscored = item.name.replaceAll("\\s", "_");
+			String sanitizedName = SAFGoFuckYourself.sanitizeFilename(item.name);
 			do {
-				String fileName = FilenameUtils.removeExtension(underscored);
-				String extension = FilenameUtils.getBaseName(underscored);
-				String name = (count == 0) ? underscored : fileName+"("+count+")"+extension;
+				String fileName = FilenameUtils.removeExtension(sanitizedName);
+				String extension = FilenameUtils.getExtension(sanitizedName);
+				String name = (count == 0) ? sanitizedName : fileName+" ("+count+")."+extension;
 				count++;
 				exportUri = SAFGoFuckYourself.makeDocUriFromDocUri(exportDocUri, name);
 			} while(SAFGoFuckYourself.fileExists(context, exportUri));

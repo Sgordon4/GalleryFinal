@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -118,6 +119,24 @@ public class MainActivity extends AppCompatActivity {
 		navController.setGraph(R.navigation.nav_graph, bundle);
 	}
 
+
+
+	private void testMaking() throws FileNotFoundException {
+		System.out.println("Inside");
+		Uri rootDocUri = MainStorageHandler.getStorageTreeUri(this);
+
+		DocumentFile file = DocumentFile.fromTreeUri(this, rootDocUri);
+		String fileName = "1:?/\\; SuperDuper File.txt";
+		String sanitizedName = SAFGoFuckYourself.sanitizeFilename(fileName);
+		file.createFile("*/*", sanitizedName);
+		DocumentFile newFile = file.createFile("*/*", sanitizedName);
+
+		System.out.println(newFile.getName());
+
+
+		System.out.println("Finished");
+		throw new RuntimeException();
+	}
 
 
 
