@@ -35,7 +35,6 @@ import aaa.sgordon.galleryfinal.repository.remote.types.RJournal;
 
 public class SyncWorkers {
 
-
 	public static class SyncWatcher extends Worker {
 		private static final String TAG = "Hyb.Sync.Watcher";
 
@@ -124,6 +123,11 @@ public class SyncWorkers {
 			//And update our journalID trackers
 			sync.updateLastSyncLocal(newSyncLocal);
 			sync.updateLastSyncRemote(newSyncRemote);
+
+
+			//TODO For sync cleanup, grab list of all isRemote only, then grab list of local journals after our new localSync,
+			// exclude any files with journals, and delete the rest
+
 
 			return Result.success();
 		}

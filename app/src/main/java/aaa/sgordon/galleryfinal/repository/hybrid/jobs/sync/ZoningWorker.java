@@ -402,6 +402,18 @@ public class ZoningWorker extends Worker {
 
 	//---------------------------------------------------------------------------------------------
 
+	private Result removeFromLocal(UUID fileUID) {
+		LocalRepo localRepo = LocalRepo.getInstance();
+		try {
+			localRepo.deleteFileProps(fileUID);
+		} catch (FileNotFoundException e) {
+			return Result.success();
+		}
+		return Result.success();
+	}
+
+	//---------------------------------------------------------------------------------------------
+
 	private Result removeFromRemote(UUID fileUID) {
 		RemoteRepo remoteRepo = RemoteRepo.getInstance();
 
