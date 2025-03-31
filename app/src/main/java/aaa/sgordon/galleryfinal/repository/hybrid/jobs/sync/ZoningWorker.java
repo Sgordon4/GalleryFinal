@@ -7,6 +7,7 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
@@ -369,7 +370,7 @@ public class ZoningWorker extends Worker {
 				remoteRepo.getContentProps(localProps.checksum);
 				Log.v(TAG, "Remote contents already exist. No need to re-upload.");
 			} catch (ContentsNotFoundException e) {
-				remoteRepo.uploadData(localProps.checksum, new File(localContent.getPath()));
+				remoteRepo.uploadData(localProps.checksum, localContent);
 				Log.v(TAG, "Contents uploaded to remote.");
 			}
 

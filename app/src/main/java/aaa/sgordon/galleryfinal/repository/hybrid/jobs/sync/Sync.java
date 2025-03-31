@@ -233,7 +233,7 @@ public class Sync {
 				//If the file contents don't match, copy them over
 				if(!localProps.checksum.equals(remoteProps.checksum)) {
 					Uri localContent = localRepo.getContentUri(localProps.checksum);
-					remoteRepo.uploadData(localProps.checksum, new File(localContent.getPath()));
+					remoteRepo.uploadData(localProps.checksum, localContent);
 					remoteRepo.putContentProps(HFile.toRemoteFile(localProps), remoteProps.checksum);
 				}
 				//If the user attributes don't match, copy them over

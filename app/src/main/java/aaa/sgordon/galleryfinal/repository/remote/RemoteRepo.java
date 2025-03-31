@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal.repository.remote;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Looper;
 import android.os.NetworkOnMainThreadException;
@@ -8,6 +9,7 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.remote.connectors.AccountConnector;
 import aaa.sgordon.galleryfinal.repository.remote.connectors.ContentConnector;
@@ -35,6 +38,7 @@ import aaa.sgordon.galleryfinal.repository.remote.types.RAccount;
 import aaa.sgordon.galleryfinal.repository.remote.types.RContent;
 import aaa.sgordon.galleryfinal.repository.remote.types.RFile;
 import aaa.sgordon.galleryfinal.repository.remote.types.RJournal;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -334,21 +338,22 @@ public class RemoteRepo {
 	//Source file must be on-disk
 	//Returns the fileSize of the provided source
 	//WARNING: DOES NOT UPDATE FILE PROPERTIES
-	public RContent uploadData(@NonNull String name, @NonNull File source) throws FileNotFoundException, ConnectException {
-		Log.i(TAG, "\nREMOTE PUT CONTENTS called with source='"+source.getPath()+"'");
+	public RContent uploadData(@NonNull String name, @NonNull Uri source) throws FileNotFoundException, ConnectException {
+		Log.i(TAG, "\nREMOTE PUT CONTENTS called with source='"+source+"'");
+		Context context = MyApplication.getAppContext();
 
-		if (!source.exists()) throw new FileNotFoundException("Source file not found! Path: '"+source.getPath()+"'");
-		int filesize = (int) source.length();
+		if (!SAFGoFuckYourself.fileExists(context, source)) throw new FileNotFoundException("Source file not found! Path: '"+source+"'");
+		int fileSize = SAFGoFuckYourself.getFileSize(context, source);
 
 		try {
 			//If the file is small enough, upload it to one url
-			if(filesize <= ContentConnector.MIN_PART_SIZE) {
+			if(fileSize <= ContentConnector.MIN_PART_SIZE) {
 				Log.i(TAG, "Source is <= 5MB, uploading directly.");
 				Log.i(TAG, "... Getting content upload URL");
 				String uploadUrl = contentConn.getUploadUrl(name);
 
-				byte[] buffer = new byte[filesize];
-				try (BufferedInputStream in = new BufferedInputStream( Files.newInputStream(source.toPath()) )) {
+				byte[] buffer = new byte[fileSize];
+				try (BufferedInputStream in = new BufferedInputStream( context.getContentResolver().openInputStream(source) )) {
 					int bytesRead = in.read(buffer);
 					Log.i(TAG, "... Uploading to URL");
 					String ETag = contentConn.uploadToUrl(buffer, uploadUrl);
@@ -360,17 +365,17 @@ public class RemoteRepo {
 				Log.i(TAG, "Source is > 5MB, uploading via multipart.");
 
 				//Get the individual components needed for a multipart upload
-				Pair<UUID, List<Uri>> multipart = contentConn.initializeMultipart(name, filesize);
+				Pair<UUID, List<Uri>> multipart = contentConn.initializeMultipart(name, fileSize);
 				UUID uploadID = multipart.first;
 				List<Uri> uris = multipart.second;
 
 
 				//Upload the file in parts to each url, receiving an ETag for each one
 				List<ContentConnector.ETag> ETags = new ArrayList<>();
-				try (BufferedInputStream in = new BufferedInputStream( Files.newInputStream(source.toPath()) )) {
+				try (BufferedInputStream in = new BufferedInputStream( context.getContentResolver().openInputStream(source) )) {
 					//WARNING: For if this code is converted to parallel, each loop uses 5MB of memory for the buffer
 					for(int i = 0; i < uris.size(); i++) {
-						int remaining = filesize - (ContentConnector.MIN_PART_SIZE * i);
+						int remaining = fileSize - (ContentConnector.MIN_PART_SIZE * i);
 						int partSize = Math.min(ContentConnector.MIN_PART_SIZE, remaining);
 
 						byte[] buffer = new byte[partSize];
@@ -393,7 +398,7 @@ public class RemoteRepo {
 
 			//Now that the data has been written, create a new entry in the content table
 			Log.i(TAG, "... Putting content props");
-			return contentConn.putProps(name, filesize);
+			return contentConn.putProps(name, fileSize);
 
 		} catch (ConnectException e) {
 			throw e;
