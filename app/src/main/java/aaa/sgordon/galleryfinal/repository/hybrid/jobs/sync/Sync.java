@@ -19,9 +19,9 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZoningDAO;
-import aaa.sgordon.galleryfinal.repository.hybrid.database.HybridHelpDatabase;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
+import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.repository.local.types.LFile;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 import aaa.sgordon.galleryfinal.repository.remote.RemoteRepo;
@@ -48,16 +48,10 @@ public class Sync {
 		return instance;
 	}
 
-	public static synchronized void initialize(Context context) {
-		if (instance == null) {
-			HybridHelpDatabase hdb = new HybridHelpDatabase.DBBuilder().newInstance(context);
-			instance = new Sync(hdb, context);
-		}
-	}
-	public static synchronized void initialize(HybridHelpDatabase database, Context context) {
+	public static synchronized void initialize(LocalDatabase database, Context context) {
 		if (instance == null) instance = new Sync(database, context);
 	}
-	private Sync(HybridHelpDatabase database, Context context) {
+	private Sync(LocalDatabase database, Context context) {
 		localRepo = LocalRepo.getInstance();
 		remoteRepo = RemoteRepo.getInstance();
 		zoningDAO = database.getZoningDao();

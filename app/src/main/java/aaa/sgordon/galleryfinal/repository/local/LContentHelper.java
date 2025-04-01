@@ -26,9 +26,9 @@ public class LContentHelper {
 	private static final String contentDir = "content";
 	private final Uri storageDir;
 
-	public LContentHelper(@NonNull String storageDir) {
+	public LContentHelper(@NonNull Uri storageDir) {
 		//Contents are stored in the app's data directory
-		this.storageDir = Uri.parse(storageDir);
+		this.storageDir = storageDir;
 	}
 
 

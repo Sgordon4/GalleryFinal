@@ -35,10 +35,10 @@ public class LocalRepo {
 	private UUID currentAccount;
 	private final Map<UUID, ReentrantLock> locks;
 
-	public static synchronized void initialize(LocalDatabase database, String storageDir) {
+	public static synchronized void initialize(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
 		if (instance == null) instance = new LocalRepo(database, storageDir);
 	}
-	private LocalRepo(LocalDatabase database, String storageDir) {
+	private LocalRepo(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
 		locks = new HashMap<>();
 		this.database = database;
 		this.contentHelper = new LContentHelper(storageDir);

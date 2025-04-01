@@ -15,15 +15,15 @@
         android:text="Device Only"/>
 
     <RadioButton
-        android:id="@+id/zone_remote"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Cloud Only"/>
-
-    <RadioButton
         android:id="@+id/zone_both"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Device &amp; Cloud"/>
+
+    <RadioButton
+        android:id="@+id/zone_remote"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cloud Only"/>
 
 </RadioGroup>

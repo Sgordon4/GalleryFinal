@@ -81,13 +81,13 @@ public class ZoningModal extends DialogFragment {
 		radioGroup = view.findViewById(R.id.zone_group);
 
 		RadioButton local = view.findViewById(R.id.zone_local);
-		RadioButton remote = view.findViewById(R.id.zone_remote);
 		RadioButton both = view.findViewById(R.id.zone_both);
+		RadioButton remote = view.findViewById(R.id.zone_remote);
 
 		viewModel.currZoning.observe(this, zoning -> {
 			local.setText("Device Only ("+viewModel.countLocalOnly+")");
-			both.setText("Cloud Only ("+viewModel.countBoth+")");
-			remote.setText("Device & Cloud ("+viewModel.countRemoteOnly+")");
+			both.setText("Device & Cloud ("+viewModel.countRemoteOnly+")");
+			remote.setText("Cloud Only ("+viewModel.countBoth+")");
 		});
 
 

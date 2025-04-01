@@ -50,21 +50,28 @@ public class HybridAPI {
 	private UUID currentAccount = UUID.fromString("b16fe0ba-df94-4bb6-ad03-aab7e47ca8c3");
 
 
+	private static HybridAPI instance;
 	public static HybridAPI getInstance() {
-		return SingletonHelper.INSTANCE;
+		if (instance == null)
+			throw new IllegalStateException("HybridAPI is not initialized. Call initialize() first.");
+		return instance;
 	}
-	private static class SingletonHelper {
-		private static final HybridAPI INSTANCE = new HybridAPI();
+	public static void destroyInstance() {
+		instance = null;
 	}
-	private HybridAPI() {
+	public static synchronized void initialize(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
+		if (instance == null) instance = new HybridAPI(database, storageDir);
+	}
+
+	private HybridAPI(@NonNull LocalDatabase db, @NonNull Uri storageDir) {
 		listeners = HybridListeners.getInstance();
 
 		//TODO Change database storage location
-		LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
+		//LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
 		//String storageDir = MyApplication.getAppContext().getApplicationInfo().dataDir;
-		Uri storageDir = MainStorageHandler.getStorageTreeUri(MyApplication.getAppContext());
-		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
-		LocalRepo.initialize(db, storageDir.toString());
+		//Uri storageDir = MainStorageHandler.getStorageTreeUri(MyApplication.getAppContext());
+
+		LocalRepo.initialize(db, storageDir);
 
 		localRepo = LocalRepo.getInstance();
 		remoteRepo = RemoteRepo.getInstance();
@@ -73,8 +80,7 @@ public class HybridAPI {
 		localRepo.setAccount(currentAccount);
 		remoteRepo.setAccount(currentAccount);
 
-		//TODO Change database storage location
-		Sync.initialize(MyApplication.getAppContext());
+		Sync.initialize(db, MyApplication.getAppContext());
 		sync = Sync.getInstance();
 	}
 
@@ -105,13 +111,14 @@ public class HybridAPI {
 	}
 
 
-	public void changeStorageDir(@NonNull String newDir) {
+	public void changeStorageDir(@NonNull Uri newStorageDir) {
 		LocalRepo.destroyInstance();
+		destroyInstance();
+
 		//TODO Change database storage location
 		//LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(MyApplication.getAppContext(), LocalDatabase.class).build();
-		LocalRepo.initialize(db, newDir);
-		localRepo = LocalRepo.getInstance();
+		initialize(db, newStorageDir);
 	}
 
 

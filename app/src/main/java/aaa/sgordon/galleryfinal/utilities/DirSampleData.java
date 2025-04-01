@@ -69,8 +69,8 @@ public class DirSampleData {
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
 		Uri storageDir = MainStorageHandler.getStorageTreeUri(context);
 		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
-		LocalRepo.initialize(db, storageDir.toString());
-		//LocalRepo.initialize(db, context.getCacheDir().toString());
+		//HybridAPI.initialize(db, context.getCacheDir().toString());
+		HybridAPI.initialize(db, storageDir);
 		HybridAPI hapi = HybridAPI.getInstance();
 
 		//Fake creating the account

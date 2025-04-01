@@ -5,12 +5,17 @@ import androidx.room.Delete;
 import androidx.room.Query;
 import androidx.room.Upsert;
 
+import java.util.List;
+
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 
 @Dao
 public interface LContentDAO {
 	@Query("SELECT * FROM content WHERE name = :name")
 	LContent get(String name);
+
+	@Query("SELECT * FROM content")
+	List<LContent> getOrphans();
 
 	@Upsert
 	void put(LContent... contents);

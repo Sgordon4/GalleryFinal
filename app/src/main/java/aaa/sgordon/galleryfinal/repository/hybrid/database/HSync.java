@@ -20,13 +20,13 @@ public class HSync {
 	public String lastSyncChecksum;
 
 	@Nullable
-	public JsonObject attrBeforeMod;
+	public JsonObject lastSyncAttr;
 
 
-	public HSync(@NonNull UUID fileuid, @NonNull String lastSyncChecksum, @Nullable JsonObject attrBeforeMod) {
+	public HSync(@NonNull UUID fileuid, @NonNull String lastSyncChecksum, @Nullable JsonObject lastSyncAttr) {
 		this.fileuid = fileuid;
 		this.lastSyncChecksum = lastSyncChecksum;
-		this.attrBeforeMod = attrBeforeMod;
+		this.lastSyncAttr = lastSyncAttr;
 	}
 
 
