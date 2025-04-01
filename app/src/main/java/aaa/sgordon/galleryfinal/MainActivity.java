@@ -31,6 +31,8 @@ import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //https://developer.android.com/guide/navigation/use-graph/animate-transitions
 
+//Main Branch
+
 public class MainActivity extends AppCompatActivity {
 	private final String TAG = "Gal.Main";
 	private ActivityMainBinding binding;
