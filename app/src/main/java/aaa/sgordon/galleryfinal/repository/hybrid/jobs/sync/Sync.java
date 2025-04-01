@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.List;
 import java.util.UUID;
@@ -121,7 +122,7 @@ public class Sync {
 
 
 	//Returns the highest journalIDs it found for Local::Remote
-	public Pair<Integer, Integer> sync(@NonNull UUID fileUID, int localSyncID, int remoteSyncID) throws IllegalStateException, ConnectException {
+	public Pair<Integer, Integer> sync(@NonNull UUID fileUID, int localSyncID, int remoteSyncID) throws IllegalStateException, ConnectException, IOException {
 		try {
 			localRepo.lock(fileUID);
 			localRepo.getFileProps(fileUID);

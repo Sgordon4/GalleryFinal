@@ -8,6 +8,7 @@ import android.util.Pair;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
@@ -88,6 +89,9 @@ public class ReorderSetup {
 					new Handler(getMainLooper()).post(myRunnable);
 
 				} catch (FileNotFoundException | ContentsNotFoundException | ConnectException | NotDirectoryException e) {
+					throw new RuntimeException(e);
+				}
+				catch (IOException e) {
 					throw new RuntimeException(e);
 				}
 			});

@@ -210,7 +210,7 @@ public class LocalRepo {
 	}
 
 
-	public LContent writeContents(@NonNull String name, @NonNull byte[] contents) {
+	public LContent writeContents(@NonNull String name, @NonNull byte[] contents) throws IOException {
 		Log.v(TAG, String.format("\nLOCAL WRITE CONTENTS BYTE called with name='"+name+"'"));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
@@ -219,17 +219,13 @@ public class LocalRepo {
 			return getContentProps(name);
 		} catch (ContentsNotFoundException e) {
 			//If the content doesn't already exist, write it
-			try {
-				LContent newContents = contentHelper.writeContents(name, contents);
-				database.getContentDao().put(newContents);
-				return newContents;
-			} catch (IOException ex) {
-				throw new RuntimeException(ex);
-			}
+			LContent newContents = contentHelper.writeContents(name, contents);
+			database.getContentDao().put(newContents);
+			return newContents;
 		}
 	}
 
-	public LContent writeContents(@NonNull String name, @NonNull Uri source) {
+	public LContent writeContents(@NonNull String name, @NonNull Uri source) throws IOException {
 		Log.v(TAG, String.format("\nLOCAL WRITE CONTENTS URI called with name='"+name+"'"));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
@@ -238,13 +234,9 @@ public class LocalRepo {
 			return getContentProps(name);
 		} catch (ContentsNotFoundException e) {
 			//If the content doesn't already exist, write it
-			try {
-				LContent newContents = contentHelper.writeContents(name, source);
-				database.getContentDao().put(newContents);
-				return newContents;
-			} catch (IOException ex) {
-				throw new RuntimeException(ex);
-			}
+			LContent newContents = contentHelper.writeContents(name, source);
+			database.getContentDao().put(newContents);
+			return newContents;
 		}
 	}
 

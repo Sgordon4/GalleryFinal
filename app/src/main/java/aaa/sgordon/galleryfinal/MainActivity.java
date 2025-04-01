@@ -19,6 +19,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
 				});
 			}
 			catch (FileNotFoundException e) { throw new RuntimeException(e); }
+			catch (IOException e) { throw new RuntimeException(e); }
 		});
 		thread.start();
 	}

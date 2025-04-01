@@ -12,6 +12,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +65,7 @@ public class DirSampleData {
 
 
 	//Returns the UUID of the root file
-	public static UUID setupDatabase(Context context) throws FileNotFoundException {
+	public static UUID setupDatabase(Context context) throws FileNotFoundException, IOException {
 		Log.i(TAG, "Setting up in-memory database...");
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
 		Uri storageDir = MainStorageHandler.getStorageTreeUri(context);
@@ -215,6 +216,7 @@ public class DirSampleData {
 			hapi.writeFile(dirUID, newContent, HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }
+		catch (IOException e) { throw new RuntimeException(e); }
 		finally { hapi.unlockLocal(dirUID); }
 	}
 
@@ -227,6 +229,7 @@ public class DirSampleData {
 			hapi.writeFile(fileUID, uri, checksum, HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }
+		catch (IOException e) { /*Skip, can't connect*/ }
 		finally { hapi.unlockLocal(fileUID); }
 	}
 
@@ -262,6 +265,7 @@ public class DirSampleData {
 			hapi.writeFile(fileUID, targetInternal.toString().getBytes(), HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }
+		catch (IOException e) { throw new RuntimeException(e); }
 		finally { hapi.unlockLocal(fileUID); }
 	}
 	private static void linkFileToUri(UUID fileUID, Uri uri) {
@@ -273,6 +277,7 @@ public class DirSampleData {
 			hapi.writeFile(fileUID, targetExternal.toString().getBytes(), HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }
+		catch (IOException e) { throw new RuntimeException(e); }
 		finally { hapi.unlockLocal(fileUID); }
 	}
 
@@ -301,6 +306,7 @@ public class DirSampleData {
 		catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 			throw new RuntimeException(e);
 		}
+		catch (IOException e) { throw new RuntimeException(e); }
 		finally {
 			hAPI.unlockLocal(dirUID);
 		}

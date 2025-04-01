@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
@@ -234,6 +235,9 @@ public class MenuItemHelper {
 		} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
 			Looper.prepare();
 			Toast.makeText(dirFragment.requireContext(), "Operation failed!", Toast.LENGTH_SHORT).show();
+		} catch (IOException e) {
+			Looper.prepare();
+			Toast.makeText(dirFragment.requireContext(), "Operation failed, could not write!", Toast.LENGTH_SHORT).show();
 		}
 	}
 

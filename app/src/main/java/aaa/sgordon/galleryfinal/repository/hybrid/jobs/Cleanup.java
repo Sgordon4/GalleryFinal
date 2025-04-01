@@ -15,13 +15,14 @@ import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 public class Cleanup {
 	private static final String TAG = "Hyb.Cleanup";
 
+	//TODO Clean up any content that doesn't have an entry in the content db
 	public static void cleanOrphanContent(LContentDAO contentDAO) {
 		//This could be done with a single sql query, but I have them split for now
 		List<LContent> orphanedContent = contentDAO.getOrphans();
 
 		System.out.println("Cleaning up orphaned content:");
 		for (LContent content : orphanedContent)
-			System.out.println(content.name+" :: "+content.checksum);
+			System.out.println(content.checksum);
 
 		for (LContent content : orphanedContent)
 			contentDAO.delete(content);

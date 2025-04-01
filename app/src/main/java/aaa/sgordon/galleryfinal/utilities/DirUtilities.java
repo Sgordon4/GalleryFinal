@@ -104,7 +104,7 @@ public class DirUtilities {
 
 
 	public static void renameFile(@NonNull UUID fileUID, @NonNull UUID dirUID, @NonNull String newName)
-			throws FileNotFoundException, ContentsNotFoundException, ConnectException {
+			throws FileNotFoundException, ContentsNotFoundException, ConnectException, IOException {
 
 		HybridAPI hAPI = HybridAPI.getInstance();
 		try {
@@ -183,7 +183,9 @@ public class DirUtilities {
 				//If the directory or its contents are not found, skip it
 				return false;
 			} catch (ConnectException e) {
-				throw new RuntimeException(e);
+				//If we can't reach the file, skip it
+			} catch (IOException e) {
+				//If we can't write to the file, skip it
 			} finally {
 				hAPI.unlockLocal(dirUID);
 			}
@@ -258,8 +260,11 @@ public class DirUtilities {
 				//If we can't reach this directory, skip it, and mark the delete as a fail
 				toDelete.removeAll(filesToDelete);
 				failed.addAll(filesToDelete);
-			}
-			finally {
+			} catch (IOException e) {
+				//If we can't write to the directory, skip it, and mark the delete as a fail
+				toDelete.removeAll(filesToDelete);
+				failed.addAll(filesToDelete);
+			} finally {
 				hAPI.unlockLocal(parentUID);
 			}
 		}
@@ -315,7 +320,7 @@ public class DirUtilities {
 
 	//TODO Cut this up into pieces (this is my last resort)
 	public static boolean moveFiles(@NonNull List<ListItem> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
-			throws FileNotFoundException, ContentsNotFoundException, ConnectException, NotDirectoryException {
+			throws FileNotFoundException, ContentsNotFoundException, ConnectException, NotDirectoryException, IOException {
 		//System.out.println("Moving files!");
 
 		if(toMove.isEmpty()) {
@@ -452,7 +457,7 @@ public class DirUtilities {
 
 
 	public static boolean copyFiles(@NonNull List<ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)
-			throws FileNotFoundException, ContentsNotFoundException, ConnectException {
+			throws FileNotFoundException, ContentsNotFoundException, ConnectException, IOException {
 		if(toCopy.isEmpty()) {
 			Log.w(TAG, "copyFiles was called with no files to copy!");
 			return false;

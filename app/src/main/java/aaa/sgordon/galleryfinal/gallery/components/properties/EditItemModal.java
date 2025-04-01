@@ -21,6 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.List;
 import java.util.Objects;
@@ -262,6 +263,8 @@ public class EditItemModal extends DialogFragment {
 					Toast.makeText(getContext(), "Cannot rename, file not found!", Toast.LENGTH_SHORT).show();
 				} catch (ConnectException e) {
 					Toast.makeText(getContext(), "Rename failed, could not reach server!", Toast.LENGTH_SHORT).show();
+				} catch (IOException e) {
+					Toast.makeText(getContext(), "Rename failed, could not write to file!", Toast.LENGTH_SHORT).show();
 				}
 			}
 		});

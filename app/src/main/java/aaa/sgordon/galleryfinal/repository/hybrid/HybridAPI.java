@@ -163,7 +163,7 @@ public class HybridAPI {
 
 
 	//Returns the FileUID of the new file
-	public UUID createFile(@NonNull UUID accountUID, boolean isDir, boolean isLink) {
+	public UUID createFile(@NonNull UUID accountUID, boolean isDir, boolean isLink) throws IOException {
 		//Note: Locking for this file doesn't really matter, since nothing can know about it yet
 		UUID fileUID = UUID.randomUUID();
 		LFile newFile = new LFile(fileUID, accountUID);
@@ -322,7 +322,7 @@ public class HybridAPI {
 
 
 	//Returns SHA-256 checksum of the given contents. Referenced as checksum in the file properties
-	public String writeFile(@NonNull UUID fileUID, @NonNull byte[] content, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException {
+	public String writeFile(@NonNull UUID fileUID, @NonNull byte[] content, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException, IOException {
 		localRepo.ensureLockHeld(fileUID);
 
 		HFile props = null;
@@ -376,7 +376,7 @@ public class HybridAPI {
 
 
 	//Returns SHA-256 checksum of the given contents. Referenced as checksum in the file properties
-	public String writeFile(@NonNull UUID fileUID, @NonNull Uri content, @NonNull String checksum, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException {
+	public String writeFile(@NonNull UUID fileUID, @NonNull Uri content, @NonNull String checksum, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException, IOException {
 		localRepo.ensureLockHeld(fileUID);
 
 		HFile props = null;

@@ -85,7 +85,10 @@ public class ImportHelper {
 
 			System.out.println(documentFile.getName()+" "+documentFile.lastModified());
 
-			UUID newUID = hAPI.createFile(accountUID, false, false);
+			UUID newUID;
+			try { newUID = hAPI.createFile(accountUID, false, false); }
+			catch (IOException e) { throw new RuntimeException(e); }
+
 			try {
 				//Write the uri to the new file in the local repo
 				hAPI.lockLocal(newUID);

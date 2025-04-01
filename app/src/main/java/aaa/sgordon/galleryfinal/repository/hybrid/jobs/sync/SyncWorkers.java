@@ -225,6 +225,11 @@ public class SyncWorkers {
 				Log.w(TAG, "SyncWorker requeueing due to connection issues!");
 				return Result.retry();
 			}
+			//If the sync fails to write to local, we're hosed
+			catch (Exception e) {
+				Log.e(TAG, "SyncWorker failed to write to local for FileUID='"+fileUID+"'", e);
+				return Result.failure();
+			}
 		}
 	}
 }
