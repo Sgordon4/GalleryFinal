@@ -19,8 +19,6 @@ import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 
-//TODO Move the content out of the data dir in case the app is deleted
-
 public class LContentHelper {
 	private static final String TAG = "Hyb.Local.Cont";
 	private static final String contentDir = "content";

@@ -32,10 +32,6 @@ public interface LJournalDAO {
 	List<LJournal> getLatestChangeFor(int journalID, UUID... fileUIDs);
 
 
-	@Query("SELECT DISTINCT fileuid FROM journal WHERE journalid > :journalID")
-	List<UUID> getAllChangedFilesAfter(int journalID);
-
-
 	@Insert
 	void insert(LJournal... entries);
 

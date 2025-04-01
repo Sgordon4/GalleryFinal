@@ -14,7 +14,10 @@ public interface LContentDAO {
 	@Query("SELECT * FROM content WHERE name = :name")
 	LContent get(String name);
 
-	@Query("SELECT * FROM content")
+	@Query("SELECT c.* FROM Content c " +
+			"LEFT JOIN file f ON c.checksum = f.checksum " +
+			"LEFT JOIN sync s ON c.checksum = s.lastSyncChecksum " +
+			"WHERE f.checksum IS NULL AND s.lastSyncChecksum IS NULL;")
 	List<LContent> getOrphans();
 
 	@Upsert

@@ -21,6 +21,8 @@ import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZoningDAO;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
+import aaa.sgordon.galleryfinal.repository.local.database.LFileDAO;
+import aaa.sgordon.galleryfinal.repository.local.database.LJournalDAO;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.repository.local.types.LFile;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
@@ -42,6 +44,8 @@ public class Sync {
 
 	private static Sync instance;
 	public final HZoningDAO zoningDAO;
+	public final LFileDAO fileDAO;
+	public final LJournalDAO journalDAO;
 	public static Sync getInstance() {
 		if (instance == null)
 			throw new IllegalStateException("Sync is not initialized. Call initialize() first.");
@@ -55,6 +59,8 @@ public class Sync {
 		localRepo = LocalRepo.getInstance();
 		remoteRepo = RemoteRepo.getInstance();
 		zoningDAO = database.getZoningDao();
+		fileDAO = database.getFileDao();
+		journalDAO = database.getJournalDao();
 
 		sharedPrefs = context.getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
 		lastSyncLocalID = sharedPrefs.getInt("lastSyncLocal", 0);

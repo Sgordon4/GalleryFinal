@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.ZoningWorker;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
@@ -45,6 +46,8 @@ public class HybridAPI {
 	private final RemoteRepo remoteRepo;
 	private final HybridListeners listeners;
 
+	public LocalDatabase tempExposedDB;
+
 	private final Sync sync;
 
 	private UUID currentAccount = UUID.fromString("b16fe0ba-df94-4bb6-ad03-aab7e47ca8c3");
@@ -57,6 +60,7 @@ public class HybridAPI {
 		return instance;
 	}
 	public static void destroyInstance() {
+		LocalRepo.destroyInstance();
 		instance = null;
 	}
 	public static synchronized void initialize(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
@@ -65,6 +69,7 @@ public class HybridAPI {
 
 	private HybridAPI(@NonNull LocalDatabase db, @NonNull Uri storageDir) {
 		listeners = HybridListeners.getInstance();
+		tempExposedDB = db;
 
 		//TODO Change database storage location
 		//LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
@@ -79,6 +84,8 @@ public class HybridAPI {
 		//Stand-in for the login system
 		localRepo.setAccount(currentAccount);
 		remoteRepo.setAccount(currentAccount);
+
+		Cleanup.cleanOrphanContent(db.getContentDao());
 
 		Sync.initialize(db, MyApplication.getAppContext());
 		sync = Sync.getInstance();
@@ -110,16 +117,6 @@ public class HybridAPI {
 		remoteRepo.setAccount(currentAccount);
 	}
 
-
-	public void changeStorageDir(@NonNull Uri newStorageDir) {
-		LocalRepo.destroyInstance();
-		destroyInstance();
-
-		//TODO Change database storage location
-		//LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(MyApplication.getAppContext());
-		LocalDatabase db = Room.inMemoryDatabaseBuilder(MyApplication.getAppContext(), LocalDatabase.class).build();
-		initialize(db, newStorageDir);
-	}
 
 
 	public void startSyncService(@NonNull UUID accountUID) {

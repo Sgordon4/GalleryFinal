@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
@@ -125,9 +126,8 @@ public class SyncWorkers {
 			sync.updateLastSyncRemote(newSyncRemote);
 
 
-			//TODO For sync cleanup, grab list of all isRemote only, then grab list of local journals after our new localSync,
-			// exclude any files with journals, and delete the rest
-
+			//Remove any temp files that we've synced
+			Cleanup.cleanSyncedTempFiles(sync.fileDAO, sync.journalDAO, accountUID, newSyncLocal);
 
 			return Result.success();
 		}
