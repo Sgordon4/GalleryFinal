@@ -201,9 +201,8 @@ public class HybridAPI {
 	}
 
 	public UUID copyFile(@NonNull UUID toCopyUID, @NonNull UUID accountUID) throws FileNotFoundException, ConnectException {
-		//Grab the properties from the item to copy
-		HFile toCopy = getFileProps(toCopyUID);
-		LFile newFile = toCopy.toLocalFile();
+		//Grab the properties for the item to copy
+		LFile newFile = getFileProps(toCopyUID).toLocalFile();
 
 		//Generate a new UUID, update the accountUID, and edit timestamps, but keep all other properties the same
 		UUID fileUID = UUID.randomUUID();

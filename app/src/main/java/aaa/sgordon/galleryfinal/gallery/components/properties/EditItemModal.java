@@ -233,6 +233,10 @@ public class EditItemModal extends DialogFragment {
 					Toast.makeText(getContext(), "Cannot save, file not found!", Toast.LENGTH_SHORT).show();
 					return;
 				}
+				catch (ConnectException e) {
+					Toast.makeText(getContext(), "Property update failed, could not reach server!", Toast.LENGTH_SHORT).show();
+					return;
+				}
 				finally {
 					hAPI.unlockLocal(props.fileUID);
 				}
@@ -257,7 +261,7 @@ public class EditItemModal extends DialogFragment {
 				} catch (FileNotFoundException e) {
 					Toast.makeText(getContext(), "Cannot rename, file not found!", Toast.LENGTH_SHORT).show();
 				} catch (ConnectException e) {
-					Toast.makeText(getContext(), "Could not connect, rename failed!", Toast.LENGTH_SHORT).show();
+					Toast.makeText(getContext(), "Rename failed, could not reach server!", Toast.LENGTH_SHORT).show();
 				}
 			}
 		});
@@ -320,6 +324,10 @@ public class EditItemModal extends DialogFragment {
 			} catch (FileNotFoundException e) {
 				Looper.prepare();
 				Toast.makeText(dirFragment.getContext(), "Cannot edit, file not found!", Toast.LENGTH_SHORT).show();
+			}
+			catch (ConnectException e) {
+				Looper.prepare();
+				Toast.makeText(dirFragment.getContext(), "Edit failed, could not reach server!", Toast.LENGTH_SHORT).show();
 			}
 		});
 		thread.start();

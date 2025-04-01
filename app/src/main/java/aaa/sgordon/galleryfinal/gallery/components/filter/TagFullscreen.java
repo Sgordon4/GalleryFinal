@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal.gallery.components.filter;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +24,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
 import java.io.FileNotFoundException;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -238,6 +241,10 @@ public class TagFullscreen extends DialogFragment {
 				hAPI.setAttributes(fileUID, fileProps.userattr, fileProps.attrhash);
 			} catch (FileNotFoundException e) {
 				//Just skip this file if it doesn't exist
+			} catch (ConnectException e) {
+				//Just skip this file if we can't reach it
+				//Looper.prepare();
+				//Toast.makeText(getContext(), "Connection error: Could not update tags for a file!", Toast.LENGTH_SHORT).show();
 			} finally {
 				hAPI.unlockLocal(fileUID);
 			}

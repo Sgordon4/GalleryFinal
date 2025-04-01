@@ -293,7 +293,7 @@ public class NewItemModal extends DialogFragment {
 					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
 				}
 			}
-			catch (FileNotFoundException e) {
+			catch (FileNotFoundException | ConnectException e) {
 				throw new RuntimeException(e);
 			} finally {
 				hAPI.unlockLocal(newFileUID);

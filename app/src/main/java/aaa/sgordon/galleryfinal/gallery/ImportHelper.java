@@ -113,7 +113,6 @@ public class ImportHelper {
 			}
 
 			//Now that we've imported the file, delete it from the system
-			//TODO We need android.permission.MANAGE_DOCUMENTS or grantUriPermission()
 			documentFile.delete();
 		}
 	}

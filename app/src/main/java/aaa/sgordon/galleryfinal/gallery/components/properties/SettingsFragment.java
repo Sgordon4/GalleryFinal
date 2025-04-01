@@ -196,6 +196,13 @@ public class SettingsFragment extends Fragment {
 					//We don't actually have to do anything else, like revert properties, because the file not found means it was just deleted
 					//Though we should probably pop backstack...
 				}
+				catch (Exception e) {
+					Looper.prepare();
+					Toast.makeText(context, "Property update failed, could not connect to server!", Toast.LENGTH_SHORT).show();
+
+					//TODO Remove this in prod, this is for making sure I remember to make dirs zone to both local and remote
+					throw new RuntimeException();
+				}
 				finally {
 					hAPI.unlockLocal(dirUID);
 				}
