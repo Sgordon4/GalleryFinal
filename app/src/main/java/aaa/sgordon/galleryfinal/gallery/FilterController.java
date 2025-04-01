@@ -9,6 +9,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -147,7 +148,7 @@ public class FilterController {
 						return true;
 					}
 				}
-			} catch (FileNotFoundException e) {
+			} catch (FileNotFoundException | ConnectException e) {
 				//Skip
 			}
 

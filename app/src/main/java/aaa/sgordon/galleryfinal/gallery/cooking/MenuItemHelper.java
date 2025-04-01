@@ -108,6 +108,11 @@ public class MenuItemHelper {
 					Toast.makeText(dirFragment.requireContext(),
 							"Could not open settings, file not found!", Toast.LENGTH_SHORT).show();
 				}
+				catch (ConnectException e) {
+					Looper.prepare();
+					Toast.makeText(dirFragment.requireContext(),
+							"Could not open settings, connection failed!", Toast.LENGTH_SHORT).show();
+				}
 			});
 			getProps.start();
 		}

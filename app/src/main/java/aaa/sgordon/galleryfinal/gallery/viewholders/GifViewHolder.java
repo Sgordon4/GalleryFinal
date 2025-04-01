@@ -69,6 +69,9 @@ public class GifViewHolder extends BaseViewHolder {
 				}
 
 
+				System.out.println("Gif cache key: " + cacheKey);
+
+
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() ->
 					Glide.with(image.getContext())
@@ -76,7 +79,7 @@ public class GifViewHolder extends BaseViewHolder {
 						.asGif()		//TODO Remove
 						.load(content)
 						.signature(new ObjectKey(cacheKey))
-						.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
+						.diskCacheStrategy(DiskCacheStrategy.ALL)	//Only cache the transformed image
 						.centerCrop()
 						.override(150, 150)
 						.placeholder(R.drawable.ic_launcher_foreground)

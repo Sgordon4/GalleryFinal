@@ -68,7 +68,7 @@ public class LinkCache {
 	}
 
 
-	public boolean isLink(UUID fileUID) throws FileNotFoundException {
+	public boolean isLink(UUID fileUID) throws FileNotFoundException, ConnectException {
 		if(isLink.contains(fileUID))
 			return true;
 		if(isDir.contains(fileUID))
@@ -86,7 +86,7 @@ public class LinkCache {
 
 		return fileProps.islink;
 	}
-	public boolean isDir(UUID fileUID) throws FileNotFoundException {
+	public boolean isDir(UUID fileUID) throws FileNotFoundException, ConnectException {
 		isLink(fileUID);	//Get the above method to do the caching
 		return isDir.contains(fileUID);
 	}
@@ -184,7 +184,7 @@ public class LinkCache {
 						fileUID = internalTarget.getParentUID();
 				}
 			}
-		} catch (FileNotFoundException e) {
+		} catch (FileNotFoundException | ConnectException e) {
 			//Do nothing
 		}
 

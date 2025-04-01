@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +52,7 @@ public class AttrCache {
 	}
 
 
-	public JsonObject getAttr(UUID fileUID) throws FileNotFoundException {
+	public JsonObject getAttr(UUID fileUID) throws FileNotFoundException, ConnectException {
 		//If we have the attributes cached, just use that
 		if(attrCache.containsKey(fileUID))
 			return attrCache.get(fileUID);
@@ -81,7 +82,7 @@ public class AttrCache {
 					compiled.putIfAbsent(tag.getAsString(), new HashSet<>());
 					compiled.get(tag.getAsString()).add(file);
 				}
-			} catch (FileNotFoundException e) {
+			} catch (FileNotFoundException | ConnectException e) {
 				//Skip the file if we can't find it
 			}
 		}
