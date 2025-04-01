@@ -1,5 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Pair;
@@ -7,7 +9,9 @@ import android.view.View;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.model.stream.UrlLoader;
 import com.bumptech.glide.signature.ObjectKey;
 
 import java.io.FileNotFoundException;
@@ -16,6 +20,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.NoCacheUrlGlideModule;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -71,17 +76,49 @@ public class VideoViewHolder extends BaseViewHolder {
 
 				//TODO Figure out if this is downloading the entire video from external uris or not
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
-				mainHandler.post(() ->
+				mainHandler.post(() -> {
+					//Load from url, ignoring the url and only considering the key when caching
+					NoCacheUrlGlideModule.UrlIgnoringModel model = new NoCacheUrlGlideModule.UrlIgnoringModel(cacheKey, content.toString());
+					UrlLoader loader = new UrlLoader();
+
+					//If the initial load from cache fails, load from the actual uri
+					RequestBuilder<Bitmap> normalLoad = Glide.with(image.getContext())
+							.asBitmap()
+							.load(model)
+							.signature(new ObjectKey(cacheKey))
+							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
+							.centerCrop()
+							.override(150, 150)
+							.error(R.drawable.ic_launcher_background)
+							.skipMemoryCache(true); 						//Prevent memory cache interfering
+
+					//Attempt to load the file from the cache only
 					Glide.with(image.getContext())
-						.asBitmap()
-						.load(content)
-						.signature(new ObjectKey(cacheKey))
-						.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
-						.centerCrop()
-						.override(150, 150)
-						.placeholder(R.drawable.ic_launcher_foreground)
-						.error(R.drawable.ic_launcher_background)
-						.into(image));
+							.load(model)
+							.signature(new ObjectKey(cacheKey))
+							.diskCacheStrategy(DiskCacheStrategy.ALL)
+							.onlyRetrieveFromCache(true)				//Try loading from the cache only
+							.centerCrop()
+							.override(150, 150)
+							.placeholder(R.drawable.ic_launcher_foreground)
+							.error(normalLoad)								//If cache misses, load normally
+							.into(image);
+
+
+					/* Original
+					Glide.with(image.getContext())
+							.asBitmap()
+							.load(content)
+							.signature(new ObjectKey(cacheKey))
+							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
+							.centerCrop()
+							.override(150, 150)
+							.placeholder(R.drawable.ic_launcher_foreground)
+							.error(R.drawable.ic_launcher_background)
+							.into(image));
+					 */
+				});
+
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing

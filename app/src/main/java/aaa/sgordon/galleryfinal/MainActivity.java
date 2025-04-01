@@ -18,6 +18,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.bumptech.glide.Glide;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.UUID;
@@ -65,6 +67,17 @@ public class MainActivity extends AppCompatActivity {
 			Log.i(TAG, "Using saved directory.");
 			launchEverything();
 		}
+	}
+
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+
+		new Thread(() -> {
+			Glide.get(this).clearDiskCache();
+		}).start();
+		Glide.get(this).clearMemory();
 	}
 
 	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
