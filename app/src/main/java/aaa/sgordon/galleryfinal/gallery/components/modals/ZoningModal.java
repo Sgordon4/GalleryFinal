@@ -35,6 +35,10 @@ public class ZoningModal extends DialogFragment {
 	private RadioGroup radioGroup;
 
 
+	//TODO Don't allow zoning to change for Dirs
+	// Also we need to make sure when a Dir is created its zoning is set correctly, but that's not done here
+
+
 	public static void launch(@NonNull Fragment fragment, @NonNull List<UUID> files) {
 		ZoningModal dialog = ZoningModal.newInstance(files);
 		dialog.show(fragment.getChildFragmentManager(), "zoning");

@@ -4,8 +4,6 @@ import android.net.Uri;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.room.Room;
 
 import com.google.gson.JsonObject;
 
@@ -24,23 +22,22 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
-import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
-import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.ZoningWorker;
-import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
-import aaa.sgordon.galleryfinal.utilities.MyApplication;
-import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.Sync;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.SyncWorkers;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.ZoningWorker;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
+import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 import aaa.sgordon.galleryfinal.repository.local.types.LFile;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 import aaa.sgordon.galleryfinal.repository.remote.RemoteRepo;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
-public class HybridAPI {
+public class HybridAPIOld {
 	private static final String TAG = "Hyb";
 
 	private LocalRepo localRepo;
@@ -54,8 +51,8 @@ public class HybridAPI {
 	private UUID currentAccount = UUID.fromString("b16fe0ba-df94-4bb6-ad03-aab7e47ca8c3");
 
 
-	private static HybridAPI instance;
-	public static HybridAPI getInstance() {
+	private static HybridAPIOld instance;
+	public static HybridAPIOld getInstance() {
 		if (instance == null)
 			throw new IllegalStateException("HybridAPI is not initialized. Call initialize() first.");
 		return instance;
@@ -65,10 +62,10 @@ public class HybridAPI {
 		instance = null;
 	}
 	public static synchronized void initialize(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
-		if (instance == null) instance = new HybridAPI(database, storageDir);
+		if (instance == null) instance = new HybridAPIOld(database, storageDir);
 	}
 
-	private HybridAPI(@NonNull LocalDatabase db, @NonNull Uri storageDir) {
+	private HybridAPIOld(@NonNull LocalDatabase db, @NonNull Uri storageDir) {
 		listeners = HybridListeners.getInstance();
 		tempExposedDB = db;
 
@@ -132,22 +129,15 @@ public class HybridAPI {
 	// File
 	//---------------------------------------------------------------------------------------------
 
-	public HFile getFileProps(@NonNull UUID fileUID) throws FileNotFoundException, ConnectException {
-		//Try to grab the file properties from local
-		try { return HFile.fromLocalFile( localRepo.getFileProps(fileUID) ); }
-		catch (FileNotFoundException ignored) { }
-
-		//Try to grab the file properties from remote
-		try { return HFile.fromRemoteFile( remoteRepo.getFileProps(fileUID) ); }
-		catch (FileNotFoundException ignored) { }
-
-		throw new FileNotFoundException(String.format("File not found for fileUID='%s'", fileUID));
+	public HFile getFileProps(@NonNull UUID fileUID) throws FileNotFoundException {
+		LFile local = localRepo.getFileProps(fileUID);
+		return HFile.fromLocalFile(local);
 	}
 
 	//Returns a Uri with the file checksum
 	public Pair<Uri, String> getFileContent(@NonNull UUID fileUID) throws FileNotFoundException, ContentsNotFoundException, ConnectException {
 		//Grab the file properties, which also makes sure the file exists
-		HFile props = getFileProps(fileUID);
+		LFile props = localRepo.getFileProps(fileUID);
 
 		//Try to get the file contents from local. If they exist, return that.
 		try { return new Pair<>(localRepo.getContentUri(props.checksum), props.checksum); }
@@ -200,10 +190,9 @@ public class HybridAPI {
 		return newFile.fileuid;
 	}
 
-	public UUID copyFile(@NonNull UUID toCopyUID, @NonNull UUID accountUID) throws FileNotFoundException, ConnectException {
+	public UUID copyFile(@NonNull UUID toCopyUID, @NonNull UUID accountUID) throws FileNotFoundException {
 		//Grab the properties from the item to copy
-		HFile toCopy = getFileProps(toCopyUID);
-		LFile newFile = toCopy.toLocalFile();
+		LFile newFile = localRepo.getFileProps(toCopyUID);
 
 		//Generate a new UUID, update the accountUID, and edit timestamps, but keep all other properties the same
 		UUID fileUID = UUID.randomUUID();
@@ -242,16 +231,9 @@ public class HybridAPI {
 
 
 	public void deleteFile(@NonNull UUID fileUID) throws FileNotFoundException {
+		localRepo.deleteFileProps(fileUID);
 
-		//Delete the file from local if it exists
-		try {
-			localRepo.deleteFileProps(fileUID);
-		} catch (FileNotFoundException ignored) { }
-
-		//Whether or not the file was deleted from local, add a deletion journal entry.
-		//This will tell the the next sync to delete the remote file if it exists.
-		//This technically means that the file still exists and can be accessed from remote,
-		// but delete usually follows things like removal from directory listings so it should be fine.
+		//Add a journal entry
 		JsonObject changes = new JsonObject();
 		changes.addProperty("isdeleted", true);
 		LJournal journal = new LJournal(fileUID, currentAccount, changes);
@@ -259,7 +241,6 @@ public class HybridAPI {
 
 		//Remove zoning information
 		Sync.getInstance().zoningDAO.delete(fileUID);
-
 		//All we need to do is delete the file properties and zoning information here in local.
 		//Cleanup will remove this file's contents if they're not being used by another file.
 		//If a remote file exists, Sync will now handle the delete from Remote using the new journal entry.
@@ -273,24 +254,15 @@ public class HybridAPI {
 
 
 	//Returns SHA-256 hash of the given attributes. Referenced as attrHash in file properties
-	public String setAttributes(@NonNull UUID fileUID, @NonNull JsonObject attributes, @NonNull String prevAttrHash) throws FileNotFoundException, ConnectException {
+	public String setAttributes(@NonNull UUID fileUID, @NonNull JsonObject attributes, @NonNull String prevAttrHash) throws FileNotFoundException {
 		localRepo.ensureLockHeld(fileUID);
 
-		HFile props = null;
+		LFile props = localRepo.getFileProps(fileUID);
 
-		//Try to get the file properties from local
-		try {
-			props = HFile.fromLocalFile( localRepo.getFileProps(fileUID) );
-
-			//Check that the current attribute checksum matches what we were given to ensure we won't be overwriting any data
-			if(!Objects.equals(props.attrhash, prevAttrHash))
-				throw new IllegalStateException(String.format("Cannot set attributes, attrHashes don't match! FileUID='%s'", fileUID));
-		} catch (FileNotFoundException ignored) { }
-
-		//If the file properties don't exist locally, try to get them from the server
-		if(props == null)
-			props = HFile.fromRemoteFile( remoteRepo.getFileProps(fileUID) );
-
+		//Check that the current attribute checksum matches what we were given to ensure we won't be overwriting any data
+		String currAttrHash = props.attrhash;
+		if(!Objects.equals(currAttrHash, prevAttrHash))
+			throw new IllegalStateException(String.format("Cannot set attributes, attrHashes don't match! FileUID='%s'", fileUID));
 
 
 		//Get the checksum of the attributes
@@ -300,13 +272,12 @@ public class HybridAPI {
 			newAttrHash = Utilities.bytesToHex(hash);
 		} catch (NoSuchAlgorithmException e) { throw new RuntimeException(e); }
 
+
 		//Update the properties with the new info received
-		String oldAttrHash = props.attrhash;
 		props.userattr = attributes;
 		props.attrhash = newAttrHash;
 		props.changetime = Instant.now().getEpochSecond();
-		props = HFile.fromLocalFile( localRepo.putFileProps(props.toLocalFile(), props.checksum, oldAttrHash) );
-
+		props = localRepo.putFileProps(props, props.checksum, currAttrHash);
 
 		//Add a journal entry
 		JsonObject changes = new JsonObject();
@@ -323,24 +294,14 @@ public class HybridAPI {
 
 
 	//Returns SHA-256 checksum of the given contents. Referenced as checksum in the file properties
-	public String writeFile(@NonNull UUID fileUID, @NonNull byte[] content, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException {
+	public String writeFile(@NonNull UUID fileUID, @NonNull byte[] content, @NonNull String prevChecksum) throws FileNotFoundException {
 		localRepo.ensureLockHeld(fileUID);
 
-		HFile props = null;
-
-		//Try to get the file properties from local
-		try {
-			props = HFile.fromLocalFile( localRepo.getFileProps(fileUID) );
-
-			//Check that the current file checksum matches what we were given to ensure we won't be overwriting any data
-			if(!Objects.equals(props.checksum, prevChecksum))
-				throw new IllegalStateException(String.format("Cannot write, checksums don't match! FileUID='%s'", fileUID));
-		} catch (FileNotFoundException ignored) { }
-
-		//If the file properties don't exist locally, try to get them from the server
-		if(props == null)
-			props = HFile.fromRemoteFile( remoteRepo.getFileProps(fileUID) );
-
+		//Check that the current file checksum matches what we were given to ensure we won't be overwriting any data
+		LFile props = localRepo.getFileProps(fileUID);
+		String currChecksum = props.checksum;
+		if(!Objects.equals(currChecksum, prevChecksum))
+			throw new IllegalStateException(String.format("Cannot write, checksums don't match! FileUID='%s'", fileUID));
 
 
 		//Get the checksum of the contents
@@ -355,12 +316,11 @@ public class HybridAPI {
 		LContent contentProps = localRepo.writeContents(newChecksum, content);
 
 		//Update the properties with the new info received
-		String oldChecksum = props.checksum;
 		props.checksum = contentProps.checksum;
 		props.filesize = contentProps.size;
 		props.changetime = Instant.now().getEpochSecond();
 		props.modifytime = Instant.now().getEpochSecond();
-		props = HFile.fromLocalFile( localRepo.putFileProps(props.toLocalFile(), oldChecksum, props.attrhash) );
+		props = localRepo.putFileProps(props, currChecksum, props.attrhash);
 
 		//Add a journal entry
 		JsonObject changes = new JsonObject();
@@ -377,37 +337,25 @@ public class HybridAPI {
 
 
 	//Returns SHA-256 checksum of the given contents. Referenced as checksum in the file properties
-	public String writeFile(@NonNull UUID fileUID, @NonNull Uri content, @NonNull String checksum, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException {
+	public String writeFile(@NonNull UUID fileUID, @NonNull Uri content, @NonNull String checksum, @NonNull String prevChecksum) throws FileNotFoundException {
 		localRepo.ensureLockHeld(fileUID);
+		LFile props = localRepo.getFileProps(fileUID);
 
-		HFile props = null;
-
-		//Try to get the file properties from local
-		try {
-			props = HFile.fromLocalFile( localRepo.getFileProps(fileUID) );
-
-			//Check that the current file checksum matches what we were given to ensure we won't be overwriting any data
-			if(!Objects.equals(props.checksum, prevChecksum))
-				throw new IllegalStateException(String.format("Cannot write, checksums don't match! FileUID='%s'", fileUID));
-		} catch (FileNotFoundException ignored) { }
-
-		//If the file properties don't exist locally, try to get them from the server
-		if(props == null)
-			props = HFile.fromRemoteFile( remoteRepo.getFileProps(fileUID) );
-
+		//Check that the current file checksum matches what we were given to ensure we won't be overwriting any data
+		String currChecksum = props.checksum;
+		if(!Objects.equals(currChecksum, prevChecksum))
+			throw new IllegalStateException(String.format("Cannot write, checksums don't match! FileUID='%s'", fileUID));
 
 
 		//Actually write the contents
 		LContent contentProps = localRepo.writeContents(checksum, content);
 
-
 		//Update the properties with the new info received
-		String oldChecksum = props.checksum;
 		props.checksum = contentProps.checksum;
 		props.filesize = contentProps.size;
 		props.changetime = Instant.now().getEpochSecond();
 		props.modifytime = Instant.now().getEpochSecond();
-		props = HFile.fromLocalFile( localRepo.putFileProps(props.toLocalFile(), oldChecksum, props.attrhash) );
+		props = localRepo.putFileProps(props, currChecksum, props.attrhash);
 
 		//Add a journal entry
 		JsonObject changes = new JsonObject();
@@ -480,7 +428,6 @@ public class HybridAPI {
 	//---------------------------------------------------------------------------------------------
 
 
-	@Nullable
 	public HZone getZoningInfo(@NonNull UUID fileUID) {
 		//Since this method is really just to show the user what zones a file is in,
 		// try to get zoning data from any enqueued workers first
