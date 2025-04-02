@@ -35,6 +35,10 @@ public class ZoningModal extends DialogFragment {
 	private RadioGroup radioGroup;
 
 
+	//TODO Don't allow zoning to change for Dirs
+	// Also we need to make sure when a Dir is created its zoning is set correctly, but that's not done here
+
+
 	public static void launch(@NonNull Fragment fragment, @NonNull List<UUID> files) {
 		ZoningModal dialog = ZoningModal.newInstance(files);
 		dialog.show(fragment.getChildFragmentManager(), "zoning");
@@ -81,13 +85,13 @@ public class ZoningModal extends DialogFragment {
 		radioGroup = view.findViewById(R.id.zone_group);
 
 		RadioButton local = view.findViewById(R.id.zone_local);
-		RadioButton remote = view.findViewById(R.id.zone_remote);
 		RadioButton both = view.findViewById(R.id.zone_both);
+		RadioButton remote = view.findViewById(R.id.zone_remote);
 
 		viewModel.currZoning.observe(this, zoning -> {
 			local.setText("Device Only ("+viewModel.countLocalOnly+")");
-			both.setText("Cloud Only ("+viewModel.countBoth+")");
-			remote.setText("Device & Cloud ("+viewModel.countRemoteOnly+")");
+			both.setText("Device & Cloud ("+viewModel.countBoth+")");
+			remote.setText("Cloud Only ("+viewModel.countRemoteOnly+")");
 		});
 
 

@@ -10,19 +10,28 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.JsonObject;
 
-import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZoningDAO;
-import aaa.sgordon.galleryfinal.repository.hybrid.database.HybridHelpDatabase;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
+import aaa.sgordon.galleryfinal.repository.local.database.LFileDAO;
+import aaa.sgordon.galleryfinal.repository.local.database.LJournalDAO;
+import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.repository.local.types.LFile;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 import aaa.sgordon.galleryfinal.repository.remote.RemoteRepo;
@@ -30,8 +39,8 @@ import aaa.sgordon.galleryfinal.repository.remote.types.RFile;
 import aaa.sgordon.galleryfinal.repository.remote.types.RJournal;
 
 public class Sync {
-	private final String TAG = "Hyb.Sync";
-	private final boolean debug = true;
+	private final static String TAG = "Hyb.Sync";
+	private final static boolean debug = true;
 
 	private final SharedPreferences sharedPrefs;
 	private int lastSyncLocalID;
@@ -43,29 +52,63 @@ public class Sync {
 
 	private static Sync instance;
 	public final HZoningDAO zoningDAO;
+	public final LFileDAO fileDAO;
+	public final LJournalDAO journalDAO;
 	public static Sync getInstance() {
 		if (instance == null)
 			throw new IllegalStateException("Sync is not initialized. Call initialize() first.");
 		return instance;
 	}
 
-	public static synchronized void initialize(Context context) {
-		if (instance == null) {
-			HybridHelpDatabase hdb = new HybridHelpDatabase.DBBuilder().newInstance(context);
-			instance = new Sync(hdb, context);
-		}
-	}
-	public static synchronized void initialize(HybridHelpDatabase database, Context context) {
+	public static synchronized void initialize(LocalDatabase database, Context context) {
 		if (instance == null) instance = new Sync(database, context);
 	}
-	private Sync(HybridHelpDatabase database, Context context) {
+	private Sync(LocalDatabase database, Context context) {
 		localRepo = LocalRepo.getInstance();
 		remoteRepo = RemoteRepo.getInstance();
 		zoningDAO = database.getZoningDao();
+		fileDAO = database.getFileDao();
+		journalDAO = database.getJournalDao();
 
 		sharedPrefs = context.getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
 		lastSyncLocalID = sharedPrefs.getInt("lastSyncLocal", 0);
 		lastSyncRemoteID = sharedPrefs.getInt("lastSyncRemote", 0);
+
+		scheduler = Executors.newSingleThreadScheduledExecutor();
+		syncWatchers = new HashMap<>();
+	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+	private final ScheduledExecutorService scheduler;
+	private final Map<UUID, Runnable> syncWatchers;
+
+	public void startSyncWatcher(UUID accountUID) {
+		if(syncWatchers.get(accountUID) != null)
+			return;
+
+		syncWatchers.put(accountUID, () -> {
+			//Look for new files to sync, launching a little worker for each one found
+			Pair<Integer, Integer> newSyncIDs = SyncWorkers.lookForSync(accountUID, lastSyncLocalID, lastSyncRemoteID);
+
+			if(newSyncIDs != null) {
+				//Update our journalID trackers
+				updateLastSyncLocal(newSyncIDs.first);
+				updateLastSyncRemote(newSyncIDs.second);
+			}
+
+			//Remove any temp files that we've synced
+			Cleanup.cleanSyncedTempFiles(fileDAO, journalDAO, accountUID, lastSyncLocalID);
+		});
+
+		scheduler.scheduleWithFixedDelay(syncWatchers.get(accountUID), 30, 30, TimeUnit.SECONDS);
+	}
+
+	public void stopSyncWatcher(UUID accountUID) {
+		if (scheduler != null && !scheduler.isShutdown())
+			scheduler.shutdownNow();
 	}
 
 
@@ -122,7 +165,7 @@ public class Sync {
 
 
 	//Returns the highest journalIDs it found for Local::Remote
-	public Pair<Integer, Integer> sync(@NonNull UUID fileUID, int localSyncID, int remoteSyncID) throws IllegalStateException, ConnectException {
+	public Pair<Integer, Integer> sync(@NonNull UUID fileUID, int localSyncID, int remoteSyncID) throws IllegalStateException, ConnectException, IOException {
 		try {
 			localRepo.lock(fileUID);
 			localRepo.getFileProps(fileUID);
@@ -240,19 +283,25 @@ public class Sync {
 				if(!localProps.attrhash.equals(remoteProps.attrhash))
 					remoteRepo.putAttributeProps(HFile.toRemoteFile(localProps), remoteProps.attrhash);
 
-				//DO NOT update zoning info. A local update could be content stored for upload to remote,
-				// or it could even just be an attribute change. Only zoning should update isLocal.
+
+				//Update isRemote here, just in case. DO NOT update isLocal in case the local entry is a temp write.
+				HZone zoningInfo = zoningDAO.get(fileUID);
+				if(zoningInfo == null) zoningInfo = new HZone(fileUID, false, true);
+				zoningInfo.isRemote = true;
+				zoningDAO.put(zoningInfo);
 			}
 			catch (ContentsNotFoundException e) {
-				//The content should have been either temp written content or permanent.
-				//Log this, and now is a good time to update the zoning data in case it was corrupted.
-				//This shouldn't happen, but we can smooth it out.
+				//The content should have been either temp written content or permanent. Log this.
 				Log.e(TAG, "Local contents not found when syncing to remote, something went wrong!");
+
+				//Now is a good time to update the zoning data in case it was corrupted.
+				//This set of zoning data will cause sync cleanup to remove the local file entry.
 				HZone zoningInfo = new HZone(fileUID, false, true);
 				zoningDAO.put(zoningInfo);
 			}
 			catch (FileNotFoundException e) {
 				//This is fine. Nothing to sync here if a file is missing, so we're done. DO NOT update zoning.
+				//If local is missing, local zoning data was already removed at the top of this method
 			}
 
 			return new Pair<>(localSyncID, remoteSyncID);
@@ -261,31 +310,35 @@ public class Sync {
 
 		//If only remote has changes, attempt to push to local. Essentially just copy everything over.
 		//We already checked deletes, so these must be actual changes.
-		else {
+		else /*(remoteHasChanges)*/ {
 			RFile remoteProps;
 			try { remoteProps = remoteRepo.getFileProps(fileUID); }
 			catch (FileNotFoundException e) {
 				//If remote doesn't exist but the latest remote journal wasn't a delete record,
-				// it's highly likely it was *just* deleted. Wait for next sync. DO NOT update zoning.
+				// it's highly likely it was *just* deleted. Hopefully. Wait for next sync. DO NOT update zoning.
 				return new Pair<>(localSyncID, remoteSyncID);
 			}
 
 			try {
 				localRepo.lock(fileUID);
 
-				LFile localProps;
-				try { localProps = localRepo.getFileProps(fileUID); }
-				catch (FileNotFoundException e) {
-					//If local doesn't exist, we want to add it, as this is effectively a new file coming from remote.
-					localProps = HFile.toLocalFile(remoteProps);	//Just use the remote props as a stand-in.
-					zoningDAO.delete(fileUID);						//Reset zoning in case of bad data
-				}
+				LFile localProps = localRepo.getFileProps(fileUID);
+
 				HZone zoningInfo = zoningDAO.get(fileUID);
 				if(zoningInfo == null) zoningInfo = new HZone(fileUID, false, true);
+				//If zoning doesn't exist, assume local is a temp write.
+
+				//Create/update the zoning info
+				zoningInfo.isRemote = true;
+				zoningDAO.put(zoningInfo);
+
+				//If the file is not supposed to be on local, don't follow through on copying data to local
+				if(!zoningInfo.isLocal)
+					return new Pair<>(localSyncID, remoteSyncID);
 
 
 				//If the file contents should be on local and they don't match, copy them over
-				if(zoningInfo.isLocal && !remoteProps.checksum.equals(localProps.checksum)) {
+				if(!remoteProps.checksum.equals(localProps.checksum)) {
 					Uri remoteContent = remoteRepo.getContentDownloadUri(remoteProps.checksum);
 					localRepo.writeContents(remoteProps.checksum, remoteContent);
 				}
@@ -293,17 +346,17 @@ public class Sync {
 				//Copy over all file properties, which happen to include the attributes we may need to copy
 				localRepo.putFileProps(HFile.toLocalFile(remoteProps), localProps.checksum, localProps.attrhash);
 
-				//Create/update the zoning info
-				zoningInfo.isRemote = true;
-				zoningDAO.put(zoningInfo);
-
 				HybridListeners.getInstance().notifyDataChanged(fileUID);
-
-			} catch (ContentsNotFoundException e) {
+			}
+			catch (FileNotFoundException e) {
+				//This is fine. Nothing to sync here if local is missing, so we're done. DO NOT update zoning.
+			}
+			catch (ContentsNotFoundException e) {
 				//Not really sure what to do here... This really shouldn't happen...
 				Log.wtf(TAG, "Remote contents not found, system is hosed! Joever! Donezo! FileUID='"+fileUID+"'");
 				throw new RuntimeException(e);
-			} finally {
+			}
+			finally {
 				localRepo.unlock(fileUID);
 			}
 

@@ -20,6 +20,7 @@ import androidx.work.WorkerParameters;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.FileAlreadyExistsException;
 import java.time.Instant;
@@ -316,7 +317,11 @@ public class ZoningWorker extends Worker {
 					//If the contents don't exist in Local, we can guarantee there is no newly written data we need to preserve.
 					//We can't guarantee the Local checksum we need exists in Remote however, so we'll need to do an ad-hoc sync.
 					//Throw the retrieved props straight into Local. This is acceptable since we know there's no data to-be-written from Local.
-					localRepo.writeContents(localProps.checksum, remoteContent);
+					try {
+						localRepo.writeContents(localProps.checksum, remoteContent);
+					} catch (IOException ex) {
+						return Result.failure();
+					}
 					localRepo.putFileProps(HFile.fromRemoteFile(remoteProps).toLocalFile(), localProps.checksum, localProps.attrhash);
 					Log.v(TAG, "Updated contents downloaded from remote.");
 
@@ -398,6 +403,18 @@ public class ZoningWorker extends Worker {
 			Log.d(TAG, "Zoning Worker retrying due to connection issues! FileUID='"+fileUID+"'");
 			return Result.retry();
 		}
+	}
+
+	//---------------------------------------------------------------------------------------------
+
+	private Result removeFromLocal(UUID fileUID) {
+		LocalRepo localRepo = LocalRepo.getInstance();
+		try {
+			localRepo.deleteFileProps(fileUID);
+		} catch (FileNotFoundException e) {
+			return Result.success();
+		}
+		return Result.success();
 	}
 
 	//---------------------------------------------------------------------------------------------

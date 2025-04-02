@@ -35,10 +35,10 @@ public class LocalRepo {
 	private UUID currentAccount;
 	private final Map<UUID, ReentrantLock> locks;
 
-	public static synchronized void initialize(LocalDatabase database, String storageDir) {
+	public static synchronized void initialize(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
 		if (instance == null) instance = new LocalRepo(database, storageDir);
 	}
-	private LocalRepo(LocalDatabase database, String storageDir) {
+	private LocalRepo(@NonNull LocalDatabase database, @NonNull Uri storageDir) {
 		locks = new HashMap<>();
 		this.database = database;
 		this.contentHelper = new LContentHelper(storageDir);
@@ -210,7 +210,7 @@ public class LocalRepo {
 	}
 
 
-	public LContent writeContents(@NonNull String name, @NonNull byte[] contents) {
+	public LContent writeContents(@NonNull String name, @NonNull byte[] contents) throws IOException {
 		Log.v(TAG, String.format("\nLOCAL WRITE CONTENTS BYTE called with name='"+name+"'"));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
@@ -219,17 +219,13 @@ public class LocalRepo {
 			return getContentProps(name);
 		} catch (ContentsNotFoundException e) {
 			//If the content doesn't already exist, write it
-			try {
-				LContent newContents = contentHelper.writeContents(name, contents);
-				database.getContentDao().put(newContents);
-				return newContents;
-			} catch (IOException ex) {
-				throw new RuntimeException(ex);
-			}
+			LContent newContents = contentHelper.writeContents(name, contents);
+			database.getContentDao().put(newContents);
+			return newContents;
 		}
 	}
 
-	public LContent writeContents(@NonNull String name, @NonNull Uri source) {
+	public LContent writeContents(@NonNull String name, @NonNull Uri source) throws IOException {
 		Log.v(TAG, String.format("\nLOCAL WRITE CONTENTS URI called with name='"+name+"'"));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
@@ -238,13 +234,9 @@ public class LocalRepo {
 			return getContentProps(name);
 		} catch (ContentsNotFoundException e) {
 			//If the content doesn't already exist, write it
-			try {
-				LContent newContents = contentHelper.writeContents(name, source);
-				database.getContentDao().put(newContents);
-				return newContents;
-			} catch (IOException ex) {
-				throw new RuntimeException(ex);
-			}
+			LContent newContents = contentHelper.writeContents(name, source);
+			database.getContentDao().put(newContents);
+			return newContents;
 		}
 	}
 

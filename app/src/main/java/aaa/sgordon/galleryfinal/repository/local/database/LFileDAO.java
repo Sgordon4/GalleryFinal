@@ -35,6 +35,13 @@ public interface LFileDAO {
 	@Query("SELECT * FROM file WHERE fileuid IN (:fileUIDs)")
 	List<LFile> get(UUID... fileUIDs);
 
+
+	@Query("SELECT DISTINCT f.* FROM File f " +
+			"LEFT JOIN Zone z ON f.fileuid = z.fileuid " +
+			"WHERE z.fileuid IS NULL OR (z.isLocal = 0 AND z.isRemote = 1);")
+	List<LFile> getTempWrites();
+
+
 	@Upsert
 	List<Long> put(LFile... files);
 

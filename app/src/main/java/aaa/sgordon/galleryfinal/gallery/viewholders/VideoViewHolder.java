@@ -1,18 +1,22 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.annotation.Nullable;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.signature.ObjectKey;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
-import java.util.UUID;
+import java.util.HashMap;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
@@ -69,24 +73,80 @@ public class VideoViewHolder extends BaseViewHolder {
 				}
 
 
-				//TODO Figure out if this is downloading the entire video from external uris or not
+				//TODO I cannot fucking figure out Glide ModelLoader Uri -> Bitmap. Legit completely hosed.
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
-				mainHandler.post(() ->
+				mainHandler.post(() -> {
+
 					Glide.with(image.getContext())
-						.asBitmap()
-						.load(content)
-						.signature(new ObjectKey(cacheKey))
-						.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
-						.centerCrop()
-						.override(150, 150)
-						.placeholder(R.drawable.ic_launcher_foreground)
-						.error(R.drawable.ic_launcher_background)
-						.into(image));
+							.asBitmap()
+							.load(content)
+							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
+							.centerCrop()
+							.override(150, 150)
+							.placeholder(R.drawable.ic_launcher_foreground)
+							.error(R.drawable.ic_launcher_background)
+							.into(image);
+
+					/*
+					//Load from url, ignoring the url and only considering the key when caching
+					BitmapModule.CacheIgnoringModel model = new BitmapModule.CacheIgnoringModel(cacheKey, content.toString());
+
+					//If the initial load from cache fails, load from the actual uri
+					RequestBuilder<Bitmap> normalLoad = Glide.with(image.getContext())
+							.asBitmap()
+							.load(getVideoThumbnail(content.toString()))
+							.signature(new ObjectKey(cacheKey))
+							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
+							.centerCrop()
+							.override(150, 150)
+							.error(R.drawable.ic_launcher_background)
+							.skipMemoryCache(true); 						//Prevent memory cache interfering
+
+					//Attempt to load the file from the cache only
+					Glide.with(image.getContext())
+							.load(model)
+							.signature(new ObjectKey(cacheKey))
+							.diskCacheStrategy(DiskCacheStrategy.ALL)
+							.onlyRetrieveFromCache(true)				//Try loading from the cache only
+							.centerCrop()
+							.override(150, 150)
+							.placeholder(R.drawable.ic_launcher_foreground)
+							.error(normalLoad)								//If cache misses, load normally
+							.into(image);
+					/**/
+
+
+					/* Original
+					Glide.with(image.getContext())
+							.asBitmap()
+							.load(content)
+							.signature(new ObjectKey(cacheKey))
+							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
+							.centerCrop()
+							.override(150, 150)
+							.placeholder(R.drawable.ic_launcher_foreground)
+							.error(R.drawable.ic_launcher_background)
+							.into(image));
+					 */
+				});
+
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing
 			}
 		});
 		thread.start();
+	}
+
+
+	@Nullable
+	private Bitmap getVideoThumbnail(String videoUri) {
+		try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()){
+			retriever.setDataSource(videoUri, new HashMap<>());
+
+			return retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

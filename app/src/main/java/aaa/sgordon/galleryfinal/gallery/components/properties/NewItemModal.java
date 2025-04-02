@@ -29,6 +29,7 @@ import com.github.naz013.colorslider.ColorSlider;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.List;
 import java.util.UUID;
@@ -270,7 +271,12 @@ public class NewItemModal extends DialogFragment {
 			HybridAPI hAPI = HybridAPI.getInstance();
 
 			//Create a new file
-			UUID newFileUID = hAPI.createFile(hAPI.getCurrentAccount(), isDir, isLink);
+			UUID newFileUID;
+			try {
+				newFileUID = hAPI.createFile(hAPI.getCurrentAccount(), isDir, isLink);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 
 			try {
 				hAPI.lockLocal(newFileUID);
@@ -293,7 +299,9 @@ public class NewItemModal extends DialogFragment {
 					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
 				}
 			}
-			catch (FileNotFoundException e) {
+			catch (FileNotFoundException | ConnectException e) {
+				throw new RuntimeException(e);
+			} catch (IOException e) {
 				throw new RuntimeException(e);
 			} finally {
 				hAPI.unlockLocal(newFileUID);
@@ -328,6 +336,8 @@ public class NewItemModal extends DialogFragment {
 				} finally {
 					hAPI.unlockLocal(newFileUID);
 				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			} finally {
 				hAPI.unlockLocal(dirUID);
 			}

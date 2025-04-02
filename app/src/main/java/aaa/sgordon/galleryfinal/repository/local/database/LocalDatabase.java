@@ -11,13 +11,17 @@ import androidx.room.TypeConverters;
 
 import java.util.Arrays;
 
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HSync;
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HSyncDAO;
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HZoningDAO;
 import aaa.sgordon.galleryfinal.repository.local.types.LAccount;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
 import aaa.sgordon.galleryfinal.repository.local.types.LFile;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 
 
-@Database(entities = {LAccount.class, LFile.class, LJournal.class, LContent.class}, version = 1)
+@Database(entities = {LAccount.class, LFile.class, LJournal.class, LContent.class, HZone.class, HSync.class}, version = 1)
 @TypeConverters({LocalConverters.class})
 public abstract class LocalDatabase extends RoomDatabase {
 
@@ -26,6 +30,9 @@ public abstract class LocalDatabase extends RoomDatabase {
 	public abstract LFileDAO getFileDao();
 	public abstract LJournalDAO getJournalDao();
 	public abstract LContentDAO getContentDao();
+	public abstract HZoningDAO getZoningDao();
+	public abstract HSyncDAO getSyncDao();
+
 
 
 

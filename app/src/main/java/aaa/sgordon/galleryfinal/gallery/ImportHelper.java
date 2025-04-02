@@ -85,7 +85,10 @@ public class ImportHelper {
 
 			System.out.println(documentFile.getName()+" "+documentFile.lastModified());
 
-			UUID newUID = hAPI.createFile(accountUID, false, false);
+			UUID newUID;
+			try { newUID = hAPI.createFile(accountUID, false, false); }
+			catch (IOException e) { throw new RuntimeException(e); }
+
 			try {
 				//Write the uri to the new file in the local repo
 				hAPI.lockLocal(newUID);
@@ -113,7 +116,6 @@ public class ImportHelper {
 			}
 
 			//Now that we've imported the file, delete it from the system
-			//TODO We need android.permission.MANAGE_DOCUMENTS or grantUriPermission()
 			documentFile.delete();
 		}
 	}

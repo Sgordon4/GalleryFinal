@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,12 +20,16 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.bumptech.glide.Glide;
+
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
@@ -67,6 +73,29 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+
+		SharedPreferences prefs = getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
+		prefs.edit().putInt("lastSyncLocal", 50).apply();
+
+		new Thread(() -> Glide.get(this).clearDiskCache()).start();
+		Glide.get(this).clearMemory();
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+
+		HybridAPI hAPI = HybridAPI.getInstance();
+		hAPI.stopSyncService(hAPI.getCurrentAccount());
+	}
+
+
+
+
 	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
@@ -88,6 +117,11 @@ public class MainActivity extends AppCompatActivity {
 				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 				viewModel.testInt += 1;
 
+
+				HybridAPI hAPI = HybridAPI.getInstance();
+				//hAPI.startSyncService(hAPI.getCurrentAccount());
+
+
 				//Use the directoryUID returned to start the first fragment
 				Handler mainHandler = new Handler(getMainLooper());
 				mainHandler.post(() -> {
@@ -104,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
 				});
 			}
 			catch (FileNotFoundException e) { throw new RuntimeException(e); }
+			catch (IOException e) { throw new RuntimeException(e); }
 		});
 		thread.start();
 	}

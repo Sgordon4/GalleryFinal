@@ -165,7 +165,7 @@ public class DirectoryViewModel extends ViewModel {
 					//Update the livedata
 					fileList.postValue(updatedList);
 				}
-				catch (FileNotFoundException e) {
+				catch (FileNotFoundException | ConnectException e) {
 					//Skip updating the file if we can't find it
 				}
 			}

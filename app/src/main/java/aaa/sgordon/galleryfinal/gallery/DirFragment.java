@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
@@ -52,6 +53,8 @@ import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 
 public class DirFragment extends Fragment {
 	public FragDirBinding binding;
@@ -102,6 +105,7 @@ public class DirFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+
 
 		//Utilities.showColorDebugOverlay(binding.galleryAppbar.getRoot(), requireContext());
 
@@ -324,9 +328,13 @@ public class DirFragment extends Fragment {
 
 		//Temporary button for testing
 		binding.buttonDrilldown.setOnClickListener(view1 -> {
-			//Remove the storage location from the shared prefs
-			SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
-			prefs.edit().remove("device_storage_location").apply();
+			Thread thread = new Thread(() -> {
+				HybridAPI hAPI = HybridAPI.getInstance();
+				Cleanup.cleanOrphanContent(hAPI.tempExposedDB.getContentDao());
+				Cleanup.cleanSyncedTempFiles(hAPI.tempExposedDB.getFileDao(), hAPI.tempExposedDB.getJournalDao(),
+						HybridAPI.getInstance().getCurrentAccount(), 60);
+			});
+			thread.start();
 		});
 
 

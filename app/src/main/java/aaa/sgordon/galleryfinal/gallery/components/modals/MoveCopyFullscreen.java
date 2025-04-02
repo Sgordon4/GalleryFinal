@@ -184,7 +184,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 					}
 				}
 			}
-			catch (FileNotFoundException ignored) {}
+			catch (FileNotFoundException | ConnectException ignored) {}
 
 
 			final UUID fParentDirUID = parentDirUID;

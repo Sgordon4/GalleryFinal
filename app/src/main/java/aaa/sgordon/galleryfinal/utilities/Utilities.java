@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 public class Utilities {
 
@@ -47,6 +48,12 @@ public class Utilities {
 			hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
 		}
 		return new String(hexChars, StandardCharsets.UTF_8);
+	}
+
+
+	//Return the first 4 characters of a UUID
+	public static String g4ID(@NonNull UUID uuid) {
+		return uuid.toString().substring(0, 4);
 	}
 
 

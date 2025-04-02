@@ -5,10 +5,12 @@ import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.ExistingWorkPolicy;
+import androidx.work.ListenableWorker;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
@@ -27,106 +29,61 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 import aaa.sgordon.galleryfinal.repository.remote.RemoteRepo;
 import aaa.sgordon.galleryfinal.repository.remote.types.RJournal;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class SyncWorkers {
 
+	private static final String TAG = "Hyb.Sync.Watcher";
 
-	public static class SyncWatcher extends Worker {
-		private static final String TAG = "Hyb.Sync.Watcher";
+	//Returns updated local::remote sync IDs
+	@Nullable
+	public static Pair<Integer, Integer> lookForSync(UUID accountUID, int lastSyncLocal, int lastSyncRemote) {
+		Log.i(TAG, "Journal Watcher looking for files to sync after "+lastSyncLocal+":"+lastSyncRemote+" for AccountUID='"+accountUID+"'");
 
-		public SyncWatcher(@NonNull Context context, @NonNull WorkerParameters workerParams) {
-			super(context, workerParams);
+		LocalRepo localRepo = LocalRepo.getInstance();
+		RemoteRepo remoteRepo = RemoteRepo.getInstance();
+
+
+		//Get all the files with changes since the journalIDs specified
+		List<LJournal> localFilesChanged = localRepo.getLatestChangesFor(lastSyncLocal, accountUID, null);
+		List<RJournal> remoteFilesChanged;
+		try {
+			remoteFilesChanged = remoteRepo.getLatestChangesFor(lastSyncRemote, accountUID, null);
+		} catch (ConnectException e) {
+			Log.w(TAG, "Journal Watcher requeueing due to connection issues!");
+			return null;
 		}
 
 
-		//Enqueue a Worker to check for changes and launch little workers to sync those changes
-		public static void enqueue(@NonNull UUID accountUID) {
-			Data.Builder data = new Data.Builder();
-			data.putString("ACCOUNTUID", accountUID.toString());
+		//And grab the data we need from them
+		Set<UUID> filesChanged = new HashSet<>();
+		int newSyncLocal = lastSyncLocal;
+		int newSyncRemote = lastSyncRemote;
 
-			PeriodicWorkRequest worker = new PeriodicWorkRequest.Builder(SyncWorker.class, 30, TimeUnit.SECONDS)
-					.setConstraints(new Constraints.Builder()
-							.setRequiredNetworkType(NetworkType.UNMETERED)
-							.setRequiresStorageNotLow(true)
-							.build())
-					.addTag(accountUID.toString()).addTag("swatch")
-					.setInputData(data.build()).build();
+		for(LJournal lJournal : localFilesChanged) {
+			filesChanged.add(lJournal.fileuid);
+			newSyncLocal = Math.max(newSyncLocal, lJournal.journalid);
+		}
+		for(RJournal rJournal : remoteFilesChanged) {
+			filesChanged.add(rJournal.fileuid);
+			newSyncRemote = Math.max(newSyncRemote, rJournal.journalid);
+		}
 
+		Log.i(TAG, "Journal Watcher found "+filesChanged.size()+" files to sync");
 
-			//Enqueue the sync job, keeping any currently running job operational
-			WorkManager workManager = WorkManager.getInstance(MyApplication.getAppContext());
-			workManager.enqueueUniquePeriodicWork("swatch_"+accountUID, ExistingPeriodicWorkPolicy.KEEP, worker);
+		//For each file with changes, start a worker to sync it
+		for(UUID fileUID : filesChanged) {
+			SyncWorker.enqueue(fileUID, lastSyncLocal, lastSyncRemote);
 		}
 
 
-		public static void dequeue(@NonNull UUID accountUID) {
-			WorkManager workManager = WorkManager.getInstance(MyApplication.getAppContext());
-			workManager.cancelUniqueWork("swatch_"+accountUID);
-		}
-
-
-
-		@NonNull
-		@Override
-		public Result doWork() {
-			String accountUIDString = getInputData().getString("ACCOUNTUID");
-			assert accountUIDString != null;
-			UUID accountUID = UUID.fromString(accountUIDString);
-
-			Sync sync = Sync.getInstance();
-			int lastSyncLocal = sync.getLastSyncLocal();
-			int lastSyncRemote = sync.getLastSyncRemote();
-
-			Log.i(TAG, "Journal Watcher looking for files to sync after "+lastSyncLocal+":"+lastSyncRemote+"for AccountUID='"+accountUID+"'");
-
-
-			LocalRepo localRepo = LocalRepo.getInstance();
-			RemoteRepo remoteRepo = RemoteRepo.getInstance();
-
-
-
-			//Get all the files with changes since the journalIDs specified
-			List<LJournal> localFilesChanged = localRepo.getLatestChangesFor(lastSyncLocal, accountUID, null);
-			List<RJournal> remoteFilesChanged;
-			try {
-				remoteFilesChanged = remoteRepo.getLatestChangesFor(lastSyncRemote, accountUID, null);
-			} catch (ConnectException e) {
-				Log.w(TAG, "Journal Watcher requeueing due to connection issues!");
-				return Result.retry();
-			}
-
-
-			//And grab the data we need from them
-			Set<UUID> filesChanged = new HashSet<>();
-			int newSyncLocal = lastSyncLocal;
-			int newSyncRemote = lastSyncRemote;
-
-			for(LJournal lJournal : localFilesChanged) {
-				filesChanged.add(lJournal.fileuid);
-				newSyncLocal = Math.max(newSyncLocal, lJournal.journalid);
-			}
-			for(RJournal rJournal : remoteFilesChanged) {
-				filesChanged.add(rJournal.fileuid);
-				newSyncRemote = Math.max(newSyncRemote, rJournal.journalid);
-			}
-
-
-			//For each file with changes, start a worker to sync it
-			for(UUID fileUID : filesChanged) {
-				SyncWorker.enqueue(fileUID, lastSyncLocal, lastSyncRemote);
-			}
-
-			//And update our journalID trackers
-			sync.updateLastSyncLocal(newSyncLocal);
-			sync.updateLastSyncRemote(newSyncRemote);
-
-			return Result.success();
-		}
+		return new Pair<>(newSyncLocal, newSyncRemote);
 	}
 
 
@@ -135,7 +92,7 @@ public class SyncWorkers {
 
 
 	public static class SyncWorker extends Worker {
-		private static final String TAG = "Hyb.Sync.Worker";
+		private static final String TAG = "Hyb.Sync.Wrk";
 
 		public SyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
 			super(context, workerParams);
@@ -199,7 +156,8 @@ public class SyncWorkers {
 			assert remoteString != null;
 			int remoteSyncID = Integer.parseInt(remoteString);
 
-			Log.i(TAG, "SyncWorker syncing for FileUID='"+fileUID+"'");
+			String SUBTAG = TAG + "." + Utilities.g4ID(fileUID);
+			Log.i(SUBTAG, "SyncWorker syncing for FileUID='"+fileUID+"'");
 
 
 
@@ -213,13 +171,18 @@ public class SyncWorkers {
 			}
 			//If the sync fails due to another update happening before we could finish the sync, requeue it for later
 			catch (IllegalStateException e) {
-				Log.w(TAG, "SyncWorker requeueing due to conflicting update!");
+				Log.w(SUBTAG, "SyncWorker requeueing due to conflicting update!");
 				return Result.retry();
 			}
 			//If the sync fails due to server connection issues, requeue it for later
 			catch (ConnectException e) {
-				Log.w(TAG, "SyncWorker requeueing due to connection issues!");
+				Log.w(SUBTAG, "SyncWorker requeueing due to connection issues!");
 				return Result.retry();
+			}
+			//If the sync fails to write to local, we're hosed
+			catch (Exception e) {
+				Log.e(SUBTAG, "SyncWorker failed to write to local for FileUID='"+fileUID+"'", e);
+				return Result.failure();
 			}
 		}
 	}
