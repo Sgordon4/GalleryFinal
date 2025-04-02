@@ -17,10 +17,12 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.Key;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.load.model.Model;
 import com.bumptech.glide.load.model.stream.UrlLoader;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.signature.ObjectKey;
+import com.google.common.hash.HashCode;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,8 +32,7 @@ import java.util.HashMap;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.BitmapModule;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.NoCacheUrlGlideModule;
+import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.try3.ChecksumVideoModel;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -89,11 +90,17 @@ public class VideoViewHolder extends BaseViewHolder {
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() -> {
 
+					ChecksumVideoModel model = new ChecksumVideoModel(content, cacheKey);
 
 					Glide.with(image.getContext())
+							.asBitmap() // Explicitly request a Bitmap
+							.load(model)
+							.into(image);
+
+					/*
+					Glide.with(image.getContext())
 							.asBitmap()
-							.load(content)
-							.signature(new CustomCacheKey(cacheKey))
+							.load(model)
 							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
 							.centerCrop()
 							.override(150, 150)
@@ -113,6 +120,8 @@ public class VideoViewHolder extends BaseViewHolder {
 								}
 							})
 							.into(image);
+
+					 */
 
 					/*
 					//Load from url, ignoring the url and only considering the key when caching
@@ -174,36 +183,6 @@ public class VideoViewHolder extends BaseViewHolder {
 			return retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-		}
-	}
-
-
-
-	public static class CustomCacheKey implements Key {
-		private final String contentId; // Unique identifier for the content
-
-		public CustomCacheKey(String contentId) {
-			this.contentId = contentId;
-		}
-
-		@Override
-		public String toString() {
-			return contentId;
-		}
-
-		@Override
-		public void updateDiskCacheKey(@NonNull MessageDigest messageDigest) {
-			messageDigest.update(contentId.getBytes());
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			return obj instanceof CustomCacheKey && ((CustomCacheKey) obj).contentId.equals(contentId);
-		}
-
-		@Override
-		public int hashCode() {
-			return contentId.hashCode();
 		}
 	}
 }
