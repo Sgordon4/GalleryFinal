@@ -27,6 +27,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
@@ -74,11 +75,20 @@ public class MainActivity extends AppCompatActivity {
 	protected void onStart() {
 		super.onStart();
 
-		new Thread(() -> {
-			Glide.get(this).clearDiskCache();
-		}).start();
+		new Thread(() -> Glide.get(this).clearDiskCache()).start();
 		Glide.get(this).clearMemory();
 	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+
+		HybridAPI hAPI = HybridAPI.getInstance();
+		hAPI.stopSyncService(hAPI.getCurrentAccount());
+	}
+
+
+
 
 	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
 			new ActivityResultContracts.StartActivityForResult(),
@@ -100,6 +110,11 @@ public class MainActivity extends AppCompatActivity {
 
 				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 				viewModel.testInt += 1;
+
+
+				HybridAPI hAPI = HybridAPI.getInstance();
+				hAPI.startSyncService(hAPI.getCurrentAccount());
+
 
 				//Use the directoryUID returned to start the first fragment
 				Handler mainHandler = new Handler(getMainLooper());

@@ -15,7 +15,6 @@ import aaa.sgordon.galleryfinal.repository.local.types.LJournal;
 public class Cleanup {
 	private static final String TAG = "Hyb.Cleanup";
 
-	//TODO Clean up any content that doesn't have an entry in the content db
 	public static void cleanOrphanContent(LContentDAO contentDAO) {
 		//This could be done with a single sql query, but I have them split for now
 		List<LContent> orphanedContent = contentDAO.getOrphans();
@@ -26,6 +25,11 @@ public class Cleanup {
 
 		for (LContent content : orphanedContent)
 			contentDAO.delete(content);
+	}
+
+	//TODO Clean up any content that doesn't have an entry in the content db
+	public static void defragContent(LContentDAO contentDAO) {
+
 	}
 
 

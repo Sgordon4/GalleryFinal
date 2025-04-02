@@ -49,10 +49,13 @@ public class SyncWorkers {
 			Data.Builder data = new Data.Builder();
 			data.putString("ACCOUNTUID", accountUID.toString());
 
-			PeriodicWorkRequest worker = new PeriodicWorkRequest.Builder(SyncWorker.class, 30, TimeUnit.SECONDS)
+			System.out.println("Enqueueing watcher");
+
+			//PeriodicWorkRequest worker = new PeriodicWorkRequest.Builder(SyncWatcher.class, 30, TimeUnit.SECONDS)
+			PeriodicWorkRequest worker = new PeriodicWorkRequest.Builder(SyncWatcher.class, 5, TimeUnit.SECONDS)
 					.setConstraints(new Constraints.Builder()
-							.setRequiredNetworkType(NetworkType.UNMETERED)
-							.setRequiresStorageNotLow(true)
+							//.setRequiredNetworkType(NetworkType.UNMETERED)
+							//.setRequiresStorageNotLow(true)
 							.build())
 					.addTag(accountUID.toString()).addTag("swatch")
 					.setInputData(data.build()).build();
@@ -82,7 +85,7 @@ public class SyncWorkers {
 			int lastSyncLocal = sync.getLastSyncLocal();
 			int lastSyncRemote = sync.getLastSyncRemote();
 
-			Log.i(TAG, "Journal Watcher looking for files to sync after "+lastSyncLocal+":"+lastSyncRemote+"for AccountUID='"+accountUID+"'");
+			Log.i(TAG, "Journal Watcher looking for files to sync after "+lastSyncLocal+":"+lastSyncRemote+" for AccountUID='"+accountUID+"'");
 
 
 			LocalRepo localRepo = LocalRepo.getInstance();

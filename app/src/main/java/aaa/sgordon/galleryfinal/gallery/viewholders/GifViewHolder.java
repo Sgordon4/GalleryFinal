@@ -23,8 +23,7 @@ import java.net.ConnectException;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.CustomGlideModule;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.cim.CacheIgnoringModel;
+import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.cim.ChecksumKeyModel;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -78,13 +77,12 @@ public class GifViewHolder extends BaseViewHolder {
 				}
 
 
-				System.out.println("Gif cache key: " + cacheKey);
 
 
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() -> {
 					//Load from url, ignoring the url and only considering the key when caching
-					CacheIgnoringModel model = new CacheIgnoringModel(cacheKey, content.toString());
+					ChecksumKeyModel model = new ChecksumKeyModel(cacheKey, content.toString());
 
 					//If the initial load from cache fails, load from the actual uri
 					RequestBuilder<Drawable> normalLoad = Glide.with(image.getContext())
@@ -106,19 +104,6 @@ public class GifViewHolder extends BaseViewHolder {
 							.override(150, 150)
 							.placeholder(R.drawable.ic_launcher_foreground)
 							.error(normalLoad)								//If cache misses, load normally
-							.listener(new RequestListener<Drawable>() {
-								@Override
-								public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-									System.out.println("Loading from not cache");
-									return false;
-								}
-
-								@Override
-								public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-									System.out.println("Loading from cache");
-									return false;
-								}
-							})
 							.into(image);
 
 
@@ -140,6 +125,6 @@ public class GifViewHolder extends BaseViewHolder {
 				//Do nothing
 			}
 		});
-		//thread.start();
+		thread.start();
 	}
 }

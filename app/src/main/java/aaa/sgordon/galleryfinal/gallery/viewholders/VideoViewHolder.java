@@ -8,31 +8,18 @@ import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.Key;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.load.model.Model;
-import com.bumptech.glide.load.model.stream.UrlLoader;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
-import com.bumptech.glide.signature.ObjectKey;
-import com.google.common.hash.HashCode;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.security.MessageDigest;
 import java.util.HashMap;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.try3.ChecksumVideoModel;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -86,42 +73,19 @@ public class VideoViewHolder extends BaseViewHolder {
 				}
 
 
-				//TODO Figure out if this is downloading the entire video from external uris or not
+				//TODO I cannot fucking figure out Glide ModelLoader Uri -> Bitmap. Legit completely hosed.
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() -> {
 
-					ChecksumVideoModel model = new ChecksumVideoModel(content, cacheKey);
-
-					Glide.with(image.getContext())
-							.asBitmap() // Explicitly request a Bitmap
-							.load(model)
-							.into(image);
-
-					/*
 					Glide.with(image.getContext())
 							.asBitmap()
-							.load(model)
+							.load(content)
 							.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
 							.centerCrop()
 							.override(150, 150)
 							.placeholder(R.drawable.ic_launcher_foreground)
 							.error(R.drawable.ic_launcher_background)
-							.listener(new RequestListener<Bitmap>() {
-								@Override
-								public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
-									System.out.println("Video load failed");
-									return false;
-								}
-
-								@Override
-								public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
-									System.out.println("Video datasource: "+dataSource);
-									return false;
-								}
-							})
 							.into(image);
-
-					 */
 
 					/*
 					//Load from url, ignoring the url and only considering the key when caching

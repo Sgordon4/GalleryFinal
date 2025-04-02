@@ -19,11 +19,11 @@ import java.io.InputStream;
 
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 
-public class CacheIgnoringModelLoader implements ModelLoader<CacheIgnoringModel, InputStream> {
+public class ChecksumKeyModelLoader implements ModelLoader<ChecksumKeyModel, InputStream> {
 
 	@Nullable
 	@Override
-	public LoadData<InputStream> buildLoadData(@NonNull CacheIgnoringModel model, int width, int height, @NonNull Options options) {
+	public LoadData<InputStream> buildLoadData(@NonNull ChecksumKeyModel model, int width, int height, @NonNull Options options) {
 		String uriString = model.getUri();
 		Uri uri = Uri.parse(uriString);
 		ObjectKey cacheKey = new ObjectKey(model.getCacheKey());
@@ -45,17 +45,17 @@ public class CacheIgnoringModelLoader implements ModelLoader<CacheIgnoringModel,
 	}
 
 	@Override
-	public boolean handles(@NonNull CacheIgnoringModel model) {
+	public boolean handles(@NonNull ChecksumKeyModel model) {
 		Uri uri = Uri.parse(model.getUri());
 		return ("content".equals(uri.getScheme()) || "file".equals(uri.getScheme())) ||
 				("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()));
 	}
 
-	public static class Factory implements ModelLoaderFactory<CacheIgnoringModel, InputStream> {
+	public static class Factory implements ModelLoaderFactory<ChecksumKeyModel, InputStream> {
 		@NonNull
 		@Override
-		public ModelLoader<CacheIgnoringModel, InputStream> build(@NonNull MultiModelLoaderFactory multiFactory) {
-			return new CacheIgnoringModelLoader();
+		public ModelLoader<ChecksumKeyModel, InputStream> build(@NonNull MultiModelLoaderFactory multiFactory) {
+			return new ChecksumKeyModelLoader();
 		}
 
 		@Override

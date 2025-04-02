@@ -90,8 +90,8 @@ public class ZoningModal extends DialogFragment {
 
 		viewModel.currZoning.observe(this, zoning -> {
 			local.setText("Device Only ("+viewModel.countLocalOnly+")");
-			both.setText("Device & Cloud ("+viewModel.countRemoteOnly+")");
-			remote.setText("Cloud Only ("+viewModel.countBoth+")");
+			both.setText("Device & Cloud ("+viewModel.countBoth+")");
+			remote.setText("Cloud Only ("+viewModel.countRemoteOnly+")");
 		});
 
 

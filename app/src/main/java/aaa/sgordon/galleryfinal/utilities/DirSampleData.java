@@ -185,7 +185,9 @@ public class DirSampleData {
 
 		DirItem deChild_f6_fake = new DirItem(UUID.randomUUID(), "DC: File Fake");		//Create a file with a fake UUID
 
-		List<DirItem> deChildItems = new ArrayList<>(Arrays.asList(deChild_f1, deChild_f2, deChild_f3, deChild_f4, deChild_f5, deChild_f6_fake, deChild_l1_cycle));
+		List<DirItem> deChildItems = new ArrayList<>(Arrays.asList(deChild_f1, deChild_f2, deChild_f3, deChild_f4, deChild_f5,
+				//deChild_f6_fake,
+				deChild_l1_cycle));
 		writeDirList(detachedChildUID, deChildItems);
 
 
