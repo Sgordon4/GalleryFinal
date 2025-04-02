@@ -1,5 +1,7 @@
 package aaa.sgordon.galleryfinal.repository.caches;
 
+import android.util.Pair;
+
 import androidx.annotation.NonNull;
 
 import com.google.gson.JsonArray;
@@ -17,6 +19,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 
 //WARNING: This object should live as long as the Application is running. Keep in Activity ViewModel.
@@ -24,7 +27,7 @@ public class AttrCache {
 	private final static String TAG = "Gal.AttrCache";
 	private final HybridAPI hAPI;
 
-	private final Map<UUID, JsonObject> attrCache;
+	private final Map<UUID, Pair<String, JsonObject>> attrCache;
 
 	private final HybridListeners.FileChangeListener fileChangeListener;
 	private final UpdateListeners updateListeners;
@@ -44,6 +47,20 @@ public class AttrCache {
 		//Whenever any file we have cached is changed, update our data
 		fileChangeListener = uuid -> {
 			if(attrCache.containsKey(uuid)) {
+				try {
+					//If the new hash matches the old, this file's attributes weren't updated
+					String newHash = hAPI.getFileProps(uuid).attrhash;
+					String oldHash = attrCache.get(uuid).first;
+					if(newHash.equals(oldHash)) return;
+				}
+				catch (ConnectException e) {
+					//If we can't reach the file, don't remove the cached attrs
+					return;
+				}
+				catch (FileNotFoundException e) {
+					//If we can't find the file, remove the cached attrs
+				}
+
 				attrCache.remove(uuid);
 				updateListeners.notifyDataChanged(uuid);
 			}
@@ -55,11 +72,14 @@ public class AttrCache {
 	public JsonObject getAttr(UUID fileUID) throws FileNotFoundException, ConnectException {
 		//If we have the attributes cached, just use that
 		if(attrCache.containsKey(fileUID))
-			return attrCache.get(fileUID);
+			return attrCache.get(fileUID).second;
 
 		//Grab the attributes from the repository and cache them
-		JsonObject attr = hAPI.getFileProps(fileUID).userattr;
-		attrCache.put(fileUID, attr);
+		HFile props = hAPI.getFileProps(fileUID);
+		String hash = props.attrhash;
+		JsonObject attr = props.userattr;
+		attrCache.put(fileUID, new Pair<>(hash, attr));
+
 		return attr;
 	}
 

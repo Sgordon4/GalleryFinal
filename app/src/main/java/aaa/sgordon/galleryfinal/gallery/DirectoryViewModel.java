@@ -110,7 +110,7 @@ public class DirectoryViewModel extends ViewModel {
 				//During a move operation (usually from reorder), the list will update after every directory change
 				//This causes animation flickers, so we want to delay the visual list update just a touch
 				Thread thread = new Thread(() -> {
-					try { Thread.sleep(30); }
+					try { Thread.sleep(50); }
 					catch (InterruptedException e) { throw new RuntimeException(e); }
 					this.queuedUpdateThread = null;
 
@@ -143,7 +143,6 @@ public class DirectoryViewModel extends ViewModel {
 				//Update the tags
 				Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
 				fileTags.postValue(newTags);
-
 
 
 				try {

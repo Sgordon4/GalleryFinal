@@ -82,6 +82,7 @@ public class ReorderSetup {
 
 
 					boolean successful = DirUtilities.moveFiles(toMove, destinationUID, nextItemUID);
+					System.out.println("Success: "+successful);
 					if(successful) return;
 
 					//If the move was not successful, we want to return the list to how it was before we dragged
