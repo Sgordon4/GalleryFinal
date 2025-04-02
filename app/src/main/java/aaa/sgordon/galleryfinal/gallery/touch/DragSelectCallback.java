@@ -61,7 +61,6 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 
 	@Override
 	public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
-		System.out.println("SELECTED CHANGED");
 		if(viewHolder != null) {
 			int pos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
 			startPath = adapter.list.get(pos).filePath;

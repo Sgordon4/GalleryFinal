@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery.touch;
 
 import android.annotation.SuppressLint;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
 
@@ -170,10 +171,10 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		}
 
 
-		System.out.println(".");
-		System.out.println("Dragged: "+draggedItem.fileUID+" "+draggedItem.name);
-		System.out.println("DraggedPos: "+draggedItemPos);
-		System.out.println("Next: "+nextItem);
+		Log.d("Gal.Reorder", String.format("Dragged item '%s'::'%s'", draggedItem.name, draggedItem.fileUID.toString()));
+		Log.d("Gal.Reorder", String.format("Destination %s", destination));
+		if(nextItem == null) Log.d("Gal.Reorder", "Next item is null");
+		else Log.d("Gal.Reorder", String.format("Next item '%s'::'%s'", nextItem.name, nextItem.fileUID.toString()));
 
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
 		Path newPath = destination.resolve(draggedItem.filePath.getFileName());

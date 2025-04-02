@@ -270,7 +270,6 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
-			System.out.println("UPDATING ---------------------------------");
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});

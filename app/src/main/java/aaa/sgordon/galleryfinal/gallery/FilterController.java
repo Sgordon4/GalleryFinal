@@ -103,7 +103,6 @@ public class FilterController {
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
 	public static List<ListItem> filterListByQuery(String filterQuery, List<ListItem> list) {
-		System.out.println("Filtering list");
 		list = list.stream().filter(item -> {
 			//If the file is hidden...
 			if(item.attr.has("hidden") && item.attr.get("hidden").getAsBoolean()) {

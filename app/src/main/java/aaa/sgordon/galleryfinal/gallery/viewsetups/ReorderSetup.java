@@ -71,18 +71,12 @@ public class ReorderSetup {
 					}
 
 
-					System.out.println("Reordering: ");
-					System.out.println("Dest: "+destinationUID);
-					System.out.println("Next: "+nextItem);
-
-
 					UUID nextItemUID = null;
 					if(nextItem != null && !LinkCache.isLinkEnd(nextItem))
 						nextItemUID = nextItem.fileUID;
 
 
 					boolean successful = DirUtilities.moveFiles(toMove, destinationUID, nextItemUID);
-					System.out.println("Success: "+successful);
 					if(successful) return;
 
 					//If the move was not successful, we want to return the list to how it was before we dragged
