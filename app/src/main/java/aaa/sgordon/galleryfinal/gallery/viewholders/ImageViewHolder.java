@@ -7,20 +7,13 @@ import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 
-import androidx.annotation.Nullable;
-
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.signature.ObjectKey;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
@@ -28,7 +21,6 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.NoCacheUrlGlid
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class ImageViewHolder extends BaseViewHolder {
 	public ImageView image;
@@ -82,7 +74,7 @@ public class ImageViewHolder extends BaseViewHolder {
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() -> {
 					//Load from url, ignoring the url and only considering the key when caching
-					NoCacheUrlGlideModule.UrlIgnoringModel model = new NoCacheUrlGlideModule.UrlIgnoringModel(cacheKey, content.toString());
+					NoCacheUrlGlideModule.CacheIgnoringModel model = new NoCacheUrlGlideModule.CacheIgnoringModel(cacheKey, content.toString());
 
 					//If the initial load from cache fails, load from the actual uri
 					RequestBuilder<Drawable> normalLoad = Glide.with(image.getContext())

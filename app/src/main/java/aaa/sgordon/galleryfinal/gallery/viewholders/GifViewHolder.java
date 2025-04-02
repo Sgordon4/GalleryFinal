@@ -14,7 +14,6 @@ import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.load.resource.bitmap.CenterCrop;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.signature.ObjectKey;
@@ -84,7 +83,7 @@ public class GifViewHolder extends BaseViewHolder {
 				Handler mainHandler = new Handler(image.getContext().getMainLooper());
 				mainHandler.post(() -> {
 					//Load from url, ignoring the url and only considering the key when caching
-					NoCacheUrlGlideModule.UrlIgnoringModel model = new NoCacheUrlGlideModule.UrlIgnoringModel(cacheKey, content.toString());
+					NoCacheUrlGlideModule.CacheIgnoringModel model = new NoCacheUrlGlideModule.CacheIgnoringModel(cacheKey, content.toString());
 
 					//If the initial load from cache fails, load from the actual uri
 					RequestBuilder<Drawable> normalLoad = Glide.with(image.getContext())
@@ -106,6 +105,19 @@ public class GifViewHolder extends BaseViewHolder {
 							.override(150, 150)
 							.placeholder(R.drawable.ic_launcher_foreground)
 							.error(normalLoad)								//If cache misses, load normally
+							.listener(new RequestListener<Drawable>() {
+								@Override
+								public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+									System.out.println("Loading from not cache");
+									return false;
+								}
+
+								@Override
+								public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+									System.out.println("Loading from cache");
+									return false;
+								}
+							})
 							.into(image);
 
 
