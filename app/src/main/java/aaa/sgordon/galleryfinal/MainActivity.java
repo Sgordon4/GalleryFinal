@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -75,6 +77,9 @@ public class MainActivity extends AppCompatActivity {
 	protected void onStart() {
 		super.onStart();
 
+		SharedPreferences prefs = getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
+		prefs.edit().putInt("lastSyncLocal", 50).apply();
+
 		new Thread(() -> Glide.get(this).clearDiskCache()).start();
 		Glide.get(this).clearMemory();
 	}
@@ -113,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 				HybridAPI hAPI = HybridAPI.getInstance();
-				hAPI.startSyncService(hAPI.getCurrentAccount());
+				//hAPI.startSyncService(hAPI.getCurrentAccount());
 
 
 				//Use the directoryUID returned to start the first fragment

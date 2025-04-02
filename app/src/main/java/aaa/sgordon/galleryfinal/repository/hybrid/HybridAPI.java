@@ -121,10 +121,10 @@ public class HybridAPI {
 
 
 	public void startSyncService(@NonNull UUID accountUID) {
-		SyncWorkers.SyncWatcher.enqueue(accountUID);
+		sync.startSyncWatcher(accountUID);
 	}
 	public void stopSyncService(@NonNull UUID accountUID) {
-		SyncWorkers.SyncWatcher.dequeue(accountUID);
+		sync.stopSyncWatcher(accountUID);
 	}
 
 

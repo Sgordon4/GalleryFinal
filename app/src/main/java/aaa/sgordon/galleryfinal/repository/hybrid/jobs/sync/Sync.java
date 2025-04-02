@@ -13,13 +13,20 @@ import com.google.gson.JsonObject;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZoningDAO;
+import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.database.LFileDAO;
@@ -66,6 +73,42 @@ public class Sync {
 		sharedPrefs = context.getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
 		lastSyncLocalID = sharedPrefs.getInt("lastSyncLocal", 0);
 		lastSyncRemoteID = sharedPrefs.getInt("lastSyncRemote", 0);
+
+		scheduler = Executors.newSingleThreadScheduledExecutor();
+		syncWatchers = new HashMap<>();
+	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+	private final ScheduledExecutorService scheduler;
+	private final Map<UUID, Runnable> syncWatchers;
+
+	public void startSyncWatcher(UUID accountUID) {
+		if(syncWatchers.get(accountUID) != null)
+			return;
+
+		syncWatchers.put(accountUID, () -> {
+			//Look for new files to sync, launching a little worker for each one found
+			Pair<Integer, Integer> newSyncIDs = SyncWorkers.lookForSync(accountUID, lastSyncLocalID, lastSyncRemoteID);
+
+			if(newSyncIDs != null) {
+				//Update our journalID trackers
+				updateLastSyncLocal(newSyncIDs.first);
+				updateLastSyncRemote(newSyncIDs.second);
+			}
+
+			//Remove any temp files that we've synced
+			Cleanup.cleanSyncedTempFiles(fileDAO, journalDAO, accountUID, lastSyncLocalID);
+		});
+
+		scheduler.scheduleWithFixedDelay(syncWatchers.get(accountUID), 30, 30, TimeUnit.SECONDS);
+	}
+
+	public void stopSyncWatcher(UUID accountUID) {
+		if (scheduler != null && !scheduler.isShutdown())
+			scheduler.shutdownNow();
 	}
 
 
