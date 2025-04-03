@@ -89,8 +89,11 @@ public class MainActivity extends AppCompatActivity {
 	protected void onStop() {
 		super.onStop();
 
-		HybridAPI hAPI = HybridAPI.getInstance();
-		hAPI.stopSyncService(hAPI.getCurrentAccount());
+		try {
+			HybridAPI hAPI = HybridAPI.getInstance();
+			hAPI.stopSyncService(hAPI.getCurrentAccount());
+		}
+		catch (IllegalStateException ignored) { }
 	}
 
 

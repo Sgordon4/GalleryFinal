@@ -115,8 +115,9 @@ public class ImportHelper {
 				hAPI.unlockLocal(newUID);
 			}
 
+			//TODO Uncomment when we want to delete things
 			//Now that we've imported the file, delete it from the system
-			documentFile.delete();
+			//documentFile.delete();
 		}
 	}
 

@@ -21,6 +21,7 @@ import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
+	private static final String TAG = "Gal.Reorder";
 	private final RecyclerView recyclerView;
 	private final DirRVAdapter adapter;
 
@@ -171,10 +172,20 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		}
 
 
-		Log.d("Gal.Reorder", String.format("Dragged item '%s'::'%s'", draggedItem.name, draggedItem.fileUID.toString()));
-		Log.d("Gal.Reorder", String.format("Destination %s", destination));
+		Log.d(TAG, String.format("Dragged item '%s'::'%s'", draggedItem.name, draggedItem.fileUID.toString()));
+		Log.d(TAG, String.format("Destination %s", destination));
 		if(nextItem == null) Log.d("Gal.Reorder", "Next item is null");
-		else Log.d("Gal.Reorder", String.format("Next item '%s'::'%s'", nextItem.name, nextItem.fileUID.toString()));
+		else Log.d(TAG, String.format("Next item '%s'::'%s'", nextItem.name, nextItem.fileUID.toString()));
+
+
+		//We do not want to move links directly inside themselves or things will visually disappear. Exclude any.
+		if(destination.startsWith(draggedItem.filePath)) {
+			Log.d(TAG, "Drag failed, not allowed to move links inside themselves");
+			callback.onReorderFailed();
+			return;
+		}
+
+
 
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
 		Path newPath = destination.resolve(draggedItem.filePath.getFileName());
@@ -195,5 +206,6 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 	public interface ReorderCallback {
 		void onReorderComplete(Path destination, ListItem nextItem);
+		void onReorderFailed();
 	}
 }

@@ -338,7 +338,7 @@ public class DirUtilities {
 		while (iterator.hasNext()) {
 			UUID fileUID = iterator.next().fileUID;
 			if(destinationUID.equals(fileUID) || destinationDirUID.equals(fileUID)) {
-				Log.d(TAG, "Not allowed to move links inside themselves");
+				Log.d(TAG, "Move failed, not allowed to move links inside themselves");
 				iterator.remove();
 			}
 		}

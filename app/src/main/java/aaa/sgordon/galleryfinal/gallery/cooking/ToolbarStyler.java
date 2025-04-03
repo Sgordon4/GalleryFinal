@@ -102,5 +102,11 @@ public class ToolbarStyler {
 		selectionToolbar.getMenu().findItem(R.id.edit).setEnabled(numSelected == 1);	//Disable edit button unless only one item is selected
 		selectionToolbar.getMenu().findItem(R.id.tag).setEnabled(numSelected >= 1);		//Disable tag button unless one or more items are selected
 		selectionToolbar.getMenu().findItem(R.id.share).setEnabled(numSelected >= 1);	//Disable share button unless one or more items are selected
+		selectionToolbar.getMenu().findItem(R.id.trash).setEnabled(numSelected >= 1);	//Disable trash button unless one or more items are selected
+		selectionToolbar.getMenu().findItem(R.id.move).setEnabled(numSelected >= 1);	//Disable move button unless one or more items are selected
+		selectionToolbar.getMenu().findItem(R.id.copy).setEnabled(numSelected >= 1);	//Disable copy button unless one or more items are selected
+		selectionToolbar.getMenu().findItem(R.id.export).setEnabled(numSelected >= 1);	//Disable export button unless one or more items are selected
+		selectionToolbar.getMenu().findItem(R.id.zoning).setEnabled(numSelected >= 1);	//Disable zoning button unless one or more items are selected
+
 	}
 }

@@ -63,6 +63,7 @@ public class DirFragment extends Fragment {
 	public ActivityResultLauncher<Intent> filePickerLauncher;
 
 	private MenuItemHelper menuItemHelper;
+	private SelectionController selectionController;
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -183,6 +184,7 @@ public class DirFragment extends Fragment {
 			@Override
 			public void onNumSelectedChanged(int numSelected) {
 				toolbarStyler.onNumSelectedChanged(numSelected);
+				if(numSelected == 0) selectionController.stopSelecting();
 			}
 			@Override
 			public UUID getUUIDAtPos(int pos) {
@@ -207,7 +209,7 @@ public class DirFragment extends Fragment {
 				}
 			}
 		};
-		SelectionController selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
+		selectionController = new SelectionController(dirViewModel.getSelectionRegistry(), selectionCallbacks);
 
 		toolbarStyler.onViewCreated(this, selectionController);
 
@@ -218,9 +220,10 @@ public class DirFragment extends Fragment {
 
 		//Deselect any items that were removed from the list
 		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
+			System.out.println("Trimming items");
 			if(selectionController.isSelecting()) {
 				//Grab all UUIDs from the full list
-				Set<UUID> inAdapter = dirViewModel.fileList.getValue().stream()
+				Set<UUID> inAdapter = adapter.list.stream()
 						.map(item -> item.fileUID)
 						.collect(Collectors.toSet());
 
