@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
@@ -11,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 
 import com.google.gson.JsonObject;
 
@@ -244,29 +246,57 @@ public class MenuItemHelper {
 
 
 	private void onExport() {
-		//Get the selected items, which should be in order
-		List<ListItem> toExport = getSelected();
-		new Thread(() -> DirUtilities.export(toExport)).start();
+		int numSelected = selectionController.getNumSelected();
+
+		//Launch a confirmation dialog first
+		AlertDialog.Builder builder = new AlertDialog.Builder(dirFragment.requireContext());
+		builder.setTitle("Export");
+		builder.setMessage("Are you sure you want to export "+numSelected+" item"+(numSelected==1?"":"s")+"?");
+
+		builder.setPositiveButton("Yes", (dialogInterface, which) -> {
+			//Get the selected items, which should be in order
+			List<ListItem> toExport = getSelected();
+
+			//And export them
+			new Thread(() -> DirUtilities.export(toExport)).start();
+		});
+		builder.setNegativeButton("No", null);
+
+		AlertDialog dialog = builder.create();
+		dialog.show();
 	}
 
 
 
 	private void onTrash() {
-		//Get the selected items
-		List<ListItem> toTrash = getSelected();
+		int numSelected = selectionController.getNumSelected();
 
-		//Update each item's name with a 'trashed' suffix
-		String suffix = ".trashed_"+ Instant.now().getEpochSecond();
-		List<ListItem> renamed = toTrash.stream()
-				.map(item -> new ListItem.Builder(item).setName(item.name + suffix).build())
-				.collect(Collectors.toList());
+		//Launch a confirmation dialog first
+		AlertDialog.Builder builder = new AlertDialog.Builder(dirFragment.requireContext());
+		builder.setTitle("Move to Trash");
+		builder.setMessage("Are you sure you want to move "+numSelected+" item"+(numSelected==1?"":"s")+" to trash?");
 
-		//And 'trash' them
-		new Thread(() -> {
-			DirUtilities.renameFiles(renamed);
-		}).start();
+		builder.setPositiveButton("Yes", (dialogInterface, which) -> {
+			//Get the selected items
+			List<ListItem> toTrash = getSelected();
 
-		selectionController.stopSelecting();
+			//Update each item's name with a 'trashed' suffix
+			String suffix = ".trashed_"+ Instant.now().getEpochSecond();
+			List<ListItem> renamed = toTrash.stream()
+					.map(item -> new ListItem.Builder(item).setName(item.name + suffix).build())
+					.collect(Collectors.toList());
+
+			//And 'trash' them
+			new Thread(() -> {
+				DirUtilities.renameFiles(renamed);
+			}).start();
+
+			selectionController.stopSelecting();
+		});
+		builder.setNegativeButton("No", null);
+
+		AlertDialog dialog = builder.create();
+		dialog.show();
 	}
 
 
