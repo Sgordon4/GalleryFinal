@@ -63,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
 
 		//If the storage directory is not accessible...
 		if(!MainStorageHandler.isStorageAccessible(this)) {
-			System.out.println("Launching");
 			Log.w(TAG, "Storage directory is inaccessible. Prompting user to reselect.");
 			MainStorageHandler.showPickStorageDialog(this, directoryPickerLauncher);
 		}

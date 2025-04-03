@@ -197,7 +197,7 @@ public class DirectoryViewModel extends ViewModel {
 			//Grab the current list of all files in this directory from the system
 			List<ListItem> newFileList = TraversalHelper.traverseDir(currDirUID);
 
-			/*
+			/**/
 			if(!printed) {
 				System.out.println("NewFiles: ");
 				for(ListItem item : newFileList) {

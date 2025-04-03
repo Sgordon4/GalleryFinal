@@ -1,7 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.touch;
 
 import android.graphics.Canvas;
-import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -17,7 +16,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class DragSelectCallback extends ItemTouchHelper.Callback {
 	RecyclerView recyclerView;
@@ -25,8 +24,8 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 	SelectionController selectionController;
 
 	private MotionEvent lastMoveEvent = null;
-	private Path startPath = null;
-	private Path lastPath = null;
+	private ListItem startItem = null;
+	private ListItem lastItem = null;
 
 
 	public DragSelectCallback(RecyclerView recyclerView, DirRVAdapter adapter, SelectionController controller) {
@@ -36,7 +35,8 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 	}
 
 	public void onMotionEvent(MotionEvent event) {
-		if (event.getAction() == MotionEvent.ACTION_MOVE)
+		//Track where the pointer is, but only while we're drag selecting
+		if (event.getAction() == MotionEvent.ACTION_MOVE && startItem != null)
 			lastMoveEvent = MotionEvent.obtain(event);
 		else
 			lastMoveEvent = null;
@@ -63,14 +63,18 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 	public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder, int actionState) {
 		if(viewHolder != null) {
 			int pos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
-			startPath = adapter.list.get(pos).filePath;
-			lastPath = startPath;
+			startItem = adapter.list.get(pos);
+			lastItem = startItem;
 		}
 		else {
 			lastMoveEvent = null;
-			startPath = null;
-			lastPath = null;
+			startItem = null;
+			lastItem = null;
 		}
+
+		System.out.println("Selection changed!");
+		System.out.println("Start: "+ startItem);
+		System.out.println("Last:  "+ lastItem);
 
 		super.onSelectedChanged(viewHolder, actionState);
 	}
@@ -144,14 +148,23 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		int lastPos = -1;
 
 		for(int i = 0; i < adapter.list.size(); i++) {
-			Path path = adapter.list.get(i).filePath;
-			if(path.equals(startPath))
+			ListItem item = adapter.list.get(i);
+
+			//ListItems in the adapter can be updated with things like new attr, but otherwise stay the same
+			//So we want to compare properties instead of the objects themselves
+			//Compare both path and type instead of just path in case we're selecting a linkEnd vs a link
+			if(item.filePath.equals(startItem.filePath) && item.type.equals(startItem.type))
 				startPos = i;
-			if(path.equals(lastPath))
+			if(item.filePath.equals(lastItem.filePath) && item.type.equals(lastItem.type))
 				lastPos = i;
+
+			if(startPos != -1 && lastPos != -1)
+				break;
 		}
 		if(startPos == -1 || lastPos == -1)
 			return;
+
+		System.out.println("Selecting from "+startPos+" to "+pos+" with last "+lastPos);
 
 
 		int from = Math.min(startPos, pos);
@@ -179,7 +192,7 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 			}
 		}
 
-		lastPath = adapter.list.get(pos).filePath;
+		lastItem = adapter.list.get(pos);
 	}
 
 

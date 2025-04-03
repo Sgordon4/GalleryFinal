@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.repository.hybrid;
 
 import android.net.Uri;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -69,6 +70,7 @@ public class HybridAPI {
 	}
 
 	private HybridAPI(@NonNull LocalDatabase db, @NonNull Uri storageDir) {
+		Log.i(TAG, "Initializing HybridAPI");
 		listeners = HybridListeners.getInstance();
 		tempExposedDB = db;
 
