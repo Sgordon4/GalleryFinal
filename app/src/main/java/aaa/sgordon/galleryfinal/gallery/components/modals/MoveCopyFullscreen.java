@@ -312,8 +312,19 @@ public class MoveCopyFullscreen extends DialogFragment {
 		@Override
 		public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
 			ListItem item = list.get(position);
+			ListItem parent = null;
 
-			holder.bind(list.get(position));
+			//If the item comes from a link, find the parent
+			if(item.filePath.getNameCount() > 2) {
+				for(int i = position-1; i >= 0; i--) {
+					if(item.parentUID.equals( list.get(i).fileUID) ) {
+						parent = list.get(i);
+						break;
+					}
+				}
+			}
+
+			holder.bind(list.get(position), parent);
 			holder.itemView.setOnClickListener(view -> {
 				Thread thread = new Thread(() -> {
 					updateToolbar(currDirUID, item.fileUID);

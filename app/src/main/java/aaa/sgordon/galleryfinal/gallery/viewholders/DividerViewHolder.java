@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -25,8 +26,8 @@ public class DividerViewHolder extends BaseViewHolder {
 	}
 
 	@Override
-	public void bind(ListItem listItem) {
-		super.bind(listItem);
+	public void bind(@NonNull ListItem listItem, @Nullable ListItem parent) {
+		super.bind(listItem, parent);
 
 		String fileName = FilenameUtils.removeExtension(listItem.name);
 		name.setText(fileName);

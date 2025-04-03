@@ -1,12 +1,15 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
@@ -29,17 +32,38 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class GifViewHolder extends BaseViewHolder {
+	public View wrapper;
 	public ImageView image;
 
 	public GifViewHolder(View itemView) {
 		super(itemView);
 
+		wrapper = itemView.findViewById(R.id.wrapper);
 		image = itemView.findViewById(R.id.media);
 	}
 
 	@Override
-	public void bind(ListItem listItem) {
-		super.bind(listItem);
+	public void bind(@NonNull ListItem listItem, @Nullable ListItem parent) {
+		super.bind(listItem, parent);
+
+		//Change the border color of the wrapper
+		if(parent != null && parent.attr.has("color")) {
+			Drawable background = wrapper.getBackground();
+			if (background instanceof GradientDrawable) {
+				GradientDrawable shapeDrawable = (GradientDrawable) background;
+				shapeDrawable.setStroke(4, parent.attr.get("color").getAsInt());
+			}
+		} else {
+			//Reset the default background color
+			//We need to do this or the card will retain previous background colors from other items thanks to the RecyclerView
+			Drawable background = wrapper.getBackground();
+			if (background instanceof GradientDrawable) {
+				GradientDrawable shapeDrawable = (GradientDrawable) background;
+				shapeDrawable.setStroke(4, Color.TRANSPARENT);
+			}
+		}
+
+
 
 		//We can't call getFileContent without a thread, so just Load a placeholder here
 		Glide.with(image.getContext())

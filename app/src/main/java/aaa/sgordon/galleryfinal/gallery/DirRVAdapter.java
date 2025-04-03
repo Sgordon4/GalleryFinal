@@ -102,11 +102,23 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	@Override
 	public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
 		ListItem item = list.get(position);
+		ListItem parent = null;
+
+		//If the item comes from a link, find the parent
+		if(item.filePath.getNameCount() > 2) {
+			for(int i = position-1; i >= 0; i--) {
+				if(item.parentUID.equals( list.get(i).fileUID) ) {
+					parent = list.get(i);
+					break;
+				}
+			}
+		}
+
 
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
 			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
-		holder.bind(list.get(position));
+		holder.bind(item, parent);
 
 		UUID fileUID = item.fileUID;
 		holder.itemView.setSelected( touchCallback.isItemSelected(fileUID) );

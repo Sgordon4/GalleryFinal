@@ -4,7 +4,7 @@
     <item>
         <selector>
             <item android:state_selected="true"
-                android:drawable="@drawable/selected_border" />
+                android:drawable="@drawable/border_selected" />
         </selector>
     </item>
 

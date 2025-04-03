@@ -5,7 +5,8 @@
     android:id="@+id/wrapper"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="2dp"
+    android:background="@drawable/border_gallery"
+    android:padding="1dp"
     android:clickable="true">
 
     <androidx.cardview.widget.CardView

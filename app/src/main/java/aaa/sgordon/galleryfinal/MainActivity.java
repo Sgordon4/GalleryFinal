@@ -115,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
 				//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
 				// or an actual database will be created.
 				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
+				//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
 
 				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 				viewModel.testInt += 1;

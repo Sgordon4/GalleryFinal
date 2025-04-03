@@ -61,7 +61,55 @@ public class DirSampleData {
 	}
 
 
+
+	public static UUID setupDatabaseSmall(Context context) throws FileNotFoundException, IOException {
+		Log.i(TAG, "Setting up SMALL in-memory database...");
+		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
+		Uri storageDir = MainStorageHandler.getStorageTreeUri(context);
+		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
+		//HybridAPI.initialize(db, context.getCacheDir().toString());
+		HybridAPI.initialize(db, storageDir);
+		HybridAPI hapi = HybridAPI.getInstance();
+
+		//Fake creating the account
+		UUID currentAccount = UUID.randomUUID();
+		hapi.setAccount(currentAccount);
+
+		//Create the root directory for the new account
+		UUID root = hapi.createFile(currentAccount, true, false);
+
+		//Setup files in the root directory
+		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Airplane.jpg");
+		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Vulture.gif");
+		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Horrifying Rabbit.mp4");
+		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 4");
+		DirItem r_f5 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 5");
+		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
+		DirItem r_f6 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 6");
+		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), "1: Child Dir");
+		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 7");
+		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(r_f1, r_f2, r_f3, r_f4, r_f5, r_div1, r_f6, r_d1, r_f7));
+		writeDirList(root, rootItems);
+
+		//Add data to some root files
+		writeUriToFile(r_f1.fileUID, externalUri_Jpg_1MB, externalUri_Jpg_1MB_Checksum);
+		writeUriToFile(r_f2.fileUID, externalUri_Gif_40KB, externalUri_Gif_40KB_Checksum);
+		writeUriToFile(r_f3.fileUID, externalUri_MP4_1MB, externalUri_MP4_1MB_Checksum);
+
+
+		//Add tags to some root files
+		writeAttrToFile(r_f1.fileUID, makeTagAttr("Actual File", "Group A"));
+		writeAttrToFile(r_d1.fileUID, makeTagAttr("Directory", "Group A"));
+
+
+		Log.i(TAG, "Finished setting up in-memory database!");
+
+		return root;
+	}
+
+
 	//TODO Add an external link, a link to a single item, and a link to a file that doesn't exist
+	// Also add a file with no data and a fake file for all of .jpg, .gif, .mp4
 
 
 	//Returns the UUID of the root file
@@ -131,6 +179,17 @@ public class DirSampleData {
 		writeAttrToFile(r_d1.fileUID, makeTagAttr("Directory", "Group A"));
 		writeAttrToFile(r_l1.fileUID, makeTagAttr("Link", "Group A"));
 		writeAttrToFile(r_l3.fileUID, makeTagAttr("Link", "Group B"));
+
+		//Add color to some files
+		JsonObject colorAttr = new JsonObject();
+		colorAttr.addProperty("color", 0xFF00FF00);
+		writeAttrToFile(r_l2.fileUID, colorAttr);
+		colorAttr.addProperty("color", 0xFFFF0000);
+		writeAttrToFile(r_f7.fileUID, colorAttr);
+		colorAttr.addProperty("color", 0xFF0000FF);
+		writeAttrToFile(r_div2.fileUID, colorAttr);
+
+
 
 
 		//Link some root files
