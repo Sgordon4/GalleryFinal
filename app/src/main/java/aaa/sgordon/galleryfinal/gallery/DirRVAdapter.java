@@ -23,6 +23,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolderSmall;
 import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
@@ -132,9 +133,16 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	}
 
 
+	/*
 	private boolean isFullSpan(int viewType) {
 		return viewType == 4 || viewType == 5 || viewType == 6 || viewType == 7 ||
 				viewType == 8 || viewType == 9 || viewType == 10;
+	}
+	 */
+	private boolean isFullSpan(int viewType) {
+		return viewType == 4 || viewType == 5 || viewType == 6 ||
+				//viewType == 7 || viewType == 8 || viewType == 9 ||
+				viewType == 10;
 	}
 	@Override
 	public int getItemViewType(int position) {
@@ -196,11 +204,14 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				break;
 			case 6: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_divider, parent, false));
 				break;
-			case 7: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_broken, parent, false));
+			//case 7: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_broken, parent, false));
+			case 7: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_broken_small, parent, false));
 				break;
-			case 8: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+			//case 8: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+			case 8: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_cycle_small, parent, false));
 				break;
-			case 9: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+			//case 9: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+			case 9: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_cycle_small, parent, false));
 				break;
 			case 10: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
 				break;

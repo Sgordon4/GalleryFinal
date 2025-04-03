@@ -16,13 +16,13 @@ import org.apache.commons.io.FilenameUtils;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 
-public class UnknownViewHolder extends BaseViewHolder {
+public class LinkViewHolderSmall extends BaseViewHolder {
 	public View wrapper;
 	public View color;
 	public ImageView image;
 	public TextView name;
 
-	public UnknownViewHolder(View itemView) {
+	public LinkViewHolderSmall(View itemView) {
 		super(itemView);
 
 		wrapper = itemView.findViewById(R.id.wrapper);

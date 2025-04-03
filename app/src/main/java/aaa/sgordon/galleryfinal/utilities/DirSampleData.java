@@ -182,7 +182,8 @@ public class DirSampleData {
 
 		//Add color to some files
 		JsonObject colorAttr = new JsonObject();
-		colorAttr.addProperty("color", 0xFF00FF00);
+		//colorAttr.addProperty("color", 0xFF00FF00);
+		colorAttr.addProperty("color", 0xFF1CB1B6);
 		writeAttrToFile(r_l2.fileUID, colorAttr);
 		colorAttr.addProperty("color", 0xFFFF0000);
 		writeAttrToFile(r_f7.fileUID, colorAttr);

@@ -80,7 +80,7 @@ public class AdapterTouchSetup {
 					}
 					else {
 						//SingleTap LongPress triggers drag selection
-						dragSelectHelper.startDrag(holder);
+						//dragSelectHelper.startDrag(holder);
 					}
 				}
 
