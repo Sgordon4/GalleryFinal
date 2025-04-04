@@ -1,15 +1,18 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.FragmentNavigator;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.transition.TransitionInflater;
 
 import java.util.UUID;
 
@@ -29,6 +32,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
+import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 
 public class AdapterTouchSetup {
 	public static DirRVAdapter.AdapterCallbacks setupAdapterCallbacks(DirFragment dirFragment, SelectionController selectionController,
@@ -138,6 +142,43 @@ public class AdapterTouchSetup {
 
 
 
+
+
+						// Exit and reenter transitions for this fragment
+						dirFragment.setExitTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.fade));
+						dirFragment.setReenterTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.fade));
+
+						// Move transition for shared element
+						ViewPagerFragment pager = new ViewPagerFragment();
+						//pager.setSharedElementEnterTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.move));
+						//pager.setEnterTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.fade));
+
+
+
+						/*
+						Bundle args = new Bundle();
+						args.putSerializable("directoryUID", dirFragment.dirViewModel.getDirUID());
+						args.putInt("fromPosition", pos);
+						pager.setArguments(args);
+
+						View mediaView = holder.itemView.findViewById(R.id.media);
+						System.out.println("Media transitioning: "+mediaView.getTransitionName());
+						dirFragment.getChildFragmentManager()
+								.beginTransaction()
+								.setReorderingAllowed(true)
+								.addSharedElement(mediaView, mediaView.getTransitionName())
+								.replace(R.id.nav_host_fragment, pager)
+								.addToBackStack(null)
+								.commit();
+
+						 */
+
+
+
+
+
+
+
 						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
 								.actionToViewPagerFragment(dirFragment.dirViewModel.getDirUID());
 						action.setFromPosition(pos);
@@ -150,6 +191,8 @@ public class AdapterTouchSetup {
 
 						//binding.galleryAppbar.appbar.setExpanded(false, false);
 						navController.navigate(action, extras);
+
+
 					}
 					return true;
 				}

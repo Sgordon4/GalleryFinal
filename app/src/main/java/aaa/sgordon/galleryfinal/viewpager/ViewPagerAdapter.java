@@ -1,9 +1,5 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
-import android.util.Pair;
-import android.view.View;
-import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DiffUtil;
@@ -12,14 +8,10 @@ import androidx.viewpager2.adapter.FragmentViewHolder;
 
 import org.apache.commons.io.FilenameUtils;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
 	public List<ListItem> list;
@@ -63,15 +55,16 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@NonNull
 	@Override
 	public Fragment createFragment(int position) {
-		String fileExtension = FilenameUtils.getExtension( list.get(position).name );
+		ListItem item = list.get(position);
+		String fileExtension = FilenameUtils.getExtension( item.name );
 
 		switch (fileExtension) {
 			case "gif":
-				return new GifFragment( list.get(position) );
+				return new GifFragment(item);
 			case "mp4":
-				return new VideoFragment( list.get(position) );
+				return new VideoFragment(item);
 			default:
-				return new ImageFragment( list.get(position) );
+				return new ImageFragment(item);
 		}
 	}
 

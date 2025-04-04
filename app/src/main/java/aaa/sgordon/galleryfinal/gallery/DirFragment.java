@@ -22,6 +22,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.SharedElementCallback;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -99,6 +100,20 @@ public class DirFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		binding = FragDirBinding.inflate(inflater, container, false);
+
+		setExitSharedElementCallback(new SharedElementCallback() {
+			@Override
+			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				if(names.isEmpty()) return;
+
+				ViewGroup item = (ViewGroup) binding.recyclerview.getChildAt(0);
+				View media = item.findViewById(R.id.media);
+
+				sharedElements.put(names.get(0), media);
+			}
+		});
+
+
 		return binding.getRoot();
 	}
 

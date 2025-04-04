@@ -116,8 +116,10 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		}
 
 
-		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
-			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
+			System.out.println("Transition name is "+ item.filePath + item.name);
+			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString() + item.name);
+		}
 
 		holder.bind(item, parent);
 
