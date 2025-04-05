@@ -47,6 +47,8 @@ public class DirectoryViewModel extends ViewModel {
 	public final MutableLiveData< List<ListItem> > fileList;
 	public final MutableLiveData< Map<String, Set<UUID>> > fileTags;
 
+	public ListItem viewPagerCurrItem = null;
+
 
 	public UUID getDirUID() {
 		return currDirUID;

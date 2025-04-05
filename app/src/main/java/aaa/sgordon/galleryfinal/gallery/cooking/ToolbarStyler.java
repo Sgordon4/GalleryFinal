@@ -6,8 +6,6 @@ import android.view.View;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 
 import com.google.android.material.appbar.MaterialToolbar;
 
@@ -37,17 +35,16 @@ public class ToolbarStyler {
 
 
 
-		NavController navController = Navigation.findNavController(binding.getRoot());
-		toolbar.setNavigationOnClickListener(view4 -> navController.popBackStack());
+		toolbar.setNavigationOnClickListener(view4 -> dirFragment.getParentFragmentManager().popBackStack());
 
 		selectionToolbar.setNavigationOnClickListener(view2 -> selectionController.stopSelecting());
 
+		System.out.println("TOOLBAR SAYS "+dirFragment.getParentFragmentManager().getBackStackEntryCount());
 
 		//Hide the navigation icon when we're at the top-level
-		navController.addOnDestinationChangedListener((navController1, navDestination, bundle) -> {
-			if(navController1.getPreviousBackStackEntry() == null)
-				toolbar.setNavigationIcon(null);
-		});
+		if(dirFragment.getParentFragmentManager().getBackStackEntryCount() <= 1)
+			toolbar.setNavigationIcon(null);
+
 
 		//TODO Have DirViewModel store a ListItem and use that here instead of directly grabbing args
 		//Must set title after configuration

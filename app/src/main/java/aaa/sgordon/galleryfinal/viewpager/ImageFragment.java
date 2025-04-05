@@ -59,8 +59,8 @@ public class ImageFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 
 		ImageView media = binding.media;
-		media.setTransitionName(item.filePath.toString()+item.name);
-		System.out.println("Page transition name: "+ item.filePath +item.name);
+		media.setTransitionName(item.filePath.toString());
+		System.out.println("Page transition name: "+ item.filePath);
 		startPostponedEnterTransition();
 
 

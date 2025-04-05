@@ -11,7 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragViewpagerBinding;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
@@ -36,18 +39,37 @@ public class ViewPagerFragment extends Fragment {
 	private DirectoryViewModel dirViewModel;
 	private int currPos = -1;
 
+
+	public static ViewPagerFragment initialize(UUID dirUID, int fromPosition) {
+		ViewPagerFragment fragment = new ViewPagerFragment();
+
+		Bundle bundle = new Bundle();
+		bundle.putSerializable("directoryUID", dirUID);
+		bundle.putInt("fromPosition", fromPosition);
+		fragment.setArguments(bundle);
+
+		return fragment;
+	}
+
+
+	@Override
+	public void onStop() {
+		ViewPagerAdapter adapter = (ViewPagerAdapter) binding.viewpager.getAdapter();
+		dirViewModel.viewPagerCurrItem = adapter.list.get(binding.viewpager.getCurrentItem());
+
+		super.onStop();
+	}
+
+
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		System.out.println("AAAAAAAAAA");
 
 		List<Fragment> fragments = getParentFragmentManager().getFragments();
 		System.out.println(Arrays.toString(fragments.toArray()));
 		System.out.println(fragments.size());
 
 		System.out.println(getParentFragment());
-		System.out.println(getParentFragment().getChildFragmentManager().getFragments());
 
 
 
@@ -57,6 +79,7 @@ public class ViewPagerFragment extends Fragment {
 		setSharedElementEnterTransition(transition);
 		 */
 
+		/*
 		requireActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
 			@Override
 			public void handleOnBackPressed() {
@@ -66,10 +89,15 @@ public class ViewPagerFragment extends Fragment {
 			}
 		});
 
+		 */
+
 
 		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
-		dirViewModel = new ViewModelProvider(requireParentFragment(),
+
+		ViewModelStoreOwner owner = DirFragment.ViewModelOwner.getOrCreateOwner(getParentFragmentManager(), directoryUID.toString());
+
+		dirViewModel = new ViewModelProvider(owner,
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
 	}

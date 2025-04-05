@@ -17,8 +17,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
 
 import com.bumptech.glide.Glide;
 
@@ -27,8 +25,9 @@ import java.io.IOException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
+import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
@@ -137,7 +136,8 @@ public class MainActivity extends AppCompatActivity {
 					transaction.commit();
 					/**/
 
-					launchNavGraph(rootDirectoryUID);
+					//launchNavGraph(rootDirectoryUID);
+					launch(rootDirectoryUID);
 				});
 			}
 			catch (FileNotFoundException e) { throw new RuntimeException(e); }
@@ -147,16 +147,16 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
-	private void launchNavGraph(UUID rootDirectoryUID) {
-		NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
-				.findFragmentById(R.id.nav_host_fragment);
-		NavController navController = navHostFragment.getNavController();
+	private void launch(UUID rootDirectoryUID) {
+		DirFragment fragment = DirFragment.initialize(getSupportFragmentManager(), rootDirectoryUID, "Gallery App");
 
-		Bundle bundle = new Bundle();
-		bundle.putSerializable("directoryUID", rootDirectoryUID);
-		bundle.putString("directoryName", rootDirectoryUID.toString());
-		navController.setGraph(R.navigation.nav_graph, bundle);
+		getSupportFragmentManager()
+				.beginTransaction()
+				.replace(R.id.fragment_container, fragment)
+				.addToBackStack(null)
+				.commit();
 	}
+
 
 
 

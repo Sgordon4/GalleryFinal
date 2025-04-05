@@ -1,26 +1,22 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.navigation.NavController;
-import androidx.navigation.fragment.FragmentNavigator;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.transition.TransitionInflater;
+
+import com.google.android.material.transition.MaterialContainerTransform;
+import com.google.android.material.transition.MaterialFadeThrough;
 
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
-import aaa.sgordon.galleryfinal.gallery.DirFragmentDirections;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
-import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
@@ -37,7 +33,7 @@ import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 public class AdapterTouchSetup {
 	public static DirRVAdapter.AdapterCallbacks setupAdapterCallbacks(DirFragment dirFragment, SelectionController selectionController,
 																	  ItemReorderCallback reorderCallback, DragSelectCallback dragSelectCallback, Context context,
-																	  ItemTouchHelper reorderHelper, ItemTouchHelper dragSelectHelper, NavController navController) {
+																	  ItemTouchHelper reorderHelper, ItemTouchHelper dragSelectHelper) {
 		return new DirRVAdapter.AdapterCallbacks() {
 			@Override
 			public boolean isItemSelected(UUID fileUID) {
@@ -104,22 +100,21 @@ public class AdapterTouchSetup {
 
 							if(!password.isEmpty()) {
 								PasswordModal.launch(dirFragment, listItem.name, password, () -> {
-									//Upon successful password entry, launch the directory fragment
-									DirFragmentDirections.ActionToDirectoryFragment action =
-											DirFragmentDirections.actionToDirectoryFragment(listItem.fileUID);
-
-									action.setDirectoryName(listItem.name);
-									navController.navigate(action);
+									DirFragment fragment = DirFragment.initialize(dirFragment.getParentFragmentManager(), listItem.fileUID, listItem.name);
+									dirFragment.getParentFragmentManager().beginTransaction()
+											.replace(R.id.fragment_container, fragment)
+											.addToBackStack(null)
+											.commit();
 								});
 							}
 						}
 						//If there is no password, launch the directory fragment
 						else {
-							DirFragmentDirections.ActionToDirectoryFragment action =
-									DirFragmentDirections.actionToDirectoryFragment(listItem.fileUID);
-
-							action.setDirectoryName(listItem.name);
-							navController.navigate(action);
+							DirFragment fragment = DirFragment.initialize(dirFragment.getParentFragmentManager(), listItem.fileUID, listItem.name);
+							dirFragment.getParentFragmentManager().beginTransaction()
+									.replace(R.id.fragment_container, fragment)
+									.addToBackStack(null)
+									.commit();
 						}
 					}
 
@@ -141,58 +136,22 @@ public class AdapterTouchSetup {
 						 */
 
 
+						System.out.println("Pos is "+pos);
+						ViewPagerFragment fragment = ViewPagerFragment.initialize(dirFragment.dirViewModel.getDirUID(), pos);
 
+						View media = holder.itemView.findViewById(R.id.media);
+						System.out.println("Launch transition name: "+media.getTransitionName());
 
+						// Set up shared element transition
+						dirFragment.setExitTransition(new MaterialFadeThrough());
+						fragment.setSharedElementEnterTransition(new MaterialContainerTransform());
 
-						// Exit and reenter transitions for this fragment
-						dirFragment.setExitTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.fade));
-						dirFragment.setReenterTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.fade));
-
-						// Move transition for shared element
-						ViewPagerFragment pager = new ViewPagerFragment();
-						//pager.setSharedElementEnterTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.move));
-						//pager.setEnterTransition(TransitionInflater.from(dirFragment.requireContext()).inflateTransition(android.R.transition.fade));
-
-
-
-						/*
-						Bundle args = new Bundle();
-						args.putSerializable("directoryUID", dirFragment.dirViewModel.getDirUID());
-						args.putInt("fromPosition", pos);
-						pager.setArguments(args);
-
-						View mediaView = holder.itemView.findViewById(R.id.media);
-						System.out.println("Media transitioning: "+mediaView.getTransitionName());
-						dirFragment.getChildFragmentManager()
-								.beginTransaction()
+						dirFragment.getParentFragmentManager().beginTransaction()
 								.setReorderingAllowed(true)
-								.addSharedElement(mediaView, mediaView.getTransitionName())
-								.replace(R.id.nav_host_fragment, pager)
+								.addSharedElement(media, media.getTransitionName())
+								.replace(R.id.fragment_container, fragment)
 								.addToBackStack(null)
 								.commit();
-
-						 */
-
-
-
-
-
-
-
-						DirFragmentDirections.ActionToViewPagerFragment action = DirFragmentDirections
-								.actionToViewPagerFragment(dirFragment.dirViewModel.getDirUID());
-						action.setFromPosition(pos);
-
-						View mediaView = holder.itemView.findViewById(R.id.media);
-
-						FragmentNavigator.Extras extras = new FragmentNavigator.Extras.Builder()
-								.addSharedElement(mediaView, mediaView.getTransitionName())
-								.build();
-
-						//binding.galleryAppbar.appbar.setExpanded(false, false);
-						navController.navigate(action, extras);
-
-
 					}
 					return true;
 				}

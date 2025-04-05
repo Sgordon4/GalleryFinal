@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,17 +24,17 @@ import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +50,7 @@ import aaa.sgordon.galleryfinal.gallery.cooking.ToolbarStyler;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
@@ -66,6 +66,36 @@ public class DirFragment extends Fragment {
 	private MenuItemHelper menuItemHelper;
 	private SelectionController selectionController;
 
+
+	public static DirFragment initialize(FragmentManager fragManager, UUID dirUID, String dirName) {
+		DirFragment fragment = new DirFragment();
+
+		Bundle bundle = new Bundle();
+		bundle.putSerializable("directoryUID", dirUID);
+		bundle.putString("directoryName", dirName);
+		fragment.setArguments(bundle);
+
+		//Initialize the viewmodel owner before launching the fragment
+		ViewModelOwner.getOrCreateOwner(fragManager, dirUID.toString());
+
+		return fragment;
+	}
+
+	public static class ViewModelOwner extends Fragment {
+		// Empty class: we just use it as a ViewModelStoreOwner
+
+		public static ViewModelStoreOwner getOrCreateOwner(FragmentManager fm, String tag) {
+			Fragment existing = fm.findFragmentByTag(tag);
+			if (existing != null) return existing;
+
+			ViewModelOwner holder = new ViewModelOwner();
+			fm.beginTransaction().add(holder, tag).commitNow(); // commitNow ensures it's available immediately
+			return holder;
+		}
+	}
+
+
+
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -75,7 +105,10 @@ public class DirFragment extends Fragment {
 
 		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
-		dirViewModel = new ViewModelProvider(this,
+
+
+		ViewModelStoreOwner owner = ViewModelOwner.getOrCreateOwner(requireActivity().getSupportFragmentManager(), directoryUID.toString());
+		dirViewModel = new ViewModelProvider(owner,
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
 
@@ -104,12 +137,32 @@ public class DirFragment extends Fragment {
 		setExitSharedElementCallback(new SharedElementCallback() {
 			@Override
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				System.out.println("EXITING BITCHESSSS");
 				if(names.isEmpty()) return;
 
-				ViewGroup item = (ViewGroup) binding.recyclerview.getChildAt(0);
-				View media = item.findViewById(R.id.media);
+				ListItem vpItem = dirViewModel.viewPagerCurrItem;
+				if(vpItem == null) return;
+				dirViewModel.viewPagerCurrItem = null;
 
-				sharedElements.put(names.get(0), media);
+				DirRVAdapter adapter = (DirRVAdapter) binding.recyclerview.getAdapter();
+				for(int i = 0; i < adapter.list.size(); i++) {
+					if(adapter.list.get(i).filePath.equals(vpItem.filePath)) {
+						binding.recyclerview.scrollToPosition(i);
+						System.out.println("Found at "+i);
+
+						//Get the child for the adapter position
+						BaseViewHolder holder = (BaseViewHolder) binding.recyclerview.findViewHolderForAdapterPosition(i);
+						if(holder == null) return;
+						View media = holder.itemView.findViewById(R.id.media);
+						if(media == null) return;
+
+						System.out.println("Names: "+ Arrays.asList(names.toArray()));
+						System.out.println("Media: "+ media.getTransitionName());
+
+						sharedElements.put(names.get(0), media);
+						break;
+					}
+				}
 			}
 		});
 
@@ -296,9 +349,8 @@ public class DirFragment extends Fragment {
 
 
 
-		NavController navController = Navigation.findNavController(view);
 		DirRVAdapter.AdapterCallbacks adapterCallbacks = AdapterTouchSetup.setupAdapterCallbacks(this, selectionController,
-				reorderCallback, dragSelectCallback, requireContext(), reorderHelper, dragSelectHelper, navController);
+				reorderCallback, dragSelectCallback, requireContext(), reorderHelper, dragSelectHelper);
 		adapter.setCallbacks(adapterCallbacks);
 
 
@@ -334,8 +386,8 @@ public class DirFragment extends Fragment {
 				else if(selectionController.isSelecting()) {
 					selectionController.stopSelecting();
 				}
-				else if (navController.getPreviousBackStackEntry() != null) {
-					navController.popBackStack();
+				else if (getParentFragmentManager().getBackStackEntryCount() > 1) {
+					getParentFragmentManager().popBackStack();
 				} else {
 					requireActivity().finish(); // Close the app if no back stack
 				}
