@@ -2,18 +2,24 @@ package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Path;
 import android.os.Handler;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.PathInterpolator;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.view.animation.PathInterpolatorCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.transition.PathMotion;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
 import androidx.transition.TransitionSet;
 
+import com.google.android.material.transition.Hold;
 import com.google.android.material.transition.MaterialContainerTransform;
 import com.google.android.material.transition.MaterialFadeThrough;
 
@@ -136,14 +142,20 @@ public class AdapterTouchSetup {
 
 						//Fade out the grid when exiting
 						dirFragment.setExitTransition(new MaterialFadeThrough());
+						//dirFragment.setExitTransition(new Hold());
 
 						//Translate the selected item to the ViewPager
 						MaterialContainerTransform transform = new MaterialContainerTransform();
-						transform.setDuration(400);
+						transform.setDuration(4000);
 						transform.setDrawingViewId(R.id.fragment_container);
-						transform.setFitMode(MaterialContainerTransform.FIT_MODE_AUTO); // or FIT_MODE_WIDTH
-						transform.setFadeMode(MaterialContainerTransform.FADE_MODE_THROUGH);
+						transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
+						transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
 						fragment.setSharedElementEnterTransition(transform);
+
+						//TODO The ViewHolder image scales up/down too quickly, and is too large when the
+						// transform swaps the views, causing a perceived jump. I'm not sure how to resolve this,
+						// like how to slow the scaling of the RV image or do something else.
+						// Keyword scaling tempo mismatch
 
 
 

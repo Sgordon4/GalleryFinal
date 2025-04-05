@@ -55,6 +55,7 @@ public class ImageViewHolder extends BaseViewHolder {
 				.diskCacheStrategy(DiskCacheStrategy.ALL)
 				.centerCrop()
 				.override(150, 150)
+				.dontAnimate()
 				.into(image);
 
 

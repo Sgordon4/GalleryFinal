@@ -91,12 +91,6 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 
 		//If the target is null, the item is not a link. Get the content uri from the fileUID's content
 		if (target == null) {
-				/*
-				HFile props = hAPI.getFileProps(uuid);
-				Uri uri = RemoteRepo.getInstance().getContentDownloadUri(props.checksum);
-				return new Pair<>(uri, props.checksum);
-				 */
-
 			return hAPI.getFileContent(uuid);
 		}
 		//If the target is internal, get the content uri from that fileUID's content

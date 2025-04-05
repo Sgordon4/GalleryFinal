@@ -58,7 +58,7 @@ public class VideoFragment extends Fragment {
 		playerView.setPlayer(player);
 
 
-		requireParentFragment().startPostponedEnterTransition();
+		//requireParentFragment().startPostponedEnterTransition();
 
 
 		Thread thread = new Thread(() -> {
@@ -74,6 +74,8 @@ public class VideoFragment extends Fragment {
 					player.setMediaItem(mediaItem);
 					player.prepare();
 					player.setPlayWhenReady(true);
+
+					requireParentFragment().startPostponedEnterTransition();
 				});
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {

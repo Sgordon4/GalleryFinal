@@ -51,6 +51,7 @@ public class ImageFragment extends Fragment {
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
 				.load(fileUID)
+				.dontAnimate()
 				.into(media);
 	}
 }
