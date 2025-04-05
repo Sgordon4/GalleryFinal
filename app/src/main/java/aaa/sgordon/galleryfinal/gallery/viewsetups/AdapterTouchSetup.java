@@ -146,7 +146,7 @@ public class AdapterTouchSetup {
 
 						//Translate the selected item to the ViewPager
 						MaterialContainerTransform transform = new MaterialContainerTransform();
-						transform.setDuration(4000);
+						transform.setDuration(300);
 						transform.setDrawingViewId(R.id.fragment_container);
 						transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
 						transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
