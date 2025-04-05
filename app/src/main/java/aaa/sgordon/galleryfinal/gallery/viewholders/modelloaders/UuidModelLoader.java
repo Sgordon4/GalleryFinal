@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.hybrid;
+package aaa.sgordon.galleryfinal.gallery.viewholders.modelloaders;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.hybrid;
+package aaa.sgordon.galleryfinal.gallery.viewholders.modelloaders;
 
 import android.net.Uri;
 import android.util.Pair;
@@ -20,8 +20,6 @@ import java.util.concurrent.Executors;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
-import aaa.sgordon.galleryfinal.repository.remote.RemoteRepo;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 
 public class UuidToUriFetcher implements DataFetcher<InputStream> {

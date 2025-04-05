@@ -3,9 +3,6 @@ package aaa.sgordon.galleryfinal.gallery.viewholders;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.net.Uri;
-import android.os.Handler;
-import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -13,23 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
-import com.bumptech.glide.signature.ObjectKey;
-
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.cim.ChecksumKeyModel;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageViewHolder extends BaseViewHolder {
 	public View wrapper;

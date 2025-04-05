@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing;
+package aaa.sgordon.galleryfinal.gallery.viewholders.modelloaders;
 
 import android.content.Context;
 
@@ -12,15 +12,10 @@ import com.bumptech.glide.module.AppGlideModule;
 import java.io.InputStream;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.cim.ChecksumKeyModel;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.cim.ChecksumKeyModelLoader;
-import aaa.sgordon.galleryfinal.gallery.viewholders.glidecacheing.hybrid.UuidModelLoader;
-
 @GlideModule
 public class CustomGlideModule extends AppGlideModule {
 	@Override
 	public void registerComponents(@NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
 		registry.append(UUID.class, InputStream.class, new UuidModelLoader.Factory());
-		registry.append(ChecksumKeyModel.class, InputStream.class, new ChecksumKeyModelLoader.Factory());
 	}
 }
