@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.os.Handler;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -8,6 +10,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.transition.Transition;
+import androidx.transition.TransitionInflater;
+import androidx.transition.TransitionSet;
 
 import com.google.android.material.transition.MaterialContainerTransform;
 import com.google.android.material.transition.MaterialFadeThrough;
@@ -100,7 +105,7 @@ public class AdapterTouchSetup {
 
 							if(!password.isEmpty()) {
 								PasswordModal.launch(dirFragment, listItem.name, password, () -> {
-									DirFragment fragment = DirFragment.initialize(dirFragment.getParentFragmentManager(), listItem.fileUID, listItem.name);
+									DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
 									dirFragment.getParentFragmentManager().beginTransaction()
 											.replace(R.id.fragment_container, fragment)
 											.addToBackStack(null)
@@ -110,7 +115,7 @@ public class AdapterTouchSetup {
 						}
 						//If there is no password, launch the directory fragment
 						else {
-							DirFragment fragment = DirFragment.initialize(dirFragment.getParentFragmentManager(), listItem.fileUID, listItem.name);
+							DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
 							dirFragment.getParentFragmentManager().beginTransaction()
 									.replace(R.id.fragment_container, fragment)
 									.addToBackStack(null)
@@ -123,35 +128,53 @@ public class AdapterTouchSetup {
 						//int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
 						int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
 
-						//Transition is causing visual problems I don't like, and Google photos
-						// doesn't even use an exit transition, so I'm disabling it
-						/*
-						//Fade out the grid when transitioning
-						setExitTransition(TransitionInflater.from(getContext())
-								.inflateTransition(R.transition.grid_fade_transition));
-
-						// Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
-						// instead of fading out with the rest to prevent an overlapping animation of fade and move).
-						((TransitionSet) getExitTransition()).excludeTarget(holder.itemView.findViewById(R.id.child), true);
-						 */
-
-
-						System.out.println("Pos is "+pos);
 						ViewPagerFragment fragment = ViewPagerFragment.initialize(dirFragment.dirViewModel.getDirUID(), pos);
 
 						View media = holder.itemView.findViewById(R.id.media);
-						System.out.println("Launch transition name: "+media.getTransitionName());
 
-						// Set up shared element transition
+
+						//Fade out the grid when exiting
 						dirFragment.setExitTransition(new MaterialFadeThrough());
-						fragment.setSharedElementEnterTransition(new MaterialContainerTransform());
+
+
+
+
+						//fragment.setSharedElementEnterTransition(new MaterialContainerTransform());
+
+						Transition transition = TransitionInflater.from(dirFragment.requireContext())
+								.inflateTransition(R.transition.image_shared_element_transition);
+						//fragment.setSharedElementEnterTransition(transition);
+
+						MaterialContainerTransform transform = new MaterialContainerTransform();
+						transform.setDuration(300);
+						transform.setDrawingViewId(R.id.fragment_container);
+						transform.setScrimColor(Color.TRANSPARENT);
+						transform.setAllContainerColors(Color.TRANSPARENT);
+						transform.setFitMode(MaterialContainerTransform.FIT_MODE_AUTO); // or FIT_MODE_WIDTH
+						transform.setFadeMode(MaterialContainerTransform.FADE_MODE_THROUGH);
+						fragment.setSharedElementEnterTransition(transform);
+
+
+
 
 						dirFragment.getParentFragmentManager().beginTransaction()
 								.setReorderingAllowed(true)
 								.addSharedElement(media, media.getTransitionName())
-								.replace(R.id.fragment_container, fragment)
+								.hide(dirFragment)
+								.add(R.id.fragment_container, fragment)
 								.addToBackStack(null)
 								.commit();
+
+
+
+						Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
+						handler.postDelayed(() -> {
+							media.setScaleX(1f);
+							media.setScaleY(1f);
+							media.setRotation(0f);
+							//dirFragment.binding.recyclerview.getAdapter().notifyItemChanged(pos);
+						}, 1000);
+
 					}
 					return true;
 				}

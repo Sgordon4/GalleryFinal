@@ -24,9 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,7 +32,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +64,7 @@ public class DirFragment extends Fragment {
 	private SelectionController selectionController;
 
 
-	public static DirFragment initialize(FragmentManager fragManager, UUID dirUID, String dirName) {
+	public static DirFragment initialize(UUID dirUID, String dirName) {
 		DirFragment fragment = new DirFragment();
 
 		Bundle bundle = new Bundle();
@@ -75,23 +72,7 @@ public class DirFragment extends Fragment {
 		bundle.putString("directoryName", dirName);
 		fragment.setArguments(bundle);
 
-		//Initialize the viewmodel owner before launching the fragment
-		ViewModelOwner.getOrCreateOwner(fragManager, dirUID.toString());
-
 		return fragment;
-	}
-
-	public static class ViewModelOwner extends Fragment {
-		// Empty class: we just use it as a ViewModelStoreOwner
-
-		public static ViewModelStoreOwner getOrCreateOwner(FragmentManager fm, String tag) {
-			Fragment existing = fm.findFragmentByTag(tag);
-			if (existing != null) return existing;
-
-			ViewModelOwner holder = new ViewModelOwner();
-			fm.beginTransaction().add(holder, tag).commitNow(); // commitNow ensures it's available immediately
-			return holder;
-		}
 	}
 
 
@@ -106,9 +87,7 @@ public class DirFragment extends Fragment {
 		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
 
-
-		ViewModelStoreOwner owner = ViewModelOwner.getOrCreateOwner(requireActivity().getSupportFragmentManager(), directoryUID.toString());
-		dirViewModel = new ViewModelProvider(owner,
+		dirViewModel = new ViewModelProvider(this,
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
 
@@ -130,6 +109,40 @@ public class DirFragment extends Fragment {
 		});
 	}
 
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		System.out.println("Resuming");
+		//setExitTransition(null); // Clears the transition when returning
+		//setExitSharedElementCallback(null);
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		System.out.println("Starting");
+	}
+
+	@Override
+	public void onPause() {
+		System.out.println("Pausing");
+		super.onPause();
+	}
+
+	@Override
+	public void onStop() {
+		System.out.println("Stopping");
+		super.onStop();
+	}
+
+	@Override
+	public void onHiddenChanged(boolean hidden) {
+		super.onHiddenChanged(hidden);
+		System.out.println("Hidden changed: "+hidden);
+	}
+
+	//public int VPStartPos = -1;
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		binding = FragDirBinding.inflate(inflater, container, false);
@@ -137,32 +150,49 @@ public class DirFragment extends Fragment {
 		setExitSharedElementCallback(new SharedElementCallback() {
 			@Override
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				System.out.println("EXITING BITCHESSSS");
-				if(names.isEmpty()) return;
+				System.out.println("Mapping");
+
 
 				ListItem vpItem = dirViewModel.viewPagerCurrItem;
 				if(vpItem == null) return;
 				dirViewModel.viewPagerCurrItem = null;
 
+				System.out.println("Actually mapping");
+
+
+				//Get the adapter position of the ViewPager item
 				DirRVAdapter adapter = (DirRVAdapter) binding.recyclerview.getAdapter();
+				int adapterPos = -1;
 				for(int i = 0; i < adapter.list.size(); i++) {
 					if(adapter.list.get(i).filePath.equals(vpItem.filePath)) {
-						binding.recyclerview.scrollToPosition(i);
-						System.out.println("Found at "+i);
-
-						//Get the child for the adapter position
-						BaseViewHolder holder = (BaseViewHolder) binding.recyclerview.findViewHolderForAdapterPosition(i);
-						if(holder == null) return;
-						View media = holder.itemView.findViewById(R.id.media);
-						if(media == null) return;
-
-						System.out.println("Names: "+ Arrays.asList(names.toArray()));
-						System.out.println("Media: "+ media.getTransitionName());
-
-						sharedElements.put(names.get(0), media);
+						adapterPos = i;
 						break;
 					}
 				}
+				if(adapterPos == -1) return;
+
+				/*
+				System.out.println("Pos: "+VPStartPos+"::"+adapterPos);
+				if(VPStartPos != adapterPos)
+					binding.recyclerview.getAdapter().notifyItemChanged(VPStartPos);
+				VPStartPos = -1;
+
+				 */
+
+
+				binding.recyclerview.scrollToPosition(adapterPos);
+
+				//Get the child for the adapter position
+				BaseViewHolder holder = (BaseViewHolder) binding.recyclerview.findViewHolderForAdapterPosition(adapterPos);
+				if(holder == null) return;
+				View media = holder.itemView.findViewById(R.id.media);
+				if(media == null) return;
+
+				sharedElements.put(names.get(0), media);
+
+
+
+
 			}
 		});
 
@@ -288,7 +318,6 @@ public class DirFragment extends Fragment {
 
 		//Deselect any items that were removed from the list
 		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
-			System.out.println("Trimming items");
 			if(selectionController.isSelecting()) {
 				//Grab all UUIDs from the full list
 				Set<UUID> inAdapter = adapter.list.stream()
@@ -454,12 +483,6 @@ public class DirFragment extends Fragment {
 
 
 
-	@Override
-	public void onResume() {
-		super.onResume();
-		setExitTransition(null); // Clears the transition when returning
-		setExitSharedElementCallback(null);
-	}
 
 	@Override
 	public void onDestroyView() {

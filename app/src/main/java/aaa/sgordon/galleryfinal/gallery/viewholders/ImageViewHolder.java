@@ -120,7 +120,7 @@ public class ImageViewHolder extends BaseViewHolder {
 							.onlyRetrieveFromCache(true)				//Try loading from the cache only
 							.centerCrop()
 							.override(150, 150)
-							.placeholder(R.drawable.ic_launcher_foreground)
+							//.placeholder(R.drawable.ic_launcher_foreground)
 							.error(normalLoad)								//If cache misses, load normally
 							.into(image);
 

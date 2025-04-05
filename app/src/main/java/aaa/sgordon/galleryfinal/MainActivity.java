@@ -113,8 +113,8 @@ public class MainActivity extends AppCompatActivity {
 			try {
 				//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
 				// or an actual database will be created.
-				//UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
-				UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
+				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
+				//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
 
 				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 				viewModel.testInt += 1;
@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 	private void launch(UUID rootDirectoryUID) {
-		DirFragment fragment = DirFragment.initialize(getSupportFragmentManager(), rootDirectoryUID, "Gallery App");
+		DirFragment fragment = DirFragment.initialize(rootDirectoryUID, "Gallery App");
 
 		getSupportFragmentManager()
 				.beginTransaction()

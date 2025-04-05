@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 
 import java.io.FileNotFoundException;
@@ -60,7 +61,6 @@ public class ImageFragment extends Fragment {
 
 		ImageView media = binding.media;
 		media.setTransitionName(item.filePath.toString());
-		System.out.println("Page transition name: "+ item.filePath);
 		startPostponedEnterTransition();
 
 
@@ -74,7 +74,7 @@ public class ImageFragment extends Fragment {
 				Uri content = hAPI.getFileContent(fileUID).first;
 				mainHandler.post(() ->
 					Glide.with(media.getContext())
-						.load(content)
+							.load(content)
 							.listener(new RequestListener<Drawable>() {
 								@Override
 								public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
@@ -88,9 +88,10 @@ public class ImageFragment extends Fragment {
 									return false;
 								}
 							})
-						//.placeholder(R.drawable.ic_launcher_foreground)
-						.error(R.drawable.ic_launcher_background)
-						.into(media));
+							.apply(new RequestOptions().dontTransform())
+							//.placeholder(R.drawable.ic_launcher_foreground)
+							.error(R.drawable.ic_launcher_background)
+							.into(media));
 			}
 			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				//Do nothing

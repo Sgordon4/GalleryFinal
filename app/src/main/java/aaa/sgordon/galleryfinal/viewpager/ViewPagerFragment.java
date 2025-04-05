@@ -33,6 +33,7 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 //https://github.com/android/animation-samples/tree/main/GridToPager
+//https://www.thedroidsonroids.com/blog/how-to-use-shared-element-transition-with-glide-in-4-steps
 
 public class ViewPagerFragment extends Fragment {
 	private FragViewpagerBinding binding;
@@ -57,47 +58,57 @@ public class ViewPagerFragment extends Fragment {
 		ViewPagerAdapter adapter = (ViewPagerAdapter) binding.viewpager.getAdapter();
 		dirViewModel.viewPagerCurrItem = adapter.list.get(binding.viewpager.getCurrentItem());
 
+		System.out.println("Setting data");
 		super.onStop();
 	}
 
+
+	/*
+	@Override
+	public void onDestroyView() {
+		System.out.println("Destroying view");
+		super.onDestroyView();
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		System.out.println("Resuming");
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+		System.out.println("Starting");
+	}
+
+	@Override
+	public void onPause() {
+		System.out.println("Pausing");
+		super.onPause();
+	}
+
+	 */
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		DirFragment dirFragment = null;
 		List<Fragment> fragments = getParentFragmentManager().getFragments();
-		System.out.println(Arrays.toString(fragments.toArray()));
-		System.out.println(fragments.size());
-
-		System.out.println(getParentFragment());
-
-
-
-		/*
-		Transition transition = TransitionInflater.from(getContext())
-				.inflateTransition(R.transition.image_shared_element_transition);
-		setSharedElementEnterTransition(transition);
-		 */
-
-		/*
-		requireActivity().getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
-			@Override
-			public void handleOnBackPressed() {
-				Bundle result = new Bundle();
-				result.putInt("viewpage", currPos);
-				getParentFragmentManager().setFragmentResult("viewpage", result);
+		for(Fragment fragment : fragments) {
+			if(fragment instanceof DirFragment) {
+				dirFragment = (DirFragment) fragment;
+				break;
 			}
-		});
-
-		 */
+		}
+		if(dirFragment == null) throw new RuntimeException("Directory fragment not found");
 
 
 		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
 		UUID directoryUID = args.getDirectoryUID();
 
-		ViewModelStoreOwner owner = DirFragment.ViewModelOwner.getOrCreateOwner(getParentFragmentManager(), directoryUID.toString());
-
-		dirViewModel = new ViewModelProvider(owner,
+		dirViewModel = new ViewModelProvider(dirFragment,
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
 	}
@@ -115,6 +126,7 @@ public class ViewPagerFragment extends Fragment {
 		setEnterSharedElementCallback(new SharedElementCallback() {
 			@Override
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				System.out.println("Mapping in viewpager");
 				if(names.isEmpty()) return;
 
 				//Get the currently displayed ViewPage and the media view inside of it
@@ -137,9 +149,6 @@ public class ViewPagerFragment extends Fragment {
 		binding.viewpager.setAdapter(adapter);
 		binding.viewpager.setOffscreenPageLimit(1);
 
-
-		//Transition transition = TransitionInflater.from(requireContext()).inflateTransition(R.transition.image_shared_element_transition);
-		//setSharedElementEnterTransition(transition);
 
 		dirViewModel.getFilterRegistry().filteredList.observe(getViewLifecycleOwner(), this::updateList);
 
