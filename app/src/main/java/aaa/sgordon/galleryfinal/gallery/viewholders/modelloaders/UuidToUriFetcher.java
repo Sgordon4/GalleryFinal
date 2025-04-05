@@ -36,14 +36,9 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 		Executors.newSingleThreadExecutor().execute(() -> {
 			try {
 				Pair<Uri, String> content = getContentInfo(uuid);
-				if (content == null || content.first == null) {
-					callback.onLoadFailed(new FileNotFoundException("No URI for UUID: " + uuid));
-					return;
-				}
-
+				Uri uri = content.first;
 
 				//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
-				Uri uri = content.first;
 				try {
 					stream = MyApplication.getAppContext().getContentResolver().openInputStream(uri);
 				} catch (FileNotFoundException e) {
@@ -53,7 +48,6 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 					callback.onLoadFailed(new IOException("Could not open stream for URI: " + uri));
 					return;
 				}
-
 
 				callback.onDataReady(stream);
 			} catch (Exception e) {
@@ -70,9 +64,7 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 	}
 
 	@Override
-	public void cancel() {
-
-	}
+	public void cancel() {}
 
 	@NonNull
 	@Override
@@ -88,37 +80,33 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 
 
 
-	private Pair<Uri, String> getContentInfo(UUID uuid) {
-		try {
-			HybridAPI hAPI = HybridAPI.getInstance();
+	@NonNull
+	private Pair<Uri, String> getContentInfo(UUID uuid) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+		HybridAPI hAPI = HybridAPI.getInstance();
 
-			//If the item is a link, the content uri is accessed differently
-			LinkCache linkCache = LinkCache.getInstance();
-			LinkCache.LinkTarget target = linkCache.getFinalTarget(uuid);
+		//If the item is a link, the content uri is accessed differently
+		LinkCache linkCache = LinkCache.getInstance();
+		LinkCache.LinkTarget target = linkCache.getFinalTarget(uuid);
 
 
-			//If the target is null, the item is not a link. Get the content uri from the fileUID's content
-			if (target == null) {
+		//If the target is null, the item is not a link. Get the content uri from the fileUID's content
+		if (target == null) {
 				/*
 				HFile props = hAPI.getFileProps(uuid);
 				Uri uri = RemoteRepo.getInstance().getContentDownloadUri(props.checksum);
 				return new Pair<>(uri, props.checksum);
 				 */
 
-				return hAPI.getFileContent(uuid);
-			}
-			//If the target is internal, get the content uri from that fileUID's content
-			else if (target instanceof LinkCache.InternalTarget) {
-				return hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID());
-			}
-			//If the target is external, get the content uri from the target
-			else {//if(target instanceof LinkCache.ExternalTarget) {
-				Uri content = ((LinkCache.ExternalTarget) target).getUri();
-				return new Pair<>(content, content.toString());
-			}
+			return hAPI.getFileContent(uuid);
 		}
-		catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-			return null;
+		//If the target is internal, get the content uri from that fileUID's content
+		else if (target instanceof LinkCache.InternalTarget) {
+			return hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID());
+		}
+		//If the target is external, get the content uri from the target
+		else {//if(target instanceof LinkCache.ExternalTarget) {
+			Uri content = ((LinkCache.ExternalTarget) target).getUri();
+			return new Pair<>(content, content.toString());
 		}
 	}
 }
