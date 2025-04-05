@@ -17,7 +17,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class LinkViewHolderSmall extends BaseViewHolder {
-	public View wrapper;
+	public View child;
 	public View color;
 	public ImageView image;
 	public TextView name;
@@ -25,7 +25,7 @@ public class LinkViewHolderSmall extends BaseViewHolder {
 	public LinkViewHolderSmall(View itemView) {
 		super(itemView);
 
-		wrapper = itemView.findViewById(R.id.wrapper);
+		child = itemView.findViewById(R.id.child);
 		color = itemView.findViewById(R.id.color);
 		image = itemView.findViewById(R.id.media);
 		name = itemView.findViewById(R.id.name);
@@ -56,9 +56,9 @@ public class LinkViewHolderSmall extends BaseViewHolder {
 		}
 
 
-		//Change the border color of the wrapper
+		//Change the border color of the child
 		if(parent != null && parent.attr.has("color")) {
-			Drawable background = wrapper.getBackground();
+			Drawable background = child.getBackground();
 			if (background instanceof GradientDrawable) {
 				GradientDrawable shapeDrawable = (GradientDrawable) background;
 				shapeDrawable.setStroke(4, parent.attr.get("color").getAsInt());
@@ -66,7 +66,7 @@ public class LinkViewHolderSmall extends BaseViewHolder {
 		} else {
 			//Reset the default background color
 			//We need to do this or the card will retain previous background colors from other items thanks to the RecyclerView
-			Drawable background = wrapper.getBackground();
+			Drawable background = child.getBackground();
 			if (background instanceof GradientDrawable) {
 				GradientDrawable shapeDrawable = (GradientDrawable) background;
 				shapeDrawable.setStroke(4, Color.TRANSPARENT);

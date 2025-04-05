@@ -241,6 +241,9 @@ public class DirSampleData {
 		List<DirItem> detachedItems = new ArrayList<>(Arrays.asList(detached_f1, detached_d1));
 		writeDirList(detachedUID, detachedItems);
 
+		Log.i(TAG, "Detached UUID: " + detachedUID);
+		Log.i(TAG, "Detached Child UUID: " + detached_d1);
+
 
 		//-----------------------------------------------------------------------------------------
 

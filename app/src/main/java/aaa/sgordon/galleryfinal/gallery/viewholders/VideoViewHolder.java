@@ -16,13 +16,13 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class VideoViewHolder extends BaseViewHolder {
-	public View wrapper;
+	public View child;
 	public ImageView image;
 
 	public VideoViewHolder(View itemView) {
 		super(itemView);
 
-		wrapper = itemView.findViewById(R.id.wrapper);
+		child = itemView.findViewById(R.id.child);
 		image = itemView.findViewById(R.id.media);
 	}
 
@@ -30,9 +30,9 @@ public class VideoViewHolder extends BaseViewHolder {
 	public void bind(@NonNull ListItem listItem, @Nullable ListItem parent) {
 		super.bind(listItem, parent);
 
-		//Change the border color of the wrapper
+		//Change the border color of the child
 		if(parent != null && parent.attr.has("color")) {
-			Drawable background = wrapper.getBackground();
+			Drawable background = child.getBackground();
 			if (background instanceof GradientDrawable) {
 				GradientDrawable shapeDrawable = (GradientDrawable) background;
 				shapeDrawable.setStroke(4, parent.attr.get("color").getAsInt());
@@ -40,7 +40,7 @@ public class VideoViewHolder extends BaseViewHolder {
 		} else {
 			//Reset the default background color
 			//We need to do this or the card will retain previous background colors from other items thanks to the RecyclerView
-			Drawable background = wrapper.getBackground();
+			Drawable background = child.getBackground();
 			if (background instanceof GradientDrawable) {
 				GradientDrawable shapeDrawable = (GradientDrawable) background;
 				shapeDrawable.setStroke(4, Color.TRANSPARENT);

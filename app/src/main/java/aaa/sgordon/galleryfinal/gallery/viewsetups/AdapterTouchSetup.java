@@ -71,8 +71,59 @@ public class AdapterTouchSetup {
 				return detector.onTouchEvent(event);
 			}
 
+
+
 			boolean isDoubleTapInProgress = false;
 			final GestureDetector detector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+
+				@Override
+				public boolean onSingleTapUp(@NonNull MotionEvent e) {
+					if(selectionController.isSelecting())
+						return false;
+
+					//If we're not selecting, launch a new fragment
+					//Launching fragments needs to be super snappy, so it must occur on a single tap up or it will feel slow
+
+					if(holder instanceof DirectoryViewHolder) {
+						launchDirectory(dirFragment, holder);
+					}
+					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
+						launchViewPager(dirFragment, holder);
+					}
+					return true;
+				}
+
+
+				@Override
+				public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+					//If we're selecting, select/deselect the item
+					if(selectionController.isSelecting()) {
+						selectionController.toggleSelectItem(fileUID);
+						return true;
+					}
+
+					return false;
+				}
+
+
+				@Override
+				public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
+					if(!selectionController.isSelecting())
+						return false;
+
+					//If we double tap while selecting, allow a drag to start
+					if(e.getAction() == MotionEvent.ACTION_DOWN) {
+						isDoubleTapInProgress = true;
+					}
+					//If we release the tap and we aren't reordering, toggle selection
+					else if(e.getAction() == MotionEvent.ACTION_UP && !reorderCallback.isDragging()) {
+						selectionController.toggleSelectItem(fileUID);
+					}
+
+					return false;
+				}
+
+
 				@Override
 				public void onLongPress(@NonNull MotionEvent e) {
 					selectionController.startSelecting();
@@ -91,95 +142,10 @@ public class AdapterTouchSetup {
 					}
 					else {
 						//SingleTap LongPress triggers drag selection
-						//dragSelectHelper.startDrag(holder);
+						dragSelectHelper.startDrag(holder);
 					}
 				}
 
-				@Override
-				public boolean onSingleTapUp(@NonNull MotionEvent e) {
-				//public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-					//If we're selecting, select/deselect the item
-					if(selectionController.isSelecting())
-						selectionController.toggleSelectItem(fileUID);
-
-					//If we're not selecting, launch a new fragment
-
-					else if(holder instanceof DirectoryViewHolder) {
-						ListItem listItem = holder.getListItem();
-
-						if(listItem.attr.has("password")) {
-							String password = listItem.attr.get("password").getAsString();
-
-							if(!password.isEmpty()) {
-								PasswordModal.launch(dirFragment, listItem.name, password, () -> {
-									DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
-									dirFragment.getParentFragmentManager().beginTransaction()
-											.replace(R.id.fragment_container, fragment)
-											.addToBackStack(null)
-											.commit();
-								});
-							}
-						}
-						//If there is no password, launch the directory fragment
-						else {
-							DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
-							dirFragment.getParentFragmentManager().beginTransaction()
-									.replace(R.id.fragment_container, fragment)
-									.addToBackStack(null)
-									.commit();
-						}
-					}
-
-
-					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
-						//int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
-						int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
-
-						ViewPagerFragment fragment = ViewPagerFragment.initialize(dirFragment.dirViewModel.getDirUID(), pos);
-
-						View media = holder.itemView.findViewById(R.id.media);
-
-
-						//Fade out the grid when exiting
-						dirFragment.setExitTransition(new MaterialFadeThrough());
-						//dirFragment.setExitTransition(new Hold());
-
-						//Translate the selected item to the ViewPager
-						MaterialContainerTransform transform = new MaterialContainerTransform();
-						transform.setDuration(300);
-						transform.setDrawingViewId(R.id.fragment_container);
-						transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
-						transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
-						fragment.setSharedElementEnterTransition(transform);
-
-						//TODO The ViewHolder image scales up/down too quickly, and is too large when the
-						// transform swaps the views, causing a perceived jump. I'm not sure how to resolve this,
-						// like how to slow the scaling of the RV image or do something else.
-						// Keyword scaling tempo mismatch
-
-
-
-						dirFragment.getParentFragmentManager().beginTransaction()
-								.setReorderingAllowed(true)
-								.addSharedElement(media, media.getTransitionName())
-								.hide(dirFragment)
-								.add(R.id.fragment_container, fragment)
-								.addToBackStack(null)
-								.commit();
-					}
-					return true;
-				}
-
-				/*
-				@Override
-				public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
-					if(e.getAction() == MotionEvent.ACTION_DOWN)
-						isDoubleTapInProgress = true;
-
-					return false;
-				}
-
-				 */
 
 				@Override
 				public boolean onDown(@NonNull MotionEvent e) {
@@ -187,5 +153,73 @@ public class AdapterTouchSetup {
 				}
 			});
 		};
+	}
+
+
+
+
+
+	private static void launchDirectory(DirFragment dirFragment, BaseViewHolder holder) {
+		ListItem listItem = holder.getListItem();
+
+		if(listItem.attr.has("password")) {
+			String password = listItem.attr.get("password").getAsString();
+
+			if(!password.isEmpty()) {
+				PasswordModal.launch(dirFragment, listItem.name, password, () -> {
+					DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
+					dirFragment.getParentFragmentManager().beginTransaction()
+							.replace(R.id.fragment_container, fragment)
+							.addToBackStack(null)
+							.commit();
+				});
+			}
+		}
+		//If there is no password, launch the directory fragment
+		else {
+			DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
+			dirFragment.getParentFragmentManager().beginTransaction()
+					.replace(R.id.fragment_container, fragment)
+					.addToBackStack(null)
+					.commit();
+		}
+	}
+
+
+	private static void launchViewPager(DirFragment dirFragment, BaseViewHolder holder) {
+		//int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
+		int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
+
+		ViewPagerFragment fragment = ViewPagerFragment.initialize(dirFragment.dirViewModel.getDirUID(), pos);
+
+		View media = holder.itemView.findViewById(R.id.media);
+
+
+		//Fade out the grid when exiting
+		dirFragment.setExitTransition(new MaterialFadeThrough());
+		//dirFragment.setExitTransition(new Hold());
+
+		//Translate the selected item to the ViewPager
+		MaterialContainerTransform transform = new MaterialContainerTransform();
+		transform.setDuration(300);
+		transform.setDrawingViewId(R.id.fragment_container);
+		transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
+		transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
+		fragment.setSharedElementEnterTransition(transform);
+
+		//TODO The ViewHolder image scales up/down too quickly, and is too large when the
+		// transform swaps the views, causing a perceived jump. I'm not sure how to resolve this,
+		// like how to slow the scaling of the RV image or do something else.
+		// Keyword scaling tempo mismatch
+
+
+
+		dirFragment.getParentFragmentManager().beginTransaction()
+				.setReorderingAllowed(true)
+				.addSharedElement(media, media.getTransitionName())
+				.hide(dirFragment)
+				.add(R.id.fragment_container, fragment)
+				.addToBackStack(null)
+				.commit();
 	}
 }

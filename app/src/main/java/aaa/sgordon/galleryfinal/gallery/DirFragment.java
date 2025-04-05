@@ -359,7 +359,7 @@ public class DirFragment extends Fragment {
 
 		DragSelectCallback dragSelectCallback = new DragSelectCallback(recyclerView, adapter, selectionController);
 		ItemTouchHelper dragSelectHelper = new ItemTouchHelper(dragSelectCallback);
-		//dragSelectHelper.attachToRecyclerView(recyclerView);
+		dragSelectHelper.attachToRecyclerView(recyclerView);
 
 		//-----------------------------------------------------------------------------------------
 

@@ -1,8 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
-import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.util.TypedValue;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.widget.TextView;
 
@@ -11,17 +11,17 @@ import androidx.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
 
-import java.util.UUID;
-
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class DividerViewHolder extends BaseViewHolder {
+	public View child;
 	public TextView name;
 
 	public DividerViewHolder(@NonNull View itemView) {
 		super(itemView);
 
+		child = itemView.findViewById(R.id.child);
 		name = itemView.findViewById(R.id.name);
 	}
 
@@ -32,17 +32,20 @@ public class DividerViewHolder extends BaseViewHolder {
 		String fileName = FilenameUtils.removeExtension(listItem.name);
 		name.setText(fileName);
 
-		if(listItem.attr.has("color")) {
-			//color.setBackgroundColor(listItem.attr.get("color").getAsInt());
+		//Change the border color of the child
+		if(parent != null && parent.attr.has("color")) {
+			Drawable background = child.getBackground();
+			if (background instanceof GradientDrawable) {
+				GradientDrawable shapeDrawable = (GradientDrawable) background;
+				shapeDrawable.setStroke(4, parent.attr.get("color").getAsInt());
+			}
 		} else {
-			TypedValue typedValue = new TypedValue();
-
-			//Get the default card background color from the theme
-			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorBackgroundFloating , typedValue, true)) {
-				int defaultBackgroundColor = typedValue.data;
-				//color.setBackgroundColor(defaultBackgroundColor);
-			} else {
-				//color.setBackgroundColor(Color.GRAY);
+			//Reset the default background color
+			//We need to do this or the card will retain previous background colors from other items thanks to the RecyclerView
+			Drawable background = child.getBackground();
+			if (background instanceof GradientDrawable) {
+				GradientDrawable shapeDrawable = (GradientDrawable) background;
+				shapeDrawable.setStroke(4, Color.TRANSPARENT);
 			}
 		}
 	}

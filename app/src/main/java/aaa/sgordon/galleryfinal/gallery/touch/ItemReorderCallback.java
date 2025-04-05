@@ -5,6 +5,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
@@ -181,9 +183,14 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		//We do not want to move links directly inside themselves or things will visually disappear. Exclude any.
 		if(destination.startsWith(draggedItem.filePath)) {
 			Log.d(TAG, "Drag failed, not allowed to move links inside themselves");
+			//Toast.makeText(recyclerView.getContext(), "Not allowed to move links inside themselves!", Toast.LENGTH_SHORT).show();
 			callback.onReorderFailed();
 			return;
 		}
+		//WARNING: If we have links A and B, and link B targets link A, moving link A into link B is allowed,
+		// even though it is technically being moved inside of itself.
+		//Checking this would require checking the target of draggedItem and destination, which would require network calls,
+		// which requires a thread. That would delay the reorder, so I'm just going to allow it.
 
 
 

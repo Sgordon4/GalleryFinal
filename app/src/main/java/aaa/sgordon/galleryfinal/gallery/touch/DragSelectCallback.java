@@ -72,10 +72,6 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 			lastItem = null;
 		}
 
-		System.out.println("Selection changed!");
-		System.out.println("Start: "+ startItem);
-		System.out.println("Last:  "+ lastItem);
-
 		super.onSelectedChanged(viewHolder, actionState);
 	}
 
@@ -164,8 +160,6 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 		if(startPos == -1 || lastPos == -1)
 			return;
 
-		System.out.println("Selecting from "+startPos+" to "+pos+" with last "+lastPos);
-
 
 		int from = Math.min(startPos, pos);
 		int to = Math.max(startPos, pos);
@@ -194,8 +188,4 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 
 		lastItem = adapter.list.get(pos);
 	}
-
-
-
-	//CanDropOver appears to oscillate between the nearest holders, not just the one underneath, so we can't use that
 }
