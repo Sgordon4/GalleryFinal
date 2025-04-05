@@ -79,26 +79,37 @@ public class DirSampleData {
 		UUID root = hapi.createFile(currentAccount, true, false);
 
 		//Setup files in the root directory
-		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Airplane.jpg");
-		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Vulture.gif");
-		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Horrifying Rabbit.mp4");
-		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 4");
+		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 1");
+		DirItem r_div12 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
+		DirItem r_div13 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
+		DirItem r_div14 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
+		DirItem r_div15 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
+
+		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Airplane.jpg");
+		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Vulture.gif");
+		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Horrifying Rabbit.mp4");
 		DirItem r_f5 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 5");
-		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
 		DirItem r_f6 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 6");
-		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), "1: Child Dir");
+		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
 		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 7");
-		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(r_f1, r_f2, r_f3, r_f4, r_f5, r_div1, r_f6, r_d1, r_f7));
+		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), "1: Child Dir");
+		DirItem r_f8 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 8");
+		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(
+				r_div12, r_div13, r_div14, r_div15, r_f1,
+				r_f2,
+				r_f3,
+				r_f4,
+				r_f5, r_div1, r_f6, r_d1, r_f7, r_f8));
 		writeDirList(root, rootItems);
 
 		//Add data to some root files
-		writeUriToFile(r_f1.fileUID, externalUri_Jpg_1MB, externalUri_Jpg_1MB_Checksum);
-		writeUriToFile(r_f2.fileUID, externalUri_Gif_40KB, externalUri_Gif_40KB_Checksum);
-		writeUriToFile(r_f3.fileUID, externalUri_MP4_1MB, externalUri_MP4_1MB_Checksum);
+		writeUriToFile(r_f2.fileUID, externalUri_Jpg_1MB, externalUri_Jpg_1MB_Checksum);
+		writeUriToFile(r_f3.fileUID, externalUri_Gif_40KB, externalUri_Gif_40KB_Checksum);
+		writeUriToFile(r_f4.fileUID, externalUri_MP4_1MB, externalUri_MP4_1MB_Checksum);
 
 
 		//Add tags to some root files
-		writeAttrToFile(r_f1.fileUID, makeTagAttr("Actual File", "Group A"));
+		writeAttrToFile(r_f2.fileUID, makeTagAttr("Actual File", "Group A"));
 		writeAttrToFile(r_d1.fileUID, makeTagAttr("Directory", "Group A"));
 
 

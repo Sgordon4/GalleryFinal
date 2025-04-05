@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.viewpager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,16 +16,12 @@ import androidx.media3.ui.PlayerView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.nio.file.Path;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.FragViewpagerVideoBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import pl.droidsonroids.gif.GifImageView;
 
 public class VideoFragment extends Fragment {
 	private FragViewpagerVideoBinding binding;
@@ -49,6 +44,7 @@ public class VideoFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = FragViewpagerVideoBinding.inflate(inflater, container, false);
+		binding.media.setTransitionName(item.filePath.toString());
 		return binding.getRoot();
 	}
 
@@ -58,10 +54,11 @@ public class VideoFragment extends Fragment {
 
 
 		PlayerView playerView = binding.media;
-		player = new ExoPlayer.Builder(getContext()).build();
+		player = new ExoPlayer.Builder(requireContext()).build();
 		playerView.setPlayer(player);
 
-		playerView.setTransitionName(item.filePath.toString());
+
+		requireParentFragment().startPostponedEnterTransition();
 
 
 		Thread thread = new Thread(() -> {
@@ -69,7 +66,6 @@ public class VideoFragment extends Fragment {
 			try {
 				Handler mainHandler = new Handler(getContext().getMainLooper());
 
-				mainHandler.post(() -> getParentFragment().startPostponedEnterTransition());
 
 				Uri content = hAPI.getFileContent(fileUID).first;
 				MediaItem mediaItem = MediaItem.fromUri(content);

@@ -52,6 +52,11 @@ public class ViewPagerFragment extends Fragment {
 		return fragment;
 	}
 
+	@Override
+	public void onStart() {
+		super.onStart();
+		System.out.println("Starting VP ---------");
+	}
 
 	@Override
 	public void onStop() {
@@ -76,11 +81,7 @@ public class ViewPagerFragment extends Fragment {
 		System.out.println("Resuming");
 	}
 
-	@Override
-	public void onStart() {
-		super.onStart();
-		System.out.println("Starting");
-	}
+
 
 	@Override
 	public void onPause() {

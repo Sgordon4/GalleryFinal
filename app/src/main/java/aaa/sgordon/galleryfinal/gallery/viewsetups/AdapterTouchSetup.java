@@ -90,7 +90,8 @@ public class AdapterTouchSetup {
 				}
 
 				@Override
-				public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+				public boolean onSingleTapUp(@NonNull MotionEvent e) {
+				//public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
 					//If we're selecting, select/deselect the item
 					if(selectionController.isSelecting())
 						selectionController.toggleSelectItem(fileUID);
@@ -136,24 +137,13 @@ public class AdapterTouchSetup {
 						//Fade out the grid when exiting
 						dirFragment.setExitTransition(new MaterialFadeThrough());
 
-
-
-
-						//fragment.setSharedElementEnterTransition(new MaterialContainerTransform());
-
-						Transition transition = TransitionInflater.from(dirFragment.requireContext())
-								.inflateTransition(R.transition.image_shared_element_transition);
-						//fragment.setSharedElementEnterTransition(transition);
-
+						//Translate the selected item to the ViewPager
 						MaterialContainerTransform transform = new MaterialContainerTransform();
-						transform.setDuration(300);
+						transform.setDuration(400);
 						transform.setDrawingViewId(R.id.fragment_container);
-						transform.setScrimColor(Color.TRANSPARENT);
-						transform.setAllContainerColors(Color.TRANSPARENT);
 						transform.setFitMode(MaterialContainerTransform.FIT_MODE_AUTO); // or FIT_MODE_WIDTH
 						transform.setFadeMode(MaterialContainerTransform.FADE_MODE_THROUGH);
 						fragment.setSharedElementEnterTransition(transform);
-
 
 
 
@@ -164,21 +154,11 @@ public class AdapterTouchSetup {
 								.add(R.id.fragment_container, fragment)
 								.addToBackStack(null)
 								.commit();
-
-
-
-						Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
-						handler.postDelayed(() -> {
-							media.setScaleX(1f);
-							media.setScaleY(1f);
-							media.setRotation(0f);
-							//dirFragment.binding.recyclerview.getAdapter().notifyItemChanged(pos);
-						}, 1000);
-
 					}
 					return true;
 				}
 
+				/*
 				@Override
 				public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
 					if(e.getAction() == MotionEvent.ACTION_DOWN)
@@ -186,6 +166,8 @@ public class AdapterTouchSetup {
 
 					return false;
 				}
+
+				 */
 
 				@Override
 				public boolean onDown(@NonNull MotionEvent e) {

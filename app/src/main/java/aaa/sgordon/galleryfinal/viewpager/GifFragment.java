@@ -1,9 +1,6 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,19 +12,10 @@ import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
-import java.nio.file.Path;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragViewpagerGifBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import pl.droidsonroids.gif.GifImageView;
 
 public class GifFragment extends Fragment {
 	private FragViewpagerGifBinding binding;
@@ -48,6 +36,7 @@ public class GifFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = FragViewpagerGifBinding.inflate(inflater, container, false);
+		binding.media.setTransitionName(item.filePath.toString());
 		return binding.getRoot();
 	}
 
@@ -55,24 +44,13 @@ public class GifFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		GifImageView media = binding.media;
-		media.setTransitionName(item.filePath.toString());
+		requireParentFragment().startPostponedEnterTransition();
 
+		ImageView media = binding.media;
 
-		Thread thread = new Thread(() -> {
-			HybridAPI hAPI = HybridAPI.getInstance();
-			try {
-				Handler mainHandler = new Handler(media.getContext().getMainLooper());
-
-				mainHandler.post(() -> getParentFragment().startPostponedEnterTransition());
-
-				Uri content = hAPI.getFileContent(fileUID).first;
-				mainHandler.post(() -> media.setImageURI(content));
-			}
-			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-				//Do nothing
-			}
-		});
-		thread.start();
+		//Using a custom modelLoader to handle HybridAPI FileUIDs
+		Glide.with(media.getContext())
+				.load(fileUID)
+				.into(media);
 	}
 }
