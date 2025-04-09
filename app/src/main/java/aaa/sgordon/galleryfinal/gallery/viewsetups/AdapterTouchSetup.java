@@ -3,17 +3,25 @@ package aaa.sgordon.galleryfinal.gallery.viewsetups;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.PathInterpolator;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.view.animation.PathInterpolatorCompat;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.transition.ChangeBounds;
+import androidx.transition.ChangeClipBounds;
+import androidx.transition.ChangeImageTransform;
+import androidx.transition.ChangeTransform;
 import androidx.transition.Fade;
 import androidx.transition.PathMotion;
 import androidx.transition.Transition;
@@ -199,13 +207,44 @@ public class AdapterTouchSetup {
 		//Fade out the grid when exiting
 		dirFragment.setExitTransition(new MaterialFadeThrough());
 
+		View startView = media;
+		View endView = dirFragment.requireView();
+
+		int startHeight = startView.getHeight();
+		int endHeight = endView.getHeight();
+
+		// Calculate vertical offset to center the animation
+		int inset = Math.abs(endHeight - startHeight) / 2;
+
 		//Translate the selected item to the ViewPager
 		MaterialContainerTransform transform = new MaterialContainerTransform();
-		transform.setDuration(300);
+		transform.setDuration(3000);
 		transform.setDrawingViewId(R.id.fragment_container);
-		transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT);
+		transform.setFitMode(MaterialContainerTransform.FIT_MODE_WIDTH);
 		transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
-		fragment.setSharedElementEnterTransition(transform);
+		transform.setDrawDebugEnabled(true);
+
+		//fragment.setSharedElementEnterTransition(transform);
+
+
+		TransitionSet sharedElementEnterTransition = new TransitionSet();
+		sharedElementEnterTransition.setOrdering(TransitionSet.ORDERING_SEQUENTIAL);
+		sharedElementEnterTransition.addTransition(new ChangeClipBounds());
+		sharedElementEnterTransition.addTransition(new ChangeImageTransform());
+
+		sharedElementEnterTransition.addTransition(new ChangeTransform());
+		sharedElementEnterTransition.addTransition(new ChangeBounds());
+		//sharedElementEnterTransition.addTransition(new Fade(Fade.IN));
+
+
+		sharedElementEnterTransition.setDuration(2000); // Optional: customize duration
+		sharedElementEnterTransition.setInterpolator(new FastOutSlowInInterpolator());
+
+		fragment.setSharedElementEnterTransition(sharedElementEnterTransition);
+
+
+
+
 
 
 		dirFragment.getParentFragmentManager().beginTransaction()

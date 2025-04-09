@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -79,11 +80,13 @@ public class ImageFragment extends Fragment {
 
 		dragHelper = new DragHelper(binding.motionLayout, binding.viewA, binding.viewB);
 		scaleHelper = new ScaleHelper(binding.dimBackground, binding.viewA, () -> {
-			//Dismiss the fragment
+			System.out.println("OnDismiss");
+			getParentFragment().getParentFragmentManager().popBackStack();
 		});
 
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		//binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		binding.viewA.setTransitionName(item.filePath.toString());
 
 		return binding.getRoot();
 	}

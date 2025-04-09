@@ -97,8 +97,8 @@ public class ViewPagerFragment extends Fragment {
 
 		//Postpone the transition until the viewPager is ready, but only if this is our first creation
 		//WARNING: The ViewPage Fragment MUST call 'requireParentFragment().startPostponedEnterTransition();'
-		if(savedInstanceState == null)
-			postponeEnterTransition();
+		postponeEnterTransition();
+
 
 		setEnterSharedElementCallback(new SharedElementCallback() {
 			@Override
@@ -107,7 +107,11 @@ public class ViewPagerFragment extends Fragment {
 
 				//Get the currently displayed ViewPage and the media view inside of it
 				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+currPos);
-				View media = viewPage.requireView().findViewById(R.id.media);
+				//View media = viewPage.requireView().findViewById(R.id.media);
+				View media = viewPage.requireView().findViewById(R.id.view_a);
+
+				System.out.println("Scale: " + media.getScaleX() + "," + media.getScaleY());
+
 
 				sharedElements.put(names.get(0), media);
 				sharedElements.put(media.getTransitionName(), media);

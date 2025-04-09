@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.util.Pair;
 import android.view.Choreographer;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
