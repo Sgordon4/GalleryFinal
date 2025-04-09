@@ -14,6 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.view.animation.PathInterpolatorCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.transition.Fade;
 import androidx.transition.PathMotion;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
@@ -197,21 +198,14 @@ public class AdapterTouchSetup {
 
 		//Fade out the grid when exiting
 		dirFragment.setExitTransition(new MaterialFadeThrough());
-		//dirFragment.setExitTransition(new Hold());
 
 		//Translate the selected item to the ViewPager
 		MaterialContainerTransform transform = new MaterialContainerTransform();
 		transform.setDuration(300);
 		transform.setDrawingViewId(R.id.fragment_container);
-		transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
+		transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT);
 		transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
 		fragment.setSharedElementEnterTransition(transform);
-
-		//TODO The ViewHolder image scales up/down too quickly, and is too large when the
-		// transform swaps the views, causing a perceived jump. I'm not sure how to resolve this,
-		// like how to slow the scaling of the RV image or do something else.
-		// Keyword scaling tempo mismatch
-
 
 
 		dirFragment.getParentFragmentManager().beginTransaction()
@@ -221,5 +215,11 @@ public class AdapterTouchSetup {
 				.add(R.id.fragment_container, fragment)
 				.addToBackStack(null)
 				.commit();
+
+
+		//TODO The ViewHolder image scales up/down too quickly, and is too large when the
+		// transform swaps the views, causing a perceived jump. I'm not sure how to resolve this,
+		// like how to slow the scaling of the RV image or do something else.
+		// Keyword scaling tempo mismatch
 	}
 }

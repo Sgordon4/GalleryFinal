@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;

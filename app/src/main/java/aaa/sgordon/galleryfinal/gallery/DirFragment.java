@@ -150,14 +150,9 @@ public class DirFragment extends Fragment {
 		setExitSharedElementCallback(new SharedElementCallback() {
 			@Override
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				System.out.println("Mapping");
-
-
 				ListItem vpItem = dirViewModel.viewPagerCurrItem;
 				if(vpItem == null) return;
 				dirViewModel.viewPagerCurrItem = null;
-
-				System.out.println("Actually mapping");
 
 
 				//Get the adapter position of the ViewPager item
@@ -171,15 +166,6 @@ public class DirFragment extends Fragment {
 				}
 				if(adapterPos == -1) return;
 
-				/*
-				System.out.println("Pos: "+VPStartPos+"::"+adapterPos);
-				if(VPStartPos != adapterPos)
-					binding.recyclerview.getAdapter().notifyItemChanged(VPStartPos);
-				VPStartPos = -1;
-
-				 */
-
-
 				binding.recyclerview.scrollToPosition(adapterPos);
 
 				//Get the child for the adapter position
@@ -189,10 +175,6 @@ public class DirFragment extends Fragment {
 				if(media == null) return;
 
 				sharedElements.put(names.get(0), media);
-
-
-
-
 			}
 		});
 

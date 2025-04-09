@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -106,7 +107,7 @@ public class ViewPagerFragment extends Fragment {
 
 				//Get the currently displayed ViewPage and the media view inside of it
 				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+currPos);
-				View media = viewPage.getView().findViewById(R.id.media);
+				View media = viewPage.requireView().findViewById(R.id.media);
 
 				sharedElements.put(names.get(0), media);
 				sharedElements.put(media.getTransitionName(), media);
