@@ -102,15 +102,16 @@ public class MainActivity extends AppCompatActivity {
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
 				MainStorageHandler.onStorageLocationPicked(this, result);
-				//launchEverything();
-				launchActual();
+				launchEverything();
+				//launchActual();
 			});
 
 
 	private void launchActual() {
 		Thread thread = new Thread(() -> {
 			//UUID that happened to be generated that we're using now
-			UUID rootDirectoryUID = UUID.fromString("2799d7ef-321d-436c-83d8-e28a31e41099");
+			//UUID rootDirectoryUID = UUID.fromString("2799d7ef-321d-436c-83d8-e28a31e41099");
+			UUID rootDirectoryUID = UUID.fromString("f289604e-8796-4668-a084-dc7147ca68bf");
 
 			Uri storageDir = MainStorageHandler.getStorageTreeUri(this);
 			if(storageDir == null) throw new RuntimeException("Storage directory is null!");
@@ -136,8 +137,8 @@ public class MainActivity extends AppCompatActivity {
 			try {
 				//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
 				// or an actual database will be created.
-				//UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
-				UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
+				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
+				//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
 
 				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 				viewModel.testInt += 1;

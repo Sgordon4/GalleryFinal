@@ -63,33 +63,8 @@ public class ViewPagerFragment extends Fragment {
 		ViewPagerAdapter adapter = (ViewPagerAdapter) binding.viewpager.getAdapter();
 		dirViewModel.viewPagerCurrItem = adapter.list.get(binding.viewpager.getCurrentItem());
 
-		System.out.println("Setting data");
 		super.onStop();
 	}
-
-
-	/*
-	@Override
-	public void onDestroyView() {
-		System.out.println("Destroying view");
-		super.onDestroyView();
-	}
-
-	@Override
-	public void onResume() {
-		super.onResume();
-		System.out.println("Resuming");
-	}
-
-
-
-	@Override
-	public void onPause() {
-		System.out.println("Pausing");
-		super.onPause();
-	}
-
-	 */
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -127,7 +102,6 @@ public class ViewPagerFragment extends Fragment {
 		setEnterSharedElementCallback(new SharedElementCallback() {
 			@Override
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				System.out.println("Mapping in viewpager");
 				if(names.isEmpty()) return;
 
 				//Get the currently displayed ViewPage and the media view inside of it
