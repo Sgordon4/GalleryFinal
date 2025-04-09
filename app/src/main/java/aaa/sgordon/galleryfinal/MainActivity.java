@@ -29,6 +29,7 @@ import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
@@ -66,7 +67,8 @@ public class MainActivity extends AppCompatActivity {
 		}
 		else {
 			Log.i(TAG, "Using saved directory.");
-			launchEverything();
+			//launchEverything();
+			launchActual();
 		}
 	}
 
@@ -100,8 +102,30 @@ public class MainActivity extends AppCompatActivity {
 			new ActivityResultContracts.StartActivityForResult(),
 			result -> {
 				MainStorageHandler.onStorageLocationPicked(this, result);
-				launchEverything();
+				//launchEverything();
+				launchActual();
 			});
+
+
+	private void launchActual() {
+		Thread thread = new Thread(() -> {
+			//UUID that happened to be generated that we're using now
+			UUID rootDirectoryUID = UUID.fromString("2799d7ef-321d-436c-83d8-e28a31e41099");
+
+			Uri storageDir = MainStorageHandler.getStorageTreeUri(this);
+			if(storageDir == null) throw new RuntimeException("Storage directory is null!");
+
+			LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(this);
+			HybridAPI.initialize(db, storageDir);
+
+
+			Handler mainHandler = new Handler(getMainLooper());
+			mainHandler.post(() -> {
+				launch(rootDirectoryUID);
+			});
+		});
+		thread.start();
+	}
 
 
 
@@ -112,12 +136,13 @@ public class MainActivity extends AppCompatActivity {
 			try {
 				//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
 				// or an actual database will be created.
-				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
-				//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
+				//UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
+				UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
 
 				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 				viewModel.testInt += 1;
 
+				System.out.println("Using rootdir: "+rootDirectoryUID);
 
 				HybridAPI hAPI = HybridAPI.getInstance();
 				//hAPI.startSyncService(hAPI.getCurrentAccount());
@@ -142,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
 			catch (FileNotFoundException e) { throw new RuntimeException(e); }
 			catch (IOException e) { throw new RuntimeException(e); }
 		});
+
 		thread.start();
 	}
 

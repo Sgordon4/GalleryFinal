@@ -126,10 +126,11 @@ public class DirSampleData {
 	//Returns the UUID of the root file
 	public static UUID setupDatabase(Context context) throws FileNotFoundException, IOException {
 		Log.i(TAG, "Setting up in-memory database...");
-		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
 		Uri storageDir = MainStorageHandler.getStorageTreeUri(context);
 		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
-		//HybridAPI.initialize(db, context.getCacheDir().toString());
+
+		//LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
+		LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(context);
 		HybridAPI.initialize(db, storageDir);
 		HybridAPI hapi = HybridAPI.getInstance();
 
