@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.viewpager;
+package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -11,8 +11,6 @@ import androidx.annotation.Nullable;
 import androidx.constraintlayout.motion.widget.MotionLayout;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.viewpager.components.DragHelper;
-import aaa.sgordon.galleryfinal.viewpager.components.ScaleHelper;
 
 public class DragPage extends MotionLayout {
 	public DragPage(@NonNull Context context) {
