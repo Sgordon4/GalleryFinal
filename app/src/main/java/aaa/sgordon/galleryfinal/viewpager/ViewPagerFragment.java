@@ -13,12 +13,23 @@ import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.transition.ChangeBounds;
+import androidx.transition.ChangeClipBounds;
+import androidx.transition.ChangeImageTransform;
+import androidx.transition.ChangeTransform;
+import androidx.transition.Fade;
 import androidx.transition.Transition;
 import androidx.transition.TransitionInflater;
+import androidx.transition.TransitionSet;
 import androidx.viewpager2.widget.ViewPager2;
+
+import com.google.android.material.transition.MaterialContainerTransform;
+import com.google.android.material.transition.MaterialFade;
+import com.google.android.material.transition.MaterialFadeThrough;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,31 +65,20 @@ public class ViewPagerFragment extends Fragment {
 	}
 
 	@Override
-	public void onStart() {
-		super.onStart();
-		System.out.println("Starting VP ---------");
-	}
-
-	@Override
 	public void onStop() {
+		//Pass back the current ViewPager position
 		ViewPagerAdapter adapter = (ViewPagerAdapter) binding.viewpager.getAdapter();
 		dirViewModel.viewPagerCurrItem = adapter.list.get(binding.viewpager.getCurrentItem());
 
 		super.onStop();
 	}
 
+
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		DirFragment dirFragment = null;
-		List<Fragment> fragments = getParentFragmentManager().getFragments();
-		for(Fragment fragment : fragments) {
-			if(fragment instanceof DirFragment) {
-				dirFragment = (DirFragment) fragment;
-				break;
-			}
-		}
+		Fragment dirFragment = getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
 		if(dirFragment == null) throw new RuntimeException("Directory fragment not found");
 
 
@@ -88,6 +88,45 @@ public class ViewPagerFragment extends Fragment {
 		dirViewModel = new ViewModelProvider(dirFragment,
 				new DirectoryViewModel.Factory(directoryUID))
 				.get(DirectoryViewModel.class);
+
+
+
+		MaterialContainerTransform transform = new MaterialContainerTransform();
+		transform.setDuration(300);
+		transform.setDrawingViewId(R.id.fragment_container);
+		transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
+		transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
+		setSharedElementEnterTransition(transform);
+
+
+
+		setEnterSharedElementCallback(new SharedElementCallback() {
+			@Override
+			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				if(names.isEmpty()) return;
+
+				View startView = sharedElements.get(names.get(0));
+				startView.postDelayed(() -> startView.setVisibility(View.VISIBLE), 1000);
+
+				//Get the currently displayed ViewPage and the media view inside of it
+				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+currPos);
+				View media = viewPage.requireView().findViewById(R.id.media);
+
+				sharedElements.put(names.get(0), media);
+				sharedElements.put(media.getTransitionName(), media);
+
+
+				//Change the return mapping cause this shit is just constantly broken
+				TransitionSet sharedElementEnterTransition = new TransitionSet();
+				sharedElementEnterTransition.setOrdering(TransitionSet.ORDERING_TOGETHER);
+				sharedElementEnterTransition.addTransition(new ChangeClipBounds());
+				sharedElementEnterTransition.addTransition(new ChangeImageTransform());
+				sharedElementEnterTransition.addTransition(new ChangeTransform());	//Culprit
+				sharedElementEnterTransition.addTransition(new ChangeBounds());
+				sharedElementEnterTransition.setDuration(300);
+				setSharedElementEnterTransition(sharedElementEnterTransition);
+			}
+		});
 	}
 
 	@Nullable
@@ -97,26 +136,8 @@ public class ViewPagerFragment extends Fragment {
 
 		//Postpone the transition until the viewPager is ready, but only if this is our first creation
 		//WARNING: The ViewPage Fragment MUST call 'requireParentFragment().startPostponedEnterTransition();'
-		postponeEnterTransition();
-
-
-		setEnterSharedElementCallback(new SharedElementCallback() {
-			@Override
-			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				if(names.isEmpty()) return;
-
-				//Get the currently displayed ViewPage and the media view inside of it
-				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+currPos);
-				//View media = viewPage.requireView().findViewById(R.id.media);
-				View media = viewPage.requireView().findViewById(R.id.view_a);
-
-				System.out.println("Scale: " + media.getScaleX() + "," + media.getScaleY());
-
-
-				sharedElements.put(names.get(0), media);
-				sharedElements.put(media.getTransitionName(), media);
-			}
-		});
+		if(savedInstanceState == null)
+			postponeEnterTransition();
 
 		return binding.getRoot();
 	}

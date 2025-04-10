@@ -111,74 +111,8 @@ public class DirFragment extends Fragment {
 
 
 	@Override
-	public void onResume() {
-		super.onResume();
-		System.out.println("Resuming");
-		//setExitTransition(null); // Clears the transition when returning
-		//setExitSharedElementCallback(null);
-	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		System.out.println("Starting");
-	}
-
-	@Override
-	public void onPause() {
-		System.out.println("Pausing");
-		super.onPause();
-	}
-
-	@Override
-	public void onStop() {
-		System.out.println("Stopping");
-		super.onStop();
-	}
-
-	@Override
-	public void onHiddenChanged(boolean hidden) {
-		super.onHiddenChanged(hidden);
-		System.out.println("Hidden changed: "+hidden);
-	}
-
-	//public int VPStartPos = -1;
-	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		binding = FragDirBinding.inflate(inflater, container, false);
-
-		setExitSharedElementCallback(new SharedElementCallback() {
-			@Override
-			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				ListItem vpItem = dirViewModel.viewPagerCurrItem;
-				if(vpItem == null) return;
-				dirViewModel.viewPagerCurrItem = null;
-
-
-				//Get the adapter position of the ViewPager item
-				DirRVAdapter adapter = (DirRVAdapter) binding.recyclerview.getAdapter();
-				int adapterPos = -1;
-				for(int i = 0; i < adapter.list.size(); i++) {
-					if(adapter.list.get(i).filePath.equals(vpItem.filePath)) {
-						adapterPos = i;
-						break;
-					}
-				}
-				if(adapterPos == -1) return;
-
-				binding.recyclerview.scrollToPosition(adapterPos);
-
-				//Get the child for the adapter position
-				BaseViewHolder holder = (BaseViewHolder) binding.recyclerview.findViewHolderForAdapterPosition(adapterPos);
-				if(holder == null) return;
-				View media = holder.itemView.findViewById(R.id.media);
-				if(media == null) return;
-
-				sharedElements.put(names.get(0), media);
-			}
-		});
-
-
 		return binding.getRoot();
 	}
 

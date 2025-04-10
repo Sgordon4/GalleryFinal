@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.SharedElementCallback;
 import androidx.core.view.animation.PathInterpolatorCompat;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -32,6 +33,8 @@ import com.google.android.material.transition.Hold;
 import com.google.android.material.transition.MaterialContainerTransform;
 import com.google.android.material.transition.MaterialFadeThrough;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -171,6 +174,9 @@ public class AdapterTouchSetup {
 	private static void launchDirectory(DirFragment dirFragment, BaseViewHolder holder) {
 		ListItem listItem = holder.getListItem();
 
+		dirFragment.setExitTransition(null);
+		dirFragment.setExitSharedElementCallback(null);
+
 		if(listItem.attr.has("password")) {
 			String password = listItem.attr.get("password").getAsString();
 
@@ -178,7 +184,7 @@ public class AdapterTouchSetup {
 				PasswordModal.launch(dirFragment, listItem.name, password, () -> {
 					DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
 					dirFragment.getParentFragmentManager().beginTransaction()
-							.replace(R.id.fragment_container, fragment)
+							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 							.addToBackStack(null)
 							.commit();
 				});
@@ -188,7 +194,7 @@ public class AdapterTouchSetup {
 		else {
 			DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
 			dirFragment.getParentFragmentManager().beginTransaction()
-					.replace(R.id.fragment_container, fragment)
+					.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 					.addToBackStack(null)
 					.commit();
 		}
@@ -207,44 +213,36 @@ public class AdapterTouchSetup {
 		//Fade out the grid when exiting
 		dirFragment.setExitTransition(new MaterialFadeThrough());
 
-		View startView = media;
-		View endView = dirFragment.requireView();
-
-		int startHeight = startView.getHeight();
-		int endHeight = endView.getHeight();
-
-		// Calculate vertical offset to center the animation
-		int inset = Math.abs(endHeight - startHeight) / 2;
-
-		//Translate the selected item to the ViewPager
-		MaterialContainerTransform transform = new MaterialContainerTransform();
-		transform.setDuration(3000);
-		transform.setDrawingViewId(R.id.fragment_container);
-		transform.setFitMode(MaterialContainerTransform.FIT_MODE_WIDTH);
-		transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
-		transform.setDrawDebugEnabled(true);
-
-		//fragment.setSharedElementEnterTransition(transform);
+		dirFragment.setExitSharedElementCallback(new SharedElementCallback() {
+			@Override
+			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+				ListItem vpItem = dirFragment.dirViewModel.viewPagerCurrItem;
+				if(vpItem == null) return;
+				dirFragment.dirViewModel.viewPagerCurrItem = null;
 
 
-		TransitionSet sharedElementEnterTransition = new TransitionSet();
-		sharedElementEnterTransition.setOrdering(TransitionSet.ORDERING_SEQUENTIAL);
-		sharedElementEnterTransition.addTransition(new ChangeClipBounds());
-		sharedElementEnterTransition.addTransition(new ChangeImageTransform());
+				//Get the adapter position of the ViewPager item
+				DirRVAdapter adapter = (DirRVAdapter) dirFragment.binding.recyclerview.getAdapter();
+				int adapterPos = -1;
+				for(int i = 0; i < adapter.list.size(); i++) {
+					if(adapter.list.get(i).filePath.equals(vpItem.filePath)) {
+						adapterPos = i;
+						break;
+					}
+				}
+				if(adapterPos == -1) return;
 
-		sharedElementEnterTransition.addTransition(new ChangeTransform());
-		sharedElementEnterTransition.addTransition(new ChangeBounds());
-		//sharedElementEnterTransition.addTransition(new Fade(Fade.IN));
+				dirFragment.binding.recyclerview.scrollToPosition(adapterPos);
 
+				//Get the child for the adapter position
+				BaseViewHolder holder = (BaseViewHolder) dirFragment.binding.recyclerview.findViewHolderForAdapterPosition(adapterPos);
+				if(holder == null) return;
+				View media = holder.itemView.findViewById(R.id.media);
+				if(media == null) return;
 
-		sharedElementEnterTransition.setDuration(2000); // Optional: customize duration
-		sharedElementEnterTransition.setInterpolator(new FastOutSlowInInterpolator());
-
-		fragment.setSharedElementEnterTransition(sharedElementEnterTransition);
-
-
-
-
+				sharedElements.put(names.get(0), media);
+			}
+		});
 
 
 		dirFragment.getParentFragmentManager().beginTransaction()
@@ -254,11 +252,5 @@ public class AdapterTouchSetup {
 				.add(R.id.fragment_container, fragment)
 				.addToBackStack(null)
 				.commit();
-
-
-		//TODO The ViewHolder image scales up/down too quickly, and is too large when the
-		// transform swaps the views, causing a perceived jump. I'm not sure how to resolve this,
-		// like how to slow the scaling of the RV image or do something else.
-		// Keyword scaling tempo mismatch
 	}
 }

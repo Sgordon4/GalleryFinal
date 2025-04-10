@@ -1,10 +1,8 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -85,8 +83,7 @@ public class ImageFragment extends Fragment {
 		});
 
 
-		//binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
-		binding.viewA.setTransitionName(item.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
 		return binding.getRoot();
 	}
@@ -148,7 +145,6 @@ public class ImageFragment extends Fragment {
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
 				.load(fileUID)
-				.dontAnimate()
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
