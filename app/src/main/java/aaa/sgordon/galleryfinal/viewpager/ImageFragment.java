@@ -40,7 +40,6 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 public class ImageFragment extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
-	private final UUID fileUID;
 
 	private ViewPagerFragment parentFrag;
 	private ViewPager2 viewPager;
@@ -50,7 +49,6 @@ public class ImageFragment extends Fragment {
 
 	public ImageFragment(ListItem item) {
 		this.item = item;
-		this.fileUID = item.fileUID;
 	}
 
 	@Override
@@ -60,7 +58,6 @@ public class ImageFragment extends Fragment {
 		parentFrag = (ViewPagerFragment) requireParentFragment();
 		viewPager = parentFrag.requireView().findViewById(R.id.viewpager);
 	}
-
 
 	@Nullable
 	@Override
@@ -99,8 +96,7 @@ public class ImageFragment extends Fragment {
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 
 
-		//if(item.fileSize < SIZE_THRESHOLD)
-		if(item.fileSize > SIZE_THRESHOLD)
+		if(item.fileSize < SIZE_THRESHOLD)
 			usePhotoView();
 		else
 			useSubsamplingScaleImageView();
@@ -112,7 +108,6 @@ public class ImageFragment extends Fragment {
 
 	//Using this instead of checking for scale == 1 or whatever in case user is still holding, touches on scale==1, and continues scaling
 	boolean photoScaling = false;
-
 	private float downX, downY;
 	private boolean vpAllowed;
 
@@ -157,19 +152,16 @@ public class ImageFragment extends Fragment {
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
-				.load(fileUID)
+				.load(item.fileUID)
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
-						System.out.println("Media failed");
 						requireParentFragment().startPostponedEnterTransition();
 						return false;
 					}
 
 					@Override
 					public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model, Target<Drawable> target, @NonNull DataSource dataSource, boolean isFirstResource) {
-						System.out.println("Media loaded");
-
 						float intrinsicHeight = resource.getIntrinsicHeight();
 						float intrinsicWidth = resource.getIntrinsicWidth();
 
@@ -186,6 +178,7 @@ public class ImageFragment extends Fragment {
 							zoom = windowAspectRatio / imageAspectRatio;
 
 						if(zoom < 1.3) zoom = 1.3f;
+						if(zoom > 2.25) zoom = 2.25f;
 
 						media.setMaximumScale(zoom * 3);
 						media.setMediumScale(zoom);
