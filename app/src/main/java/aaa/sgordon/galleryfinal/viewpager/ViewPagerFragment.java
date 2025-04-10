@@ -105,9 +105,6 @@ public class ViewPagerFragment extends Fragment {
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
 				if(names.isEmpty()) return;
 
-				View startView = sharedElements.get(names.get(0));
-				startView.postDelayed(() -> startView.setVisibility(View.VISIBLE), 1000);
-
 				//Get the currently displayed ViewPage and the media view inside of it
 				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+currPos);
 				View media = viewPage.requireView().findViewById(R.id.media);

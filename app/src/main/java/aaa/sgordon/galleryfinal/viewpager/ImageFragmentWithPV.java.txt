@@ -1,9 +1,7 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
-import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -23,21 +21,15 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
-import com.davemorrissey.labs.subscaleview.ImageSource;
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.github.chrisbanes.photoview.PhotoView;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
-public class ImageFragment extends Fragment {
+public class ImageFragmentWithPV extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
 	private final UUID fileUID;
@@ -48,7 +40,7 @@ public class ImageFragment extends Fragment {
 	private DragPage dragPage;
 
 
-	public ImageFragment(ListItem item) {
+	public ImageFragmentWithPV(ListItem item) {
 		this.item = item;
 		this.fileUID = item.fileUID;
 	}
@@ -67,6 +59,10 @@ public class ImageFragment extends Fragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = VpViewpageBinding.inflate(inflater, container, false);
 
+		ViewStub mediaStub = binding.mediaStub;
+		mediaStub.setLayoutResource(R.layout.vp_image);
+		mediaStub.inflate();
+
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
@@ -76,54 +72,30 @@ public class ImageFragment extends Fragment {
 		});
 
 
+
 		dragPage = binding.motionLayout;
 		dragPage.setOnDismissListener(() -> {
+			System.out.println("OnDismiss");
 			getParentFragment().getParentFragmentManager().popBackStack();
 		});
 
+
+		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
 		return binding.getRoot();
 	}
 
 
-
-
-	public static final int SIZE_THRESHOLD = 1024 * 1024 * 3;	//3MB
+	private float downX, downY;
 	private float touchSlop;
-
+	private boolean vpAllowed;
+	boolean photoScaling = false;
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
-
-
-		if(item.fileSize < SIZE_THRESHOLD)
-			usePhotoView();
-		else
-			useSubsamplingScaleImageView();
-	}
-
-
-	//---------------------------------------------------------------------------------------------
-
-
-	//Using this instead of checking for scale == 1 or whatever in case user is still holding, touches on scale==1, and continues scaling
-	boolean photoScaling = false;
-
-	private float downX, downY;
-	private boolean vpAllowed;
-
-	private void usePhotoView() {
-
-		//Swap out ViewA for our PhotoView
-		ViewStub mediaStub = binding.mediaStub;
-		mediaStub.setLayoutResource(R.layout.vp_image_photoview);
-		mediaStub.inflate();
-
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
-
+		DragPage motionLayout = binding.motionLayout;
 
 		PhotoView media = binding.viewA.findViewById(R.id.media);
 		media.setOnScaleChangeListener((scaleFactor, focusX, focusY) -> {
@@ -132,7 +104,9 @@ public class ImageFragment extends Fragment {
 			media.setAllowParentInterceptOnEdge(false);
 		});
 
-		dragPage.setExtraOnInterceptTouchListener(event -> {
+
+		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
+		motionLayout.setExtraOnInterceptTouchListener(event -> {
 			if (event.getAction() == MotionEvent.ACTION_DOWN) {
 				photoScaling = false;
 
@@ -152,6 +126,8 @@ public class ImageFragment extends Fragment {
 
 			return false;
 		});
+
+
 
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
@@ -178,94 +154,4 @@ public class ImageFragment extends Fragment {
 				.into(media);
 	}
 
-
-
-	private void useSubsamplingScaleImageView() {
-
-		//Swap out ViewA for our SubsamplingScaleImageView
-		ViewStub mediaStub = binding.mediaStub;
-		mediaStub.setLayoutResource(R.layout.vp_image_subsampling);
-		mediaStub.inflate();
-
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
-
-
-		SubsamplingScaleImageView media = binding.viewA.findViewById(R.id.media);
-		media.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
-			@Override
-			public void onReady() {
-
-			}
-			@Override
-			public void onPreviewLoadError(Exception e) {
-				requireParentFragment().startPostponedEnterTransition();
-			}
-			@Override
-			public void onImageLoadError(Exception e) {
-				requireParentFragment().startPostponedEnterTransition();
-			}
-			@Override
-			public void onTileLoadError(Exception e) {
-				requireParentFragment().startPostponedEnterTransition();
-			}
-			@Override
-			public void onPreviewReleased() {
-
-			}
-			@Override
-			public void onImageLoaded() {
-				float intrinsicHeight = media.getSHeight() * media.getScale();
-				dragPage.onMediaReady(intrinsicHeight);
-				requireParentFragment().startPostponedEnterTransition();
-			}
-		});
-
-		media.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
-			@Override
-			public void onCenterChanged(PointF newCenter, int origin) {
-
-			}
-			@Override
-			public void onScaleChanged(float newScale, int origin) {
-				photoScaling = true;
-				dragPage.requestDisallowInterceptTouchEvent(true);
-			}
-		});
-
-		dragPage.setExtraOnInterceptTouchListener(event -> {
-			if (event.getAction() == MotionEvent.ACTION_DOWN) {
-				photoScaling = false;
-
-				downX = event.getX();
-				downY = event.getY();
-				vpAllowed = false;
-
-				boolean mediaScaled = media.getScale() != media.getMinScale();
-				dragPage.requestDisallowInterceptTouchEvent(mediaScaled);
-			}
-
-			//Don't allow viewpager to take control until twice the normal horizontal touch slop
-			//This makes the viewpage vertical dragging more forgiving, feels better
-			vpAllowed = vpAllowed || Math.abs(event.getX() - downX) > 2*touchSlop;
-			viewPager.setUserInputEnabled(!dragPage.isHandlingTouch() && vpAllowed && !photoScaling);
-
-			return false;
-		});
-
-
-
-		Thread load = new Thread(() -> {
-			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(item.fileUID).first;
-
-				media.post(() -> {
-					media.setImage(ImageSource.uri(uri));
-
-				});
-			} catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-				//TODO Load error uri
-			}
-		});
-		load.start();
-	}
 }

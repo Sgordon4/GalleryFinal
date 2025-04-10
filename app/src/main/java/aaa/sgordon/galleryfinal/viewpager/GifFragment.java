@@ -124,11 +124,11 @@ public class GifFragment extends Fragment {
 			vpAllowed = vpAllowed || Math.abs(event.getX() - downX) > 2*touchSlop;
 
 
-			viewPager.setUserInputEnabled(!scaleHelper.isActive() && !dragHelper.isDragging() && vpAllowed);
+			viewPager.setUserInputEnabled(!scaleHelper.isScaling() && !dragHelper.isDragging() && vpAllowed);
 
 
 
-			if(!scaleHelper.isActive())
+			if(!scaleHelper.isScaling())
 				dragHelper.onMotionEvent(event);
 			if(!dragHelper.isActive())
 				scaleHelper.onMotionEvent(event);

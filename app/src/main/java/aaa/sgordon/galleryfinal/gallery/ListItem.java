@@ -10,6 +10,7 @@ public class ListItem {
 	public final UUID parentUID;
 	public final String name;
 	public final Path filePath;
+	public final int fileSize;
 	public final boolean isDir;
 	public final boolean isLink;
 	public final JsonObject attr;
@@ -30,12 +31,13 @@ public class ListItem {
 	}
 	
 
-	public ListItem(Path filePath, UUID fileUID, UUID parentUID, String name,
+	public ListItem(Path filePath, UUID fileUID, UUID parentUID, String name, int fileSize,
 					boolean isDir, boolean isLink, JsonObject attr, ListItemType type) {
 		this.fileUID = fileUID;
 		this.parentUID = parentUID;
 		this.name = name;
 		this.filePath = filePath;
+		this.fileSize = fileSize;
 		this.isDir = isDir;
 		this.isLink = isLink;
 		this.attr = attr;
@@ -51,6 +53,7 @@ public class ListItem {
 				", isLink=" + isLink +
 				", type=" + type +
 				", name='" + name + '\'' +
+				", fileSize=" + fileSize +
 				", filePath=" + filePath +
 				'}';
 	}
@@ -61,6 +64,7 @@ public class ListItem {
 		private UUID parentUID;
 		private String name;
 		private Path filePath;
+		private int fileSize;
 		private boolean isDir;
 		private boolean isLink;
 		private JsonObject attr;
@@ -72,6 +76,7 @@ public class ListItem {
 			this.parentUID = item.parentUID;
 			this.name = item.name;
 			this.filePath = item.filePath;
+			this.fileSize = item.fileSize;
 			this.isDir = item.isDir;
 			this.isLink = item.isLink;
 			this.attr = item.attr;
@@ -94,6 +99,10 @@ public class ListItem {
 			this.filePath = filePath;
 			return this;
 		}
+		public Builder setFileSize(int fileSize) {
+			this.fileSize = fileSize;
+			return this;
+		}
 		public Builder setIsDir(boolean isDir) {
 			this.isDir = isDir;
 			return this;
@@ -112,7 +121,7 @@ public class ListItem {
 		}
 
 		public ListItem build() {
-			return new ListItem(filePath, fileUID, parentUID, name, isDir, isLink, attr, type);
+			return new ListItem(filePath, fileUID, parentUID, name, fileSize, isDir, isLink, attr, type);
 		}
 	}
 }

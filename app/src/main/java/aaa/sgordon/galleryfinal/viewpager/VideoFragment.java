@@ -1,7 +1,6 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,7 +11,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.ViewTreeObserver;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -24,18 +22,11 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
-
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragViewpagerVideoBinding;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -136,11 +127,11 @@ public class VideoFragment extends Fragment {
 			vpAllowed = vpAllowed || Math.abs(event.getX() - downX) > 2*touchSlop;
 
 
-			viewPager.setUserInputEnabled(!scaleHelper.isActive() && !dragHelper.isDragging() && vpAllowed);
+			viewPager.setUserInputEnabled(!scaleHelper.isScaling() && !dragHelper.isDragging() && vpAllowed);
 
 
 
-			if(!scaleHelper.isActive())
+			if(!scaleHelper.isScaling())
 				dragHelper.onMotionEvent(event);
 			if(!dragHelper.isActive())
 				scaleHelper.onMotionEvent(event);

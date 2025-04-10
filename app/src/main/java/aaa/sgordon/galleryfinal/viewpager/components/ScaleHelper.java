@@ -42,8 +42,8 @@ public class ScaleHelper extends Fragment {
 		void onDismiss();
 	}
 
-	public boolean isActive() {
-		return isScaling || scaleView.getScaleX() < 1f;
+	public boolean isScaling() {
+		return isScaling || scaleView.getScaleX() != 1f;
 	}
 
 
@@ -64,8 +64,7 @@ public class ScaleHelper extends Fragment {
 					backgroundDimmer = null;
 				}
 
-				return true;
-
+				break;
 			case MotionEvent.ACTION_MOVE:
 				float moveX = event.getRawX();
 				float moveY = event.getRawY();
@@ -73,10 +72,16 @@ public class ScaleHelper extends Fragment {
 				float deltaX = moveX - downX;
 				float deltaY = moveY - downY;
 
-				if (!isActive()) {
+				if (!isScaling()) {
+					//Make sure there's enough vertical intent
+					//if (Math.abs(deltaY) <= Math.abs(deltaX) || Math.abs(deltaY) < touchSlop)
+					if (Math.abs(deltaY) < touchSlop)
+						break;
+
 					//If we are not swiping downwards, don't interfere with other gestures
-					if (Math.abs(deltaY) <= Math.abs(deltaX) || Math.abs(deltaY) < touchSlop)
-						return false;
+					if(deltaY < 0)
+						break;
+
 					downX = moveX;
 					downY = moveY;
 				}
@@ -110,7 +115,7 @@ public class ScaleHelper extends Fragment {
 
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
-				if(!isActive()) return false;
+				if(!isScaling()) break;
 
 				float finalDx = scaleView.getTranslationX();
 				float finalDy = scaleView.getTranslationY();

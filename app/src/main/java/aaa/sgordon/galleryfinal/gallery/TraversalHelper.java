@@ -59,10 +59,10 @@ public class TraversalHelper {
 				//If this isn't a link, we don't need to do anything special
 				if (!fileProps.islink) {
 					if(fileProps.isdir)
-						files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, true, false, fileProps.userattr,
+						files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, fileProps.filesize, true, false, fileProps.userattr,
 								ListItem.ListItemType.DIRECTORY));
 					else
-						files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, false, fileProps.userattr,
+						files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, fileProps.filesize, false, false, fileProps.userattr,
 								ListItem.ListItemType.NORMAL));
 					continue;
 				}
@@ -78,14 +78,14 @@ public class TraversalHelper {
 
 				//If this is a link but it's trashed, we don't want to follow it
 				if(isTrashed) {
-					files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, true, fileProps.userattr,
+					files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, fileProps.filesize, false, true, fileProps.userattr,
 							ListItem.ListItemType.LINKBROKEN));
 					continue;
 				}
 
 				Set<UUID> localVisited = new HashSet<>(visited);
 				if(!localVisited.add(fileUID)) {    //Prevent cycles
-					files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, true, fileProps.userattr,
+					files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, fileProps.filesize, false, true, fileProps.userattr,
 							ListItem.ListItemType.LINKCYCLE));
 					continue;
 				}
@@ -93,7 +93,7 @@ public class TraversalHelper {
 
 				try {
 					//Traverse the link
-					ListItem topLink = new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, true,  fileProps.userattr,
+					ListItem topLink = new ListItem(thisFilePath, fileUID, parentUID, entry.second, fileProps.filesize, false, true,  fileProps.userattr,
 							ListItem.ListItemType.LINKSINGLE);
 
 					files.addAll(traverseLink(fileUID, topLink, localVisited, thisFilePath));
@@ -101,14 +101,14 @@ public class TraversalHelper {
 				catch (ContentsNotFoundException e) {
 					//If we're here, traverseLink threw this exception
 					//If we can't find the link's contents, this is an issue, link is broken
-					files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, true, fileProps.userattr,
+					files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, fileProps.filesize, false, true, fileProps.userattr,
 							ListItem.ListItemType.LINKBROKEN));
 					continue;
 				}
 			}
 			catch (FileNotFoundException | ConnectException e) {
 				//If the file isn't found (file may be local on another device) or we just can't reach it, treat it as unreachable
-				files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, false, false, new JsonObject(),
+				files.add(new ListItem(thisFilePath, fileUID, parentUID, entry.second, 0, false, false, new JsonObject(),
 						ListItem.ListItemType.UNREACHABLE));
 				continue;
 			}

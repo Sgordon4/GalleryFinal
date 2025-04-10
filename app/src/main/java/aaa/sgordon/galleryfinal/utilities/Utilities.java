@@ -1,8 +1,10 @@
 package aaa.sgordon.galleryfinal.utilities;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -13,8 +15,12 @@ import androidx.annotation.NonNull;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -57,6 +63,33 @@ public class Utilities {
 	}
 
 
+
+	public static Pair<Integer, Integer> getMediaDimensions(Uri uri){
+		BitmapFactory.Options options = new BitmapFactory.Options();
+		options.inJustDecodeBounds = true;      //Don't load into memory
+
+		InputStream in = null;
+		try {
+			//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
+			try {
+				in = MyApplication.getAppContext().getContentResolver().openInputStream(uri);
+			} catch (FileNotFoundException e) {
+				in = new URL(uri.toString()).openStream();
+			}
+
+			BitmapFactory.decodeStream(in, null, options);
+		}
+		catch (IOException e) { throw new RuntimeException(e); }
+		finally {
+			try {
+				if(in != null) in.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		return new Pair<>(options.outWidth, options.outHeight);
+	}
 
 
 	//Thanks ChatGPT!

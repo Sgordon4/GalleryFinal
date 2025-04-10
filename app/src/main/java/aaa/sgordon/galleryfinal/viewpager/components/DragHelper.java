@@ -77,6 +77,9 @@ public class DragHelper {
 	public boolean isDragging() {
 		return isDragging;
 	}
+	public float getProgress() {
+		return motionLayout.getProgress();
+	}
 
 
 
@@ -154,6 +157,7 @@ public class DragHelper {
 
 				break;
 			case MotionEvent.ACTION_MOVE:
+				velocityTracker.addMovement(event);
 
 				float moveX = event.getX();
 				float moveY = event.getY();
@@ -186,7 +190,7 @@ public class DragHelper {
 				newProgress = Math.max(0f, Math.min(1f, newProgress));
 				motionLayout.setProgress(newProgress);
 
-				break;
+				return true;
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
 				//if(!isDragging) return false;
@@ -209,9 +213,6 @@ public class DragHelper {
 				velocityTracker.clear();
 				velocityTracker.addMovement(event);
 
-				break;
-			case MotionEvent.ACTION_MOVE:
-				velocityTracker.addMovement(event);
 				break;
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
@@ -276,11 +277,13 @@ public class DragHelper {
 				if (currMediaBottom >= thresholdChange) {
 					//Snap to Closed
 					animateSnapTo(0);
+					return true;
 				}
 				//Bottom above threshold Change, but below threshold Open
 				else if (currMediaBottom < thresholdChange && currMediaBottom > thresholdOpen) {
 					//Snap to Open
 					animateSnapTo(progressAtOpen);
+					return true;
 				}
 				//Bottom above threshold Open
 				//else {//if(mediaBottom <= thresholdOpen) {
@@ -289,7 +292,7 @@ public class DragHelper {
 		}
 
 
-		return true;
+		return false;
 	}
 
 
