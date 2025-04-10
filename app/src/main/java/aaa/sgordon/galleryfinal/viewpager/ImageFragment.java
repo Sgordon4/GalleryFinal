@@ -99,7 +99,8 @@ public class ImageFragment extends Fragment {
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 
 
-		if(item.fileSize < SIZE_THRESHOLD)
+		//if(item.fileSize < SIZE_THRESHOLD)
+		if(item.fileSize > SIZE_THRESHOLD)
 			usePhotoView();
 		else
 			useSubsamplingScaleImageView();
@@ -169,8 +170,30 @@ public class ImageFragment extends Fragment {
 					public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model, Target<Drawable> target, @NonNull DataSource dataSource, boolean isFirstResource) {
 						System.out.println("Media loaded");
 
-						int intrinsicHeight = resource.getIntrinsicHeight();
+						float intrinsicHeight = resource.getIntrinsicHeight();
+						float intrinsicWidth = resource.getIntrinsicWidth();
+
+						float windowHeight = dragPage.getHeight();
+						float windowWidth = dragPage.getWidth();
+
+						//Set zoom scaling to better match image
+						float windowAspectRatio = windowWidth / windowHeight;
+						float imageAspectRatio = intrinsicWidth / intrinsicHeight;
+						float zoom;
+						if(imageAspectRatio > windowAspectRatio)
+							zoom = imageAspectRatio / windowAspectRatio;
+						else
+							zoom = windowAspectRatio / imageAspectRatio;
+
+						if(zoom < 1.3) zoom = 1.3f;
+
+						media.setMaximumScale(zoom * 3);
+						media.setMediumScale(zoom);
+						media.setMinimumScale(1);
+
+
 						dragPage.onMediaReady(intrinsicHeight);
+
 						requireParentFragment().startPostponedEnterTransition();
 						return false;
 					}
