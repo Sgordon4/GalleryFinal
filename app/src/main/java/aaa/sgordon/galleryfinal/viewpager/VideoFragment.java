@@ -1,55 +1,61 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
+import android.graphics.Matrix;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
-import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.motion.widget.MotionLayout;
+import androidx.annotation.OptIn;
 import androidx.fragment.app.Fragment;
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.ui.PlayerView;
+import androidx.media3.ui.PlayerControlView;
 import androidx.viewpager2.widget.ViewPager2;
+
+import com.otaliastudios.zoom.ZoomSurfaceView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
-import aaa.sgordon.galleryfinal.viewpager.components.DragHelper;
-import aaa.sgordon.galleryfinal.viewpager.components.ScaleHelper;
+import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
+import aaa.sgordon.galleryfinal.viewpager.components.VideoTouchHandler;
 
 public class VideoFragment extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
-	private final UUID fileUID;
-
-	private DragHelper dragHelper;
-	private ScaleHelper scaleHelper;
 
 	private ViewPagerFragment parentFrag;
 	private ViewPager2 viewPager;
 
+	private DragPage dragPage;
+
 	private ExoPlayer player;
+	private TextureView textureView;
+	private View controls;
+
 
 	public VideoFragment(ListItem item) {
 		this.item = item;
-		this.fileUID = item.fileUID;
 	}
 
 	@Override
@@ -60,15 +66,19 @@ public class VideoFragment extends Fragment {
 		viewPager = parentFrag.requireView().findViewById(R.id.viewpager);
 	}
 
-
 	@Nullable
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = VpViewpageBinding.inflate(inflater, container, false);
 
+
+		//Swap out ViewA for our PhotoView
 		ViewStub mediaStub = binding.mediaStub;
 		mediaStub.setLayoutResource(R.layout.vp_video);
 		mediaStub.inflate();
+
+		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+
 
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
@@ -78,103 +88,143 @@ public class VideoFragment extends Fragment {
 			Toast.makeText(requireContext(), "Test Button Clicked", Toast.LENGTH_SHORT).show();
 		});
 
-		dragHelper = new DragHelper(binding.motionLayout, binding.viewA, binding.viewB);
-		scaleHelper = new ScaleHelper(binding.dimBackground, binding.viewA, () -> {
-			System.out.println("OnDismiss");
+
+		dragPage = binding.motionLayout;
+		dragPage.setOnDismissListener(() -> {
 			getParentFragment().getParentFragmentManager().popBackStack();
 		});
 
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		textureView = binding.viewA.findViewById(R.id.media);
+		controls = binding.viewA.findViewById(R.id.videoControls);
 
 		return binding.getRoot();
 	}
 
-	private float downX, downY;
+
+
+
 	private float touchSlop;
-	private boolean vpAllowed;
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
-		MotionLayout motionLayout = binding.motionLayout;
 
-		motionLayout.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+		dragPage.requestDisallowInterceptTouchEvent(true);
+		viewPager.setUserInputEnabled(false);
+
+		VideoTouchHandler touchHandler = new VideoTouchHandler(requireContext(), textureView);
+		GestureDetector detector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
 			@Override
-			public boolean onPreDraw() {
-				motionLayout.getViewTreeObserver().removeOnPreDrawListener(this);
+			public boolean onDown(@NonNull MotionEvent e) {
+				longPress = false;
+				return false;
+			}
 
-				dragHelper.onViewCreated();
+			@Override
+			public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
+				toggleControls();
+				return false;
+			}
+
+
+			boolean longPress = false;
+			@Override
+			public void onLongPress(@NonNull MotionEvent e) {
+				longPress = true;
+			}
+			@Override
+			public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
+				//We are looking for a double tap without a longPress
+				if(e.getAction() != MotionEvent.ACTION_UP || longPress) return true;
+
+				//TODO Do something
+
 				return true;
 			}
 		});
 
+		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
+			boolean dontContinue = detector.onTouchEvent(event);
 
-		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
-		motionLayout.setOnTouchListener((v, event) -> {
-			v.performClick();
+			boolean videoHandled = touchHandler.onTouch(v, event);
 
-			switch (event.getActionMasked()) {
-				case MotionEvent.ACTION_DOWN:
-					downX = event.getX();
-					downY = event.getY();
-					vpAllowed = false;
-					break;
-			}
-			//Don't allow viewpager to take control until twice the normal horizontal touch slop
-			//This makes the viewpage vertical dragging more forgiving, feels better
-			vpAllowed = vpAllowed || Math.abs(event.getX() - downX) > 2*touchSlop;
-
-
-			viewPager.setUserInputEnabled(!scaleHelper.isScaling() && !dragHelper.isDragging() && vpAllowed);
-
-
-
-			if(!scaleHelper.isScaling())
-				dragHelper.onMotionEvent(event);
-			if(!dragHelper.isActive())
-				scaleHelper.onMotionEvent(event);
+			dragPage.onTouchEvent(event);
 
 			return true;
 		});
 
-
-
-
-		PlayerView playerView = binding.viewA.findViewById(R.id.media);
-		player = new ExoPlayer.Builder(requireContext()).build();
-		playerView.setPlayer(player);
-
-
-		Thread thread = new Thread(() -> {
-			HybridAPI hAPI = HybridAPI.getInstance();
-			try {
-				Handler mainHandler = new Handler(getContext().getMainLooper());
-
-
-				Uri content = hAPI.getFileContent(fileUID).first;
-				MediaItem mediaItem = MediaItem.fromUri(content);
-
-				mainHandler.post(() -> {
-					player.setMediaItem(mediaItem);
-					player.prepare();
-					player.setPlayWhenReady(true);
-
-					requireParentFragment().startPostponedEnterTransition();
-				});
-			}
-			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-				//Do nothing
-			}
-		});
-		thread.start();
+		initializePlayer();
 	}
 
 
+
+	@OptIn(markerClass = UnstableApi.class)
+	private void initializePlayer() {
+		player = new ExoPlayer.Builder(requireContext()).build();
+		player.setVideoTextureView(textureView);
+
+		player.addListener(new Player.Listener() {
+			@Override
+			public void onVideoSizeChanged(@NonNull VideoSize videoSize) {
+				//Adjust the height of the media in the TextureView
+				float videoWidth = videoSize.width;
+				float videoHeight = videoSize.height;
+				float videoAspectRatio = videoSize.pixelWidthHeightRatio * videoWidth / videoHeight;
+
+				// Get the view's aspect ratio
+				float viewWidth = textureView.getWidth();
+				float viewHeight = textureView.getHeight();
+				float viewAspectRatio = viewWidth / viewHeight;
+
+				// Compute scale
+				float scaleX = 1f;
+				float scaleY = 1f;
+
+				if (videoAspectRatio > viewAspectRatio) {
+					scaleY = viewAspectRatio / videoAspectRatio;
+				} else {
+					scaleX = videoAspectRatio / viewAspectRatio;
+				}
+
+				// Apply scale to TextureView
+				Matrix matrix = new Matrix();
+				matrix.setScale(scaleX, scaleY, viewWidth / 2f, viewHeight / 2f);
+				textureView.setTransform(matrix);
+
+
+				//Tell DragPage the correct media height as well
+				//dragPage.onMediaReady(videoHeight);		//TODO No correcto
+			}
+		});
+
+
+
+		Uri videoUri = Uri.parse("https://file-examples.com/storage/fee47d30d267f6756977e34/2017/04/file_example_MP4_480_1_5MG.mp4"); // Replace with your video URI
+		MediaItem mediaItem = MediaItem.fromUri(videoUri);
+		player.setMediaItem(mediaItem);
+		player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
+		player.prepare();
+		player.play();
+
+		startPostponedEnterTransition();
+	}
+
+	private void toggleControls() {
+		if (controls.getVisibility() == View.VISIBLE) {
+			controls.animate().alpha(0f).setDuration(200).withEndAction(() -> controls.setVisibility(View.GONE)).start();
+		} else {
+			controls.setAlpha(0f);
+			controls.setVisibility(View.VISIBLE);
+			controls.animate().alpha(1f).setDuration(200).start();
+		}
+	}
+
 	@Override
-	public void onStop() {
-		super.onStop();
+	public void onDestroy() {
+		super.onDestroy();
 		if (player != null) {
 			player.release();
 			player = null;

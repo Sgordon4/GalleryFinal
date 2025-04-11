@@ -55,6 +55,15 @@ public class GifFragment extends Fragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = VpViewpageBinding.inflate(inflater, container, false);
 
+
+		//Swap out ViewA for our PhotoView
+		ViewStub mediaStub = binding.mediaStub;
+		mediaStub.setLayoutResource(R.layout.vp_image_photoview);
+		mediaStub.inflate();
+
+		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+
+
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
@@ -69,7 +78,6 @@ public class GifFragment extends Fragment {
 			getParentFragment().getParentFragmentManager().popBackStack();
 		});
 
-
 		return binding.getRoot();
 	}
 
@@ -83,16 +91,9 @@ public class GifFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
-
-		//Swap out ViewA for our PhotoView
-		ViewStub mediaStub = binding.mediaStub;
-		mediaStub.setLayoutResource(R.layout.vp_image_photoview);
-		mediaStub.inflate();
-
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
-
 
 		PhotoView media = binding.viewA.findViewById(R.id.media);
 		media.setOnScaleChangeListener((scaleFactor, focusX, focusY) -> {

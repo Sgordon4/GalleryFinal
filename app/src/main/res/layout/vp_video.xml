@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.media3.ui.PlayerView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/media"
+    android:id="@+id/touch_overlay"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:keepScreenOn="true"
-    android:adjustViewBounds="true"
-    android:scaleType="fitCenter"
-    android:layout_centerInParent="true"
-    app:use_controller="true"
-    app:resize_mode="fit"
-    tools:context=".viewpager.ViewPagerFragment" />
+    android:layout_height="match_parent">
+
+    <TextureView
+        android:id="@+id/media"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <include
+        android:id="@+id/controls"
+        layout="@layout/vp_video_controls" />
+
+    <!--
+    <androidx.media3.ui.PlayerControlView
+        android:id="@+id/player_control_view"
+        android:layout_gravity="bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    -->
+
+</FrameLayout>

@@ -92,6 +92,7 @@ public class ImageFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 
