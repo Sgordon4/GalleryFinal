@@ -103,8 +103,6 @@ public class VideoFragment extends Fragment {
 
 
 
-
-	private float touchSlop;
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -112,10 +110,7 @@ public class VideoFragment extends Fragment {
 		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 
-		dragPage.requestDisallowInterceptTouchEvent(true);
-		viewPager.setUserInputEnabled(false);
-
-		VideoTouchHandler touchHandler = new VideoTouchHandler(requireContext(), textureView);
+		VideoTouchHandler videoTouchHandler = new VideoTouchHandler(requireContext(), textureView);
 		GestureDetector detector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
@@ -146,12 +141,13 @@ public class VideoFragment extends Fragment {
 			}
 		});
 
+
 		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
-			boolean dontContinue = detector.onTouchEvent(event);
+			boolean handled = videoTouchHandler.onTouch(v, event);
+			handled = handled || videoTouchHandler.isScaled();
+			dragPage.requestDisallowInterceptTouchEvent(handled);
 
-			boolean videoHandled = touchHandler.onTouch(v, event);
-
-			dragPage.onTouchEvent(event);
+			//TODO May need to stop viewpager input when multi-touching
 
 			return true;
 		});
@@ -169,6 +165,7 @@ public class VideoFragment extends Fragment {
 		player.addListener(new Player.Listener() {
 			@Override
 			public void onVideoSizeChanged(@NonNull VideoSize videoSize) {
+				System.out.println("Size changed!");
 				//Adjust the height of the media in the TextureView
 				float videoWidth = videoSize.width;
 				float videoHeight = videoSize.height;
@@ -202,12 +199,13 @@ public class VideoFragment extends Fragment {
 
 
 
-		Uri videoUri = Uri.parse("https://file-examples.com/storage/fee47d30d267f6756977e34/2017/04/file_example_MP4_480_1_5MG.mp4"); // Replace with your video URI
+		//Uri videoUri = Uri.parse("https://file-examples.com/storage/fee47d30d267f6756977e34/2017/04/file_example_MP4_480_1_5MG.mp4");
+		Uri videoUri = Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
 		MediaItem mediaItem = MediaItem.fromUri(videoUri);
 		player.setMediaItem(mediaItem);
 		player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
 		player.prepare();
-		player.play();
+		//player.play();
 
 		startPostponedEnterTransition();
 	}
@@ -220,6 +218,18 @@ public class VideoFragment extends Fragment {
 			controls.setVisibility(View.VISIBLE);
 			controls.animate().alpha(1f).setDuration(200).start();
 		}
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		player.play();
+	}
+
+	@Override
+	public void onPause() {
+		player.pause();
+		super.onPause();
 	}
 
 	@Override

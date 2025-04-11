@@ -129,6 +129,7 @@ public class ImageFragment extends Fragment {
 			media.setAllowParentInterceptOnEdge(false);
 		});
 
+		/*
 		dragPage.setExtraOnInterceptTouchListener(event -> {
 			if (event.getAction() == MotionEvent.ACTION_DOWN) {
 				photoScaling = false;
@@ -149,6 +150,8 @@ public class ImageFragment extends Fragment {
 
 			return false;
 		});
+
+		 */
 
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
@@ -249,6 +252,7 @@ public class ImageFragment extends Fragment {
 			}
 		});
 
+		/*
 		dragPage.setExtraOnInterceptTouchListener(event -> {
 			if (event.getAction() == MotionEvent.ACTION_DOWN) {
 				photoScaling = false;
@@ -268,6 +272,8 @@ public class ImageFragment extends Fragment {
 
 			return false;
 		});
+
+		 */
 
 
 

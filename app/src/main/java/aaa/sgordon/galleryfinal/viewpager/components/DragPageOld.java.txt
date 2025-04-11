@@ -12,14 +12,14 @@ import androidx.constraintlayout.motion.widget.MotionLayout;
 
 import aaa.sgordon.galleryfinal.R;
 
-public class DragPage extends MotionLayout {
-	public DragPage(@NonNull Context context) {
+public class DragPageOld extends MotionLayout {
+	public DragPageOld(@NonNull Context context) {
 		super(context);
 	}
-	public DragPage(@NonNull Context context, @Nullable AttributeSet attrs) {
+	public DragPageOld(@NonNull Context context, @Nullable AttributeSet attrs) {
 		super(context, attrs);
 	}
-	public DragPage(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+	public DragPageOld(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
 	}
 
@@ -31,6 +31,9 @@ public class DragPage extends MotionLayout {
 	private ViewGroup viewA;
 	private ViewGroup viewB;
 	private View dimBackground;
+
+	private boolean childRequestedDisallowTouchIntercept;
+
 
 
 	@Override
@@ -48,41 +51,64 @@ public class DragPage extends MotionLayout {
 		dragHelper.onViewCreated();
 	}
 
-
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
-		if(childRequestedDisallowInterceptTouchEvent) return false;
-		if(event.getPointerCount() > 1) return false;	//Ignore multitouch events
+		if(event.getAction() == MotionEvent.ACTION_DOWN)
+			getParent().requestDisallowInterceptTouchEvent(false);
 
+		//Additional Intercept listener cause PhotoView's touchListener is broken
+		if(interceptTouchListener != null) {
+			boolean intercept = interceptTouchListener.onInterceptTouchEvent(event);
+			if(intercept) return true;
+		}
+
+		if(childRequestedDisallowTouchIntercept)
+			return false;
+
+		boolean handlingTouch = false;
 		if(!scaleHelper.isScaling())
-			dragHelper.onMotionEvent(event);
+			handlingTouch = dragHelper.onMotionEvent(event);
 		if(!dragHelper.isDragging())
-			scaleHelper.onMotionEvent(event);
+			handlingTouch = scaleHelper.onMotionEvent(event);
 
-		return dragHelper.isDragging() || scaleHelper.isScaling();
+		if(handlingTouch)
+			getParent().requestDisallowInterceptTouchEvent(true);
+
+		return handlingTouch;
 	}
+
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		getParent().requestDisallowInterceptTouchEvent(true);
+
 		if(!scaleHelper.isScaling())
 			dragHelper.onMotionEvent(event);
 		if(!dragHelper.isDragging())
 			scaleHelper.onMotionEvent(event);
 
-		if(dragHelper.isDragging() || scaleHelper.isScaling())
-			getParent().requestDisallowInterceptTouchEvent(true);
-
-		if(event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL)
+		if(event.getAction() != MotionEvent.ACTION_UP && event.getAction() != MotionEvent.ACTION_CANCEL)
 			getParent().requestDisallowInterceptTouchEvent(false);
+
 
 		return true;
 	}
 
 
-	boolean childRequestedDisallowInterceptTouchEvent = false;
+
+	private InterceptTouchListener interceptTouchListener;
+	public void setExtraOnInterceptTouchListener(InterceptTouchListener listener) {
+		this.interceptTouchListener = listener;
+	}
+	public interface InterceptTouchListener {
+		boolean onInterceptTouchEvent(MotionEvent event);
+	}
+
+
+
 	@Override
 	public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-		childRequestedDisallowInterceptTouchEvent = disallowIntercept;
+		this.childRequestedDisallowTouchIntercept = disallowIntercept;
 		super.requestDisallowInterceptTouchEvent(disallowIntercept);
 	}
 

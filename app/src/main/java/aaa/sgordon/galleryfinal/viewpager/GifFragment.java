@@ -102,6 +102,8 @@ public class GifFragment extends Fragment {
 			media.setAllowParentInterceptOnEdge(false);
 		});
 
+
+		/*
 		dragPage.setExtraOnInterceptTouchListener(event -> {
 			if (event.getAction() == MotionEvent.ACTION_DOWN) {
 				photoScaling = false;
@@ -122,6 +124,7 @@ public class GifFragment extends Fragment {
 
 			return false;
 		});
+		 */
 
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs

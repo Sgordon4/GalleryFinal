@@ -14,8 +14,9 @@ import androidx.annotation.Nullable;
 public class VideoTouchHandler implements View.OnTouchListener {
 
 	private final TextureView textureView;
-	private final ScaleGestureDetector scaleDetector;
 	private final GestureDetector gestureDetector;
+	private final ScaleGestureDetector scaleDetector;
+	public boolean currentlyScaling = false;
 
 	private static final float minScale = 1f;
 	private static final float maxScale = 4f;
@@ -36,18 +37,37 @@ public class VideoTouchHandler implements View.OnTouchListener {
 		textureView.setTranslationY(translationY);
 	}
 
+
+	public boolean isScaled() {
+		return scaleFactor != 1f;
+	}
+
+
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		v.performClick();
 
-		boolean scaleHandled = scaleDetector.onTouchEvent(event);
+		scaleDetector.onTouchEvent(event);
+		boolean scaleHandled = currentlyScaling;
+
 		boolean gestureHandled = gestureDetector.onTouchEvent(event);
-		return scaleHandled || gestureHandled || event.getAction() == MotionEvent.ACTION_DOWN;
+
+		//System.out.println("ScaleHandled: "+scaleHandled);
+		//System.out.println("GestureHandled: "+gestureHandled);
+		return scaleHandled || gestureHandled;
 	}
 
 	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 		@Override
-		public boolean onScale(ScaleGestureDetector detector) {
+		public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
+			System.out.println("Scale begin!");
+			currentlyScaling = true;
+			return super.onScaleBegin(detector);
+		}
+
+		@Override
+		public boolean onScale(@NonNull ScaleGestureDetector detector) {
+			super.onScale(detector);
 			float prevScale = scaleFactor;
 			scaleFactor *= detector.getScaleFactor();
 			scaleFactor = Math.max(minScale, Math.min(scaleFactor, maxScale));
@@ -64,7 +84,14 @@ public class VideoTouchHandler implements View.OnTouchListener {
 			}
 
 			applyTranslationClamp();
+
 			return true;
+		}
+
+		@Override
+		public void onScaleEnd(@NonNull ScaleGestureDetector detector) {
+			currentlyScaling = false;
+			super.onScaleEnd(detector);
 		}
 	}
 

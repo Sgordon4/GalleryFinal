@@ -33,6 +33,7 @@ public class ScaleHelper extends Fragment {
 		// Run after layout to get center point
 		scaleView.post(() -> {
 			touchSlop = ViewConfiguration.get(scaleView.getContext()).getScaledTouchSlop();
+			touchSlop *= 2;
 
 			initialX = scaleView.getX();
 			initialY = scaleView.getY();

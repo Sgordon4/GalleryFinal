@@ -85,6 +85,7 @@ public class DragHelper {
 
 	public void onViewCreated() {
 		touchSlop = ViewConfiguration.get(motionLayout.getContext()).getScaledTouchSlop();
+		touchSlop *= 2;
 		onMediaReady(motionLayout.getHeight());
 	}
 
