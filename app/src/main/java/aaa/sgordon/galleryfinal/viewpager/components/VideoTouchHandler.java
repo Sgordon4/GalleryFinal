@@ -11,7 +11,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-//TODO Try to get scale and translation to work at the same time
+//TODO Try to get scale to focus on the pinch point, current setup not working right now
 
 //Thanks ChatGPT for the important parts!
 public class VideoTouchHandler implements View.OnTouchListener {
@@ -110,6 +110,8 @@ public class VideoTouchHandler implements View.OnTouchListener {
 			float newScale = scaleFactor * newFactor;
 			newScale = Math.max(minScale, Math.min(newScale, maxScale));
 
+
+
 			// Compute scale change
 			newFactor = newScale / scaleFactor;
 
@@ -121,26 +123,9 @@ public class VideoTouchHandler implements View.OnTouchListener {
 			translationX = (translationX - focusX) * newFactor + focusX;
 			translationY = (translationY - focusY) * newFactor + focusY;
 
+
+
 			scaleFactor = newScale;
-
-
-
-			/*
-
-			float prevScale = scaleFactor;
-			scaleFactor *= detector.getScaleFactor();
-			scaleFactor = Math.max(minScale, Math.min(scaleFactor, maxScale));
-
-			// Adjust scale
-			textureView.setScaleX(scaleFactor);
-			textureView.setScaleY(scaleFactor);
-
-			// If scaling out and oit of bounds, gradually recenter
-			if (scaleFactor < prevScale)
-				maybeRecenterIfOutOfBounds();
-
-			applyTransform();
-			 */
 
 			maybeRecenterIfOutOfBounds();
 			applyTransform();

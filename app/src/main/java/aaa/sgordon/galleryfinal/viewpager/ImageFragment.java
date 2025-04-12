@@ -90,7 +90,7 @@ public class ImageFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
-		if(item.fileSize > SIZE_THRESHOLD)
+		if(item.fileSize < SIZE_THRESHOLD)
 			usePhotoView();
 		else
 			useSubsamplingScaleImageView();
