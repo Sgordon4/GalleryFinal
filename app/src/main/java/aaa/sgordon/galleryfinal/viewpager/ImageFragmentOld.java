@@ -36,7 +36,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 
-public class ImageFragment extends Fragment {
+public class ImageFragmentOld extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
 
@@ -44,7 +44,7 @@ public class ImageFragment extends Fragment {
 	private DragPage dragPage;
 
 
-	public ImageFragment(ListItem item) {
+	public ImageFragmentOld(ListItem item) {
 		this.item = item;
 	}
 
@@ -89,8 +89,7 @@ public class ImageFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
-		//if(item.fileSize < SIZE_THRESHOLD)
-		if(item.fileSize > SIZE_THRESHOLD)
+		if(item.fileSize < SIZE_THRESHOLD)
 			usePhotoView();
 		else
 			useSubsamplingScaleImageView();

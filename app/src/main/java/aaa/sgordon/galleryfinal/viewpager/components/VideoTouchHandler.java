@@ -11,12 +11,10 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-//TODO Try to get scale to focus on the pinch point, current setup not working right now
-
 //Thanks ChatGPT for the important parts!
 public class VideoTouchHandler implements View.OnTouchListener {
 
-	private final TextureView textureView;
+	private final TextureView mediaView;
 	private final GestureDetector gestureDetector;
 	private final ScaleGestureDetector scaleDetector;
 
@@ -25,8 +23,9 @@ public class VideoTouchHandler implements View.OnTouchListener {
 	public boolean currentlyScaling = false;
 
 	private static final float minScale = 1f;
-	private static final float maxScale = 12f;
-	private float scaleFactor = 1f;
+	private static final float midScale = 2.5f;
+	private static final float maxScale = 10f;
+	private float currentScale = 1f;
 
 	private float translationX = 0f;
 	private float translationY = 0f;
@@ -34,19 +33,21 @@ public class VideoTouchHandler implements View.OnTouchListener {
 	private float mediaWidth;
 	private float mediaHeight;
 
-	public VideoTouchHandler(Context context, TextureView textureView) {
-		this.textureView = textureView;
+	private boolean doubleTapZoomEnabled = false;
+
+	public VideoTouchHandler(Context context, TextureView mediaView) {
+		this.mediaView = mediaView;
 
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		gestureDetector = new GestureDetector(context, new GestureListener());
 
-		textureView.setScaleX(scaleFactor);
-		textureView.setScaleY(scaleFactor);
-		textureView.setTranslationX(translationX);
-		textureView.setTranslationY(translationY);
+		mediaView.setScaleX(currentScale);
+		mediaView.setScaleY(currentScale);
+		mediaView.setTranslationX(translationX);
+		mediaView.setTranslationY(translationY);
 
-		mediaWidth = textureView.getWidth();
-		mediaHeight = textureView.getHeight();
+		mediaWidth = mediaView.getWidth();
+		mediaHeight = mediaView.getHeight();
 	}
 
 	public void setMediaDimens(float width, float height) {
@@ -54,9 +55,15 @@ public class VideoTouchHandler implements View.OnTouchListener {
 		mediaHeight = height;
 	}
 
+	public boolean isDoubleTapZoomEnabled() {
+		return doubleTapZoomEnabled;
+	}
+	public void setDoubleTapZoomEnabled(boolean doubleTapZoomEnabled) {
+		this.doubleTapZoomEnabled = doubleTapZoomEnabled;
+	}
 
 	public boolean isScaled() {
-		return scaleFactor != 1f;
+		return currentScale != 1f;
 	}
 
 
@@ -105,27 +112,23 @@ public class VideoTouchHandler implements View.OnTouchListener {
 
 		@Override
 		public boolean onScale(@NonNull ScaleGestureDetector detector) {
-			float newFactor = detector.getScaleFactor();
-
-			float newScale = scaleFactor * newFactor;
+			float newScale = currentScale * detector.getScaleFactor();
 			newScale = Math.max(minScale, Math.min(newScale, maxScale));
 
 
-
 			// Compute scale change
-			newFactor = newScale / scaleFactor;
+			float newFactor = newScale / currentScale;
 
 			// Pivot (focal point of the pinch gesture)
-			float focusX = detector.getFocusX();
-			float focusY = detector.getFocusY();
+			float focusX = detector.getFocusX() - mediaView.getWidth() / 2f;
+			float focusY = detector.getFocusY() - mediaView.getHeight() / 2f;
 
 			// Adjust translation to keep zoom centered on the fingers
-			translationX = (translationX - focusX) * newFactor + focusX;
-			translationY = (translationY - focusY) * newFactor + focusY;
+			translationX = newFactor * (translationX - focusX) + focusX;
+			translationY = newFactor * (translationY - focusY) + focusY;
 
 
-
-			scaleFactor = newScale;
+			currentScale = newScale;
 
 			maybeRecenterIfOutOfBounds();
 			applyTransform();
@@ -142,23 +145,134 @@ public class VideoTouchHandler implements View.OnTouchListener {
 	private class GestureListener extends GestureDetector.SimpleOnGestureListener {
 		@Override
 		public boolean onScroll(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float distanceX, float distanceY) {
-			if (!currentlyScaling && scaleFactor > 1f) {
+			if (!currentlyScaling && currentScale > 1f) {
 				translationX -= distanceX;
 				translationY -= distanceY;
 				applyTransform();
+
+				/*
+				EdgeDirection edgeDir = detectEdge(distanceX, distanceY);
+				if (edgeDir != EdgeDirection.NONE)
+					System.out.println("Scrolling toward edge: " + edgeDir);
+				 */
+
 				return true;
 			}
 			return false;
 		}
+
+		@Override
+		public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+			if (currentScale <= 1f) return false;
+
+			final float decay = 0.9f; // damping factor
+			final int frameRate = 60; // fps
+
+			Runnable flingRunnable = new Runnable() {
+				float vx = velocityX / frameRate;
+				float vy = velocityY / frameRate;
+
+				@Override
+				public void run() {
+					translationX += vx;
+					translationY += vy;
+
+					// Apply decay
+					vx *= decay;
+					vy *= decay;
+
+					applyTransform();
+
+					// Stop when velocity is low
+					if (Math.abs(vx) > 1f || Math.abs(vy) > 1f) {
+						mediaView.postOnAnimation(this);
+					}
+				}
+			};
+
+			mediaView.postOnAnimation(flingRunnable);
+			return true;
+		}
+
+		@Override
+		public boolean onDoubleTap(@NonNull MotionEvent e) {
+			if(!doubleTapZoomEnabled) return false;
+
+			//Cycle between 3 zoom states when double tapping
+			float targetScale;
+			if (Math.abs(currentScale - minScale) < 0.1f) {
+				targetScale = midScale;
+			} else if (Math.abs(currentScale - midScale) < 0.1f) {
+				targetScale = maxScale;
+			} else {
+				targetScale = minScale;
+			}
+
+			float focusX = e.getX() - mediaView.getWidth() / 2f;
+			float focusY = e.getY() - mediaView.getHeight() / 2f;
+
+			float scaleFactor = targetScale / currentScale;
+
+			translationX = scaleFactor * (translationX - focusX) + focusX;
+			translationY = scaleFactor * (translationY - focusY) + focusY;
+			currentScale = targetScale;
+
+			maybeRecenterIfOutOfBounds();
+			applyTransform();
+			return true;
+		}
 	}
 
 
-	private SizeF getMaxTranslations() {
-		float viewWidth = textureView.getWidth();
-		float viewHeight = textureView.getHeight();
+	public enum EdgeDirection {
+		NONE, UP, DOWN, LEFT, RIGHT
+	}
 
-		float scaledWidth = mediaWidth * scaleFactor;
-		float scaledHeight = mediaHeight * scaleFactor;
+	public EdgeDirection detectEdge(float dx, float dy) {
+		SizeF maxTranslations = getMaxTranslations();
+
+		//If scrolling horizontally...
+		if(dx > dy) {
+			boolean atLeftEdge = translationX == 0;
+			boolean atRightEdge = translationX == maxTranslations.getWidth();
+		}
+
+		boolean atLeftEdge = translationX >= maxTranslations.getWidth();
+		boolean atRightEdge = translationX <= maxTranslations.getWidth();
+		boolean atTopEdge = translationY >= maxTranslations.getHeight();
+		boolean atBottomEdge = translationY <= maxTranslations.getHeight();
+
+		if (atLeftEdge && dx < 0 && dx > dy) return EdgeDirection.LEFT;
+		if (atRightEdge && dx > 0 && dx > dy) return EdgeDirection.RIGHT;
+		if (atTopEdge && dy < 0 && dx < dy) return EdgeDirection.UP;
+		if (atBottomEdge && dy > 0 && dx < dy) return EdgeDirection.DOWN;
+
+		return EdgeDirection.NONE;
+	}
+
+	public EdgeDirection detectScrollEdgeOld(float dx, float dy) {
+		SizeF maxTranslations = getMaxTranslations();
+		boolean atLeftEdge = translationX >= maxTranslations.getWidth();
+		boolean atRightEdge = translationX <= maxTranslations.getWidth();
+		boolean atTopEdge = translationY >= maxTranslations.getHeight();
+		boolean atBottomEdge = translationY <= maxTranslations.getHeight();
+
+		if (atLeftEdge && dx < 0) return EdgeDirection.LEFT;
+		if (atRightEdge && dx > 0) return EdgeDirection.RIGHT;
+		if (atTopEdge && dy < 0) return EdgeDirection.UP;
+		if (atBottomEdge && dy > 0) return EdgeDirection.DOWN;
+
+		return EdgeDirection.NONE;
+	}
+
+
+
+	private SizeF getMaxTranslations() {
+		float viewWidth = mediaView.getWidth();
+		float viewHeight = mediaView.getHeight();
+
+		float scaledWidth = mediaWidth * currentScale;
+		float scaledHeight = mediaHeight * currentScale;
 
 		float maxTranslateX = Math.max(0f, (scaledWidth - viewWidth) / 2f);
 		float maxTranslateY = Math.max(0f, (scaledHeight - viewHeight) / 2f);
@@ -192,9 +306,10 @@ public class VideoTouchHandler implements View.OnTouchListener {
 		translationX = Math.max(-maxTranslateX, Math.min(translationX, maxTranslateX));
 		translationY = Math.max(-maxTranslateY, Math.min(translationY, maxTranslateY));
 
-		textureView.setScaleX(scaleFactor);
-		textureView.setScaleY(scaleFactor);
-		textureView.setTranslationX(translationX);
-		textureView.setTranslationY(translationY);
+		mediaView.setScaleX(currentScale);
+		mediaView.setScaleY(currentScale);
+		mediaView.setTranslationX(translationX);
+		mediaView.setTranslationY(translationY);
+
 	}
 }
