@@ -51,6 +51,8 @@ public class DragPage extends MotionLayout {
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
+		if(interceptor != null) interceptor.onInterceptTouchEvent(event);
+
 		if(childRequestedDisallowInterceptTouchEvent) return false;
 		if(event.getPointerCount() > 1) return false;	//Ignore multitouch events
 
@@ -100,6 +102,16 @@ public class DragPage extends MotionLayout {
 	}
 	public interface OnDismissListener {
 		void onDismiss();
+	}
+
+
+
+	private Interceptor interceptor;
+	public void setInterceptForPhotoViewsBitchAss(Interceptor interceptor) {
+		this.interceptor = interceptor;
+	}
+	public interface Interceptor {
+		void onInterceptTouchEvent(MotionEvent event);
 	}
 }
 

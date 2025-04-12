@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.content.Context;
+import android.util.SizeF;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -10,7 +11,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-//Thanks ChatGPT for this entire class!
+//Thanks ChatGPT for the important parts!
 public class VideoTouchHandler implements View.OnTouchListener {
 
 	private final TextureView textureView;
@@ -25,6 +26,9 @@ public class VideoTouchHandler implements View.OnTouchListener {
 	private float translationX = 0f;
 	private float translationY = 0f;
 
+	private float mediaWidth;
+	private float mediaHeight;
+
 	public VideoTouchHandler(Context context, TextureView textureView) {
 		this.textureView = textureView;
 
@@ -35,6 +39,14 @@ public class VideoTouchHandler implements View.OnTouchListener {
 		textureView.setScaleY(scaleFactor);
 		textureView.setTranslationX(translationX);
 		textureView.setTranslationY(translationY);
+
+		mediaWidth = textureView.getWidth();
+		mediaHeight = textureView.getHeight();
+	}
+
+	public void setMediaDimens(float width, float height) {
+		mediaWidth = width;
+		mediaHeight = height;
 	}
 
 
@@ -52,15 +64,12 @@ public class VideoTouchHandler implements View.OnTouchListener {
 
 		boolean gestureHandled = gestureDetector.onTouchEvent(event);
 
-		//System.out.println("ScaleHandled: "+scaleHandled);
-		//System.out.println("GestureHandled: "+gestureHandled);
 		return scaleHandled || gestureHandled;
 	}
 
 	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 		@Override
 		public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
-			System.out.println("Scale begin!");
 			currentlyScaling = true;
 			return super.onScaleBegin(detector);
 		}
@@ -76,14 +85,11 @@ public class VideoTouchHandler implements View.OnTouchListener {
 			textureView.setScaleX(scaleFactor);
 			textureView.setScaleY(scaleFactor);
 
-			// If scaling out, gradually recenter
-			if (scaleFactor < prevScale) {
-				float centerShiftFactor = (scaleFactor - minScale) / (prevScale - minScale);
-				translationX *= centerShiftFactor;
-				translationY *= centerShiftFactor;
-			}
+			// If scaling out and oit of bounds, gradually recenter
+			if (scaleFactor < prevScale)
+				maybeRecenterIfOutOfBounds();
 
-			applyTranslationClamp();
+			applyTransform();
 
 			return true;
 		}
@@ -101,26 +107,55 @@ public class VideoTouchHandler implements View.OnTouchListener {
 			if (scaleFactor > 1f) {
 				translationX -= distanceX;
 				translationY -= distanceY;
-				applyTranslationClamp();
+				applyTransform();
 				return true;
 			}
 			return false;
 		}
 	}
 
-	private void applyTranslationClamp() {
+
+	private SizeF getMaxTranslations() {
 		float viewWidth = textureView.getWidth();
 		float viewHeight = textureView.getHeight();
 
-		float scaledWidth = viewWidth * scaleFactor;
-		float scaledHeight = viewHeight * scaleFactor;
+		float scaledWidth = mediaWidth * scaleFactor;
+		float scaledHeight = mediaHeight * scaleFactor;
 
-		float maxTranslateX = Math.max(0, (scaledWidth - viewWidth) / 2f);
-		float maxTranslateY = Math.max(0, (scaledHeight - viewHeight) / 2f);
+		float maxTranslateX = Math.max(0f, (scaledWidth - viewWidth) / 2f);
+		float maxTranslateY = Math.max(0f, (scaledHeight - viewHeight) / 2f);
 
+		return new SizeF(maxTranslateX, maxTranslateY);
+	}
+	
+
+	private void maybeRecenterIfOutOfBounds() {
+		SizeF maxTranslations = getMaxTranslations();
+		float maxTranslateX = maxTranslations.getWidth();
+		float maxTranslateY = maxTranslations.getHeight();
+
+		boolean outOfBoundsX = Math.abs(translationX) > maxTranslateX;
+		boolean outOfBoundsY = Math.abs(translationY) > maxTranslateY;
+
+		if (outOfBoundsX) {
+			translationX = Math.signum(translationX) * maxTranslateX;
+		}
+		if (outOfBoundsY) {
+			translationY = Math.signum(translationY) * maxTranslateY;
+		}
+	}
+
+	private void applyTransform() {
+		SizeF maxTranslations = getMaxTranslations();
+		float maxTranslateX = maxTranslations.getWidth();
+		float maxTranslateY = maxTranslations.getHeight();
+
+		// Clamp translation to within allowed range
 		translationX = Math.max(-maxTranslateX, Math.min(translationX, maxTranslateX));
 		translationY = Math.max(-maxTranslateY, Math.min(translationY, maxTranslateY));
 
+		textureView.setScaleX(scaleFactor);
+		textureView.setScaleY(scaleFactor);
 		textureView.setTranslationX(translationX);
 		textureView.setTranslationY(translationY);
 	}

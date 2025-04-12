@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.TextureView;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.Toast;
@@ -19,15 +18,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.fragment.app.Fragment;
+import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.VideoSize;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.LegacyPlayerControlView;
 import androidx.media3.ui.PlayerControlView;
 import androidx.viewpager2.widget.ViewPager2;
-
-import com.otaliastudios.zoom.ZoomSurfaceView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -40,30 +39,30 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.VideoTouchHandler;
 
+@UnstableApi
 public class VideoFragment extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
 
-	private ViewPagerFragment parentFrag;
 	private ViewPager2 viewPager;
 
 	private DragPage dragPage;
+	private VideoTouchHandler videoTouchHandler;
 
 	private ExoPlayer player;
 	private TextureView textureView;
-	private View controls;
+	private LegacyPlayerControlView controls;
 
 
 	public VideoFragment(ListItem item) {
 		this.item = item;
 	}
 
+
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		parentFrag = (ViewPagerFragment) requireParentFragment();
-		viewPager = parentFrag.requireView().findViewById(R.id.viewpager);
+		viewPager = requireParentFragment().requireView().findViewById(R.id.viewpager);
 	}
 
 	@Nullable
@@ -96,7 +95,6 @@ public class VideoFragment extends Fragment {
 
 
 		textureView = binding.viewA.findViewById(R.id.media);
-		controls = binding.viewA.findViewById(R.id.videoControls);
 
 		return binding.getRoot();
 	}
@@ -110,7 +108,7 @@ public class VideoFragment extends Fragment {
 		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 
-		VideoTouchHandler videoTouchHandler = new VideoTouchHandler(requireContext(), textureView);
+		videoTouchHandler = new VideoTouchHandler(requireContext(), textureView);
 		GestureDetector detector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
@@ -135,19 +133,31 @@ public class VideoFragment extends Fragment {
 				//We are looking for a double tap without a longPress
 				if(e.getAction() != MotionEvent.ACTION_UP || longPress) return true;
 
-				//TODO Do something
+				//Figure out which half of the view this event is on
+				float viewWidth = binding.viewA.getWidth();
+				float touchX = e.getX();
+
+				//Seek forward/backward
+				if(touchX < viewWidth/2)
+					player.seekBack();
+				else
+					player.seekForward();
 
 				return true;
 			}
 		});
 
 
+
+
 		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
+			detector.onTouchEvent(event);
+
 			boolean handled = videoTouchHandler.onTouch(v, event);
 			handled = handled || videoTouchHandler.isScaled();
 			dragPage.requestDisallowInterceptTouchEvent(handled);
 
-			//TODO May need to stop viewpager input when multi-touching
+			viewPager.setUserInputEnabled(event.getPointerCount() == 1);	//Stop ViewPager input if multi-touching
 
 			return true;
 		});
@@ -162,10 +172,18 @@ public class VideoFragment extends Fragment {
 		player = new ExoPlayer.Builder(requireContext()).build();
 		player.setVideoTextureView(textureView);
 
+
+		controls = binding.viewA.findViewById(R.id.player_control_view);
+		controls.setPlayer(player);
+
+		controls.addVisibilityListener(visibility ->
+				binding.viewA.findViewById(R.id.getthatshitouttathebottomofthescreendawg).setVisibility(visibility));
+
+
+
 		player.addListener(new Player.Listener() {
 			@Override
 			public void onVideoSizeChanged(@NonNull VideoSize videoSize) {
-				System.out.println("Size changed!");
 				//Adjust the height of the media in the TextureView
 				float videoWidth = videoSize.width;
 				float videoHeight = videoSize.height;
@@ -192,32 +210,42 @@ public class VideoFragment extends Fragment {
 				textureView.setTransform(matrix);
 
 
+				float actualWidth = viewWidth * scaleX;
+				float actualHeight = viewHeight * scaleY;
+
+				videoTouchHandler.setMediaDimens(actualWidth, actualHeight);
+
 				//Tell DragPage the correct media height as well
-				//dragPage.onMediaReady(videoHeight);		//TODO No correcto
+				dragPage.onMediaReady(actualHeight);
 			}
 		});
 
 
 
-		//Uri videoUri = Uri.parse("https://file-examples.com/storage/fee47d30d267f6756977e34/2017/04/file_example_MP4_480_1_5MG.mp4");
-		Uri videoUri = Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
-		MediaItem mediaItem = MediaItem.fromUri(videoUri);
-		player.setMediaItem(mediaItem);
-		player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
-		player.prepare();
-		//player.play();
+		Thread load = new Thread(() -> {
+			try {
+				Uri uri = HybridAPI.getInstance().getFileContent(item.fileUID).first;
 
-		startPostponedEnterTransition();
+				textureView.post(() -> {
+					//MediaItem mediaItem = MediaItem.fromUri(uri);
+					MediaItem mediaItem = MediaItem.fromUri(Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"));
+					player.setMediaItem(mediaItem);
+					player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
+					player.prepare();
+				});
+			} catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+				//TODO Load error uri
+			}
+			startPostponedEnterTransition();
+		});
+		load.start();
 	}
 
 	private void toggleControls() {
-		if (controls.getVisibility() == View.VISIBLE) {
-			controls.animate().alpha(0f).setDuration(200).withEndAction(() -> controls.setVisibility(View.GONE)).start();
-		} else {
-			controls.setAlpha(0f);
-			controls.setVisibility(View.VISIBLE);
-			controls.animate().alpha(1f).setDuration(200).start();
-		}
+		if(controls.isVisible())
+			controls.hide();
+		else
+			controls.show();
 	}
 
 	@Override

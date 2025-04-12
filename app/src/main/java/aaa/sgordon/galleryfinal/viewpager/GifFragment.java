@@ -32,9 +32,7 @@ public class GifFragment extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
 
-	private ViewPagerFragment parentFrag;
 	private ViewPager2 viewPager;
-
 	private DragPage dragPage;
 
 
@@ -42,12 +40,11 @@ public class GifFragment extends Fragment {
 		this.item = item;
 	}
 
+
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		parentFrag = (ViewPagerFragment) requireParentFragment();
-		viewPager = parentFrag.requireView().findViewById(R.id.viewpager);
+		viewPager = requireParentFragment().requireView().findViewById(R.id.viewpager);
 	}
 
 	@Nullable
@@ -81,50 +78,36 @@ public class GifFragment extends Fragment {
 		return binding.getRoot();
 	}
 
-	private float touchSlop;
 
-	//Using this instead of checking for scale == 1 or whatever in case user is still holding, touches on scale==1, and continues scaling
-	boolean photoScaling = false;
-	private float downX, downY;
-	private boolean vpAllowed;
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
-		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
-
 		PhotoView media = binding.viewA.findViewById(R.id.media);
 		media.setOnScaleChangeListener((scaleFactor, focusX, focusY) -> {
-			photoScaling = true;
-			dragPage.requestDisallowInterceptTouchEvent(true);
-			media.setAllowParentInterceptOnEdge(false);
+			boolean isScaled = media.getScale() * scaleFactor != 1;
+
+			dragPage.requestDisallowInterceptTouchEvent(isScaled);
+			media.setAllowParentInterceptOnEdge(!isScaled);
 		});
 
 
-		/*
-		dragPage.setExtraOnInterceptTouchListener(event -> {
-			if (event.getAction() == MotionEvent.ACTION_DOWN) {
-				photoScaling = false;
-
-				downX = event.getX();
-				downY = event.getY();
-				vpAllowed = false;
-
-				boolean mediaScaled = media.getScale() != 1;
-				media.setAllowParentInterceptOnEdge(!mediaScaled);	//TODO Or we've downed when on the left/right edge
-				dragPage.requestDisallowInterceptTouchEvent(mediaScaled);
+		dragPage.setInterceptForPhotoViewsBitchAss(event -> {
+			//Shit straight up isn't working unless I filter to these
+			//ACTION_POINTER_DOWN/UP aren't firing on my emulator :(
+			switch (event.getActionMasked()) {
+				case MotionEvent.ACTION_POINTER_DOWN:
+				case MotionEvent.ACTION_MOVE:
+				case MotionEvent.ACTION_POINTER_UP:
+					viewPager.setUserInputEnabled(event.getPointerCount() == 1);    //Stop ViewPager input if multi-touching
+					break;
+				case MotionEvent.ACTION_UP:
+				case MotionEvent.ACTION_CANCEL:
+					viewPager.setUserInputEnabled(true);
 			}
-
-			//Don't allow viewpager to take control until twice the normal horizontal touch slop
-			//This makes the viewpage vertical dragging more forgiving, feels better
-			vpAllowed = vpAllowed || Math.abs(event.getX() - downX) > 2*touchSlop;
-			viewPager.setUserInputEnabled(!dragPage.isHandlingTouch() && vpAllowed && !photoScaling);
-
-			return false;
 		});
-		 */
 
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs

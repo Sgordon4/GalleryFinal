@@ -216,7 +216,7 @@ public class DragHelper {
 
 				break;
 			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL:
+			//case MotionEvent.ACTION_CANCEL:	Don't fling if we get cancelled
 				velocityTracker.addMovement(event);
 
 				velocityTracker.computeCurrentVelocity(1000);

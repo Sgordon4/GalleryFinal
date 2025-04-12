@@ -17,7 +17,7 @@ public class ScaleHelper extends Fragment {
 	float downX, downY;
 	boolean isScaling = false;
 	float scaleDistanceThreshold = 150f; // Max distance before scale stops decreasing
-	float snapBackRadius = 100f; // Distance to snap back
+	float snapBackRadius = 50f; // Distance to snap back
 	private float touchSlop;
 
 	ViewPropertyAnimator mediaScaler;

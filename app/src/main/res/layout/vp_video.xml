@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/touch_overlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -10,16 +10,26 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <include
-        android:id="@+id/controls"
-        layout="@layout/vp_video_controls" />
-
-    <!--
-    <androidx.media3.ui.PlayerControlView
-        android:id="@+id/player_control_view"
-        android:layout_gravity="bottom"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-    -->
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
+
+        <androidx.media3.ui.LegacyPlayerControlView
+            android:id="@+id/player_control_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:show_previous_button="false"
+            app:show_next_button="false"
+            android:background="@android:color/transparent"/>
+
+        <View
+            android:id="@+id/getthatshitouttathebottomofthescreendawg"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:background="#CC000000"/>
+
+    </LinearLayout>
 
 </FrameLayout>
