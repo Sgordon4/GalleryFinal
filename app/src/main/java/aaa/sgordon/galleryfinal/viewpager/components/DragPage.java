@@ -56,6 +56,7 @@ public class DragPage extends MotionLayout {
 		if(childRequestedDisallowInterceptTouchEvent) return false;
 		if(event.getPointerCount() > 1) return false;	//Ignore multitouch events
 
+		System.out.println("Intercepting!");
 		if(!scaleHelper.isScaling())
 			dragHelper.onMotionEvent(event);
 		if(!dragHelper.isDragging())
@@ -66,6 +67,7 @@ public class DragPage extends MotionLayout {
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		System.out.println("Touching!");
 		if(!scaleHelper.isScaling())
 			dragHelper.onMotionEvent(event);
 		if(!dragHelper.isDragging())

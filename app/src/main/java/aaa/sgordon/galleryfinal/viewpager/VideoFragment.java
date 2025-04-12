@@ -37,7 +37,6 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
-import aaa.sgordon.galleryfinal.viewpager.components.VideoTouchHandler;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
 @UnstableApi
@@ -48,7 +47,6 @@ public class VideoFragment extends Fragment {
 	private ViewPager2 viewPager;
 
 	private DragPage dragPage;
-	private VideoTouchHandler videoTouchHandler;
 	private ZoomPanHandler zoomPanHandler;
 
 	private ExoPlayer player;
@@ -110,8 +108,8 @@ public class VideoFragment extends Fragment {
 		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 
-		videoTouchHandler = new VideoTouchHandler(requireContext(), textureView);
 		zoomPanHandler = new ZoomPanHandler(textureView);
+		zoomPanHandler.setDoubleTapZoomEnabled(false);
 		GestureDetector detector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
@@ -154,20 +152,28 @@ public class VideoFragment extends Fragment {
 
 
 		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
-			//detector.onTouchEvent(event);
+			detector.onTouchEvent(event);
 
-			//boolean handled = videoTouchHandler.onTouch(v, event);
-			//handled = handled || videoTouchHandler.isScaled();
-			//dragPage.requestDisallowInterceptTouchEvent(handled);
-
-			zoomPanHandler.onTouch(v, event);
+			boolean handled = zoomPanHandler.onTouch(v, event);
+			handled = handled || zoomPanHandler.isScaled();
 
 
-			dragPage.requestDisallowInterceptTouchEvent(true);
+			//Shit straight up isn't working unless I filter to these
+			//ACTION_POINTER_DOWN/UP aren't firing on my emulator :(
+			switch (event.getActionMasked()) {
+				case MotionEvent.ACTION_POINTER_DOWN:
+				case MotionEvent.ACTION_MOVE:
+				case MotionEvent.ACTION_POINTER_UP:
+					dragPage.requestDisallowInterceptTouchEvent(handled);
+					viewPager.setUserInputEnabled(event.getPointerCount() == 1);	//Stop ViewPager input if multi-touching
+					break;
+				case MotionEvent.ACTION_UP:
+				case MotionEvent.ACTION_CANCEL:
+					dragPage.requestDisallowInterceptTouchEvent(false);
+					viewPager.setUserInputEnabled(true);
+			}
 
-			viewPager.setUserInputEnabled(event.getPointerCount() == 1);	//Stop ViewPager input if multi-touching
-
-			return true;
+			return handled || event.getActionMasked() == MotionEvent.ACTION_DOWN;
 		});
 
 		initializePlayer();
@@ -192,8 +198,6 @@ public class VideoFragment extends Fragment {
 		player.addListener(new Player.Listener() {
 			@Override
 			public void onVideoSizeChanged(@NonNull VideoSize videoSize) {
-				zoomPanHandler.setMediaDimensions(videoSize.width, videoSize.height);
-
 				//Adjust the height of the media in the TextureView
 				float videoWidth = videoSize.width;
 				float videoHeight = videoSize.height;
@@ -214,12 +218,18 @@ public class VideoFragment extends Fragment {
 					scaleX = videoAspectRatio / viewAspectRatio;
 				}
 
+				// Apply scale to TextureView
+				Matrix matrix = new Matrix();
+				matrix.setScale(scaleX, scaleY, viewWidth / 2f, viewHeight / 2f);
+				textureView.setTransform(matrix);
+
+
 				int actualWidth = (int) (viewWidth * scaleX);
 				int actualHeight = (int) (viewHeight * scaleY);
 
 
-				//videoTouchHandler.setMediaDimens(actualWidth, actualHeight);
-
+				//zoomPanHandler.setMediaDimensions(actualWidth, actualHeight);
+				zoomPanHandler.setMediaDimensions((int) videoWidth, (int) videoHeight);
 
 				//Tell DragPage the correct media height as well
 				dragPage.onMediaReady(actualHeight);
@@ -235,6 +245,7 @@ public class VideoFragment extends Fragment {
 				textureView.post(() -> {
 					//MediaItem mediaItem = MediaItem.fromUri(uri);
 					MediaItem mediaItem = MediaItem.fromUri(Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"));
+					//MediaItem mediaItem = MediaItem.fromUri(Uri.parse("https://file-examples.com/storage/fef7a0384867fa86095088c/2017/04/file_example_MP4_480_1_5MG.mp4"));
 					player.setMediaItem(mediaItem);
 					player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
 					player.prepare();

@@ -8,20 +8,19 @@ import android.view.ViewPropertyAnimator;
 import androidx.fragment.app.Fragment;
 
 public class ScaleHelper extends Fragment {
-	ScaleHelperCallback callback;
+	private final ScaleHelperCallback callback;
 
-	View dimBackground;
-	View scaleView;
+	private final View dimBackground;
+	private final View scaleView;
 
-	float initialX, initialY;
-	float downX, downY;
-	boolean isScaling = false;
-	float scaleDistanceThreshold = 150f; // Max distance before scale stops decreasing
-	float snapBackRadius = 50f; // Distance to snap back
+	private float downX, downY;
+	private boolean isScaling = false;
+	private static final float scaleDistanceThreshold = 150f; // Max distance before scale stops decreasing
+	private static final float snapBackRadius = 50f; // Distance to snap back
 	private float touchSlop;
 
-	ViewPropertyAnimator mediaScaler;
-	ViewPropertyAnimator backgroundDimmer;
+	private ViewPropertyAnimator mediaScaler;
+	private ViewPropertyAnimator backgroundDimmer;
 
 
 	public ScaleHelper(View dimBackground, View scaleView, ScaleHelperCallback callback) {
@@ -34,9 +33,6 @@ public class ScaleHelper extends Fragment {
 		scaleView.post(() -> {
 			touchSlop = ViewConfiguration.get(scaleView.getContext()).getScaledTouchSlop();
 			touchSlop *= 2;
-
-			initialX = scaleView.getX();
-			initialY = scaleView.getY();
 		});
 	}
 	public interface ScaleHelperCallback {

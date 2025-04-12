@@ -1,7 +1,7 @@
 package aaa.sgordon.galleryfinal.viewpager.components;
 
-import android.animation.ValueAnimator;
 import android.graphics.Matrix;
+import android.hardware.SensorManager;
 import android.os.SystemClock;
 import android.util.SizeF;
 import android.view.Choreographer;
@@ -14,9 +14,8 @@ import android.view.ViewConfiguration;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-public class ZoomPanHandler implements View.OnTouchListener {
+public class ZoomPanHandlerRVFling implements View.OnTouchListener {
 
 	public interface OnScaleChangedListener {
 		void onScaleChanged(float newScale);
@@ -38,6 +37,8 @@ public class ZoomPanHandler implements View.OnTouchListener {
 	private int mediaWidth = -1;
 	private int mediaHeight = -1;
 
+	private float lastTouchX;
+	private float lastTouchY;
 	private boolean isDragging;
 	private boolean isScaling;
 
@@ -147,7 +148,7 @@ public class ZoomPanHandler implements View.OnTouchListener {
 
 	//---------------------------------------------------------------------------------------------
 
-	public ZoomPanHandler(View mediaView) {
+	public ZoomPanHandlerRVFling(View mediaView) {
 		this.mediaView = mediaView;
 		this.touchSlop = ViewConfiguration.get(mediaView.getContext()).getScaledTouchSlop();
 
@@ -178,30 +179,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 
 				currentScale = newScale;
 
-				applyTransform();
-
-				return true;
-
-
-				/*
-				float newScale = currentScale * detector.getScaleFactor();
-				newScale = Math.max(minScale, Math.min(newScale, maxScale));
-
-
-				// Compute scale change
-				float newFactor = newScale / currentScale;
-
-				// Pivot (focal point of the pinch gesture)
-				float focusX = detector.getFocusX() - mediaView.getWidth() / 2f;
-				float focusY = detector.getFocusY() - mediaView.getHeight() / 2f;
-
-				// Adjust translation to keep zoom centered on the fingers
-				currentTranslationX = newFactor * (currentTranslationX - focusX) + focusX;
-				currentTranslationY = newFactor * (currentTranslationY - focusY) + focusY;
-
-
-				currentScale = newScale;
-
 
 				applyTransform();
 
@@ -209,8 +186,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 					scaleChangedListener.onScaleChanged(currentScale);
 				}
 				return true;
-
-				 */
 			}
 
 			@Override
@@ -219,21 +194,14 @@ public class ZoomPanHandler implements View.OnTouchListener {
 			}
 		});
 
-
-
 		gestureDetector = new GestureDetector(mediaView.getContext(), new GestureDetector.SimpleOnGestureListener() {
 			boolean longPress = false;
-			float initialTouchX = 0;
-			float initialTouchY = 0;
 
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
 				longPress = false;
-				initialTouchX = e.getX();
-				initialTouchY = e.getY();
 				return false;
 			}
-
 
 			@Override
 			public void onLongPress(@NonNull MotionEvent e) {
@@ -243,23 +211,8 @@ public class ZoomPanHandler implements View.OnTouchListener {
 			public boolean onDoubleTapEvent(@NonNull MotionEvent e) {
 				if(!doubleTapZoomEnabled) return false;
 
-				//Wait until the user lifts their finger
-				if (e.getAction() != MotionEvent.ACTION_UP) return false;
-
-				//If this is a DoubleTap LongPress, it's a single-pointer zoom gesture and we shouldn't zoom here
-				if(longPress) return false;
-
-				//Check if movement exceeds TouchSlop before considering this a double tap
-				float deltaX = Math.abs(e.getX() - initialTouchX);
-				float deltaY = Math.abs(e.getY() - initialTouchY);
-
-				//If the movement between down and up is larger than TouchSlop, we treat it as a single-pointer zoom gesture too
-				if(deltaX > touchSlop || deltaY > touchSlop) return false;
-
-
-
 				//We are looking for a double tap without a longPress
-				//if(e.getAction() != MotionEvent.ACTION_UP || longPress) return false;
+				if(e.getAction() != MotionEvent.ACTION_UP || longPress) return false;
 
 				//Cycle between 3 zoom states when double tapping
 				float targetScale;
@@ -279,93 +232,25 @@ public class ZoomPanHandler implements View.OnTouchListener {
 			}
 
 			@Override
-			public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
-				startFling(velocityX / 60f, velocityY / 60f); // pixels per frame (assuming ~60fps)
+			public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+				startFling(velocityX, velocityY);
 				return true;
 			}
 		});
 	}
 
-	private int activePointerId = MotionEvent.INVALID_POINTER_ID;
-	private float activePointerLastX;
-	private float activePointerLastY;
+
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
+		if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+			stopFling();
+		}
+
 		scaleDetector.onTouchEvent(event);
 		boolean scaleHandled = isScaling;
 		boolean gestureHandled = gestureDetector.onTouchEvent(event);
 
 
-		switch (event.getAction()) {
-			case MotionEvent.ACTION_DOWN: {
-				activePointerId = event.getPointerId(0);
-				activePointerLastX = event.getX();
-				activePointerLastY = event.getY();
-				isDragging = false;
-				stopFling();
-				break;
-			}
-
-			case MotionEvent.ACTION_POINTER_DOWN: {
-				int newIndex = event.getActionIndex();
-				activePointerId = event.getPointerId(newIndex);
-				activePointerLastX = event.getX(newIndex);
-				activePointerLastY = event.getY(newIndex);
-				break;
-			}
-
-
-			case MotionEvent.ACTION_MOVE: {
-				System.out.println("Here");
-				int pointerIndex = event.findPointerIndex(activePointerId);
-				if (pointerIndex == -1) break;
-
-				float x = event.getX(pointerIndex);
-				float y = event.getY(pointerIndex);
-				float dx = x - activePointerLastX;
-				float dy = y - activePointerLastY;
-
-
-				System.out.println(Math.hypot(dx, dy) > touchSlop);
-
-				if (!isDragging && isScaled() && Math.hypot(dx, dy) > touchSlop) {
-					isDragging = true;
-				}
-
-				if (isDragging) {
-					currentTranslationX += dx;
-					currentTranslationY += dy;
-					applyTransform();
-				}
-
-				activePointerLastX = x;
-				activePointerLastY = y;
-				break;
-			}
-
-			case MotionEvent.ACTION_POINTER_UP: {
-				int pointerIndex = event.getActionIndex();
-				int pointerId = event.getPointerId(pointerIndex);
-
-				if (pointerId == activePointerId) {
-					// Switch to a different pointer
-					int newIndex = pointerIndex == 0 ? 1 : 0;
-					activePointerId = event.getPointerId(newIndex);
-					activePointerLastX = event.getX(newIndex);
-					activePointerLastY = event.getY(newIndex);
-				}
-				break;
-			}
-
-			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL: {
-				isDragging = false;
-				activePointerId = MotionEvent.INVALID_POINTER_ID;
-				break;
-			}
-		}
-
-		/*
 		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_DOWN:
 				lastTouchX = event.getX();
@@ -378,7 +263,7 @@ public class ZoomPanHandler implements View.OnTouchListener {
 				float dx = event.getX() - lastTouchX;
 				float dy = event.getY() - lastTouchY;
 
-				if (!isDragging && isScaled() && Math.hypot(dx, dy) > touchSlop) {
+				if (!isDragging && Math.hypot(dx, dy) > touchSlop) {
 					isDragging = true;
 				}
 
@@ -399,9 +284,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 				break;
 		}
 
-		 */
-
-		//System.out.println(scaleHandled +" vs "+ gestureHandled +" vs "+ isDragging);
 		return scaleHandled || gestureHandled || isDragging;
 	}
 
@@ -436,9 +318,15 @@ public class ZoomPanHandler implements View.OnTouchListener {
 
 
 
+
+	private static final float DECELERATION_RATE = (float) (Math.log(0.78) / Math.log(0.9));
+	private static final float FLING_FRICTION = ViewConfiguration.getScrollFriction();
+	private static final float GRAVITY = 9.80665f;
+	private static final float INFLEXION = 0.35f; // Tension lines cross at (INFLEXION, 1)
+
 	private void startFling(float velocityX, float velocityY) {
-		flingVelocityX = velocityX;
-		flingVelocityY = velocityY;
+		flingVelocityX = velocityX / 1000f; // px/ms
+		flingVelocityY = velocityY / 1000f;
 		isFlinging = true;
 		lastFrameTimeNanos = System.nanoTime();
 		Choreographer.getInstance().postFrameCallback(flingRunnable);
@@ -453,16 +341,19 @@ public class ZoomPanHandler implements View.OnTouchListener {
 		@Override
 		public void doFrame(long frameTimeNanos) {
 			if (!isFlinging) return;
-			float elapsed = (frameTimeNanos - lastFrameTimeNanos) / 1_000_000_000f;
+			float elapsed = (frameTimeNanos - lastFrameTimeNanos) / 1_000_000f; // ms
 			lastFrameTimeNanos = frameTimeNanos;
 
-			currentTranslationX += flingVelocityX;
-			currentTranslationY += flingVelocityY;
+			float deceleration = SensorManager.GRAVITY_EARTH * 39.37f * mediaView.getContext().getResources().getDisplayMetrics().density * FLING_FRICTION;
+			float drag = (float) Math.exp(-DECELERATION_RATE * elapsed / 1000f);
 
-			flingVelocityX *= 0.9f;
-			flingVelocityY *= 0.9f;
+			flingVelocityX *= drag;
+			flingVelocityY *= drag;
 
-			if (Math.abs(flingVelocityX) < 0.5f && Math.abs(flingVelocityY) < 0.5f) {
+			currentTranslationX += flingVelocityX * elapsed;
+			currentTranslationY += flingVelocityY * elapsed;
+
+			if (Math.abs(flingVelocityX) < 5f && Math.abs(flingVelocityY) < 5f) {
 				stopFling();
 			}
 

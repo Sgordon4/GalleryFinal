@@ -39,8 +39,6 @@ public class ToolbarStyler {
 
 		selectionToolbar.setNavigationOnClickListener(view2 -> selectionController.stopSelecting());
 
-		System.out.println("TOOLBAR SAYS "+dirFragment.getParentFragmentManager().getBackStackEntryCount());
-
 		//Hide the navigation icon when we're at the top-level
 		if(dirFragment.getParentFragmentManager().getBackStackEntryCount() <= 1)
 			toolbar.setNavigationIcon(null);
