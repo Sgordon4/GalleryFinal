@@ -38,6 +38,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.VideoTouchHandler;
+import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
 @UnstableApi
 public class VideoFragment extends Fragment {
@@ -48,6 +49,7 @@ public class VideoFragment extends Fragment {
 
 	private DragPage dragPage;
 	private VideoTouchHandler videoTouchHandler;
+	private ZoomPanHandler zoomPanHandler;
 
 	private ExoPlayer player;
 	private TextureView textureView;
@@ -109,6 +111,7 @@ public class VideoFragment extends Fragment {
 
 
 		videoTouchHandler = new VideoTouchHandler(requireContext(), textureView);
+		zoomPanHandler = new ZoomPanHandler(textureView);
 		GestureDetector detector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public boolean onDown(@NonNull MotionEvent e) {
@@ -151,11 +154,16 @@ public class VideoFragment extends Fragment {
 
 
 		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
-			detector.onTouchEvent(event);
+			//detector.onTouchEvent(event);
 
-			boolean handled = videoTouchHandler.onTouch(v, event);
-			handled = handled || videoTouchHandler.isScaled();
-			dragPage.requestDisallowInterceptTouchEvent(handled);
+			//boolean handled = videoTouchHandler.onTouch(v, event);
+			//handled = handled || videoTouchHandler.isScaled();
+			//dragPage.requestDisallowInterceptTouchEvent(handled);
+
+			zoomPanHandler.onTouch(v, event);
+
+
+			dragPage.requestDisallowInterceptTouchEvent(true);
 
 			viewPager.setUserInputEnabled(event.getPointerCount() == 1);	//Stop ViewPager input if multi-touching
 
@@ -184,6 +192,8 @@ public class VideoFragment extends Fragment {
 		player.addListener(new Player.Listener() {
 			@Override
 			public void onVideoSizeChanged(@NonNull VideoSize videoSize) {
+				zoomPanHandler.setMediaDimensions(videoSize.width, videoSize.height);
+
 				//Adjust the height of the media in the TextureView
 				float videoWidth = videoSize.width;
 				float videoHeight = videoSize.height;
@@ -204,16 +214,12 @@ public class VideoFragment extends Fragment {
 					scaleX = videoAspectRatio / viewAspectRatio;
 				}
 
-				// Apply scale to TextureView
-				Matrix matrix = new Matrix();
-				matrix.setScale(scaleX, scaleY, viewWidth / 2f, viewHeight / 2f);
-				textureView.setTransform(matrix);
+				int actualWidth = (int) (viewWidth * scaleX);
+				int actualHeight = (int) (viewHeight * scaleY);
 
 
-				float actualWidth = viewWidth * scaleX;
-				float actualHeight = viewHeight * scaleY;
+				//videoTouchHandler.setMediaDimens(actualWidth, actualHeight);
 
-				videoTouchHandler.setMediaDimens(actualWidth, actualHeight);
 
 				//Tell DragPage the correct media height as well
 				dragPage.onMediaReady(actualHeight);

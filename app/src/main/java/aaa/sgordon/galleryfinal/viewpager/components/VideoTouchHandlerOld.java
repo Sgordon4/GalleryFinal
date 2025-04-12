@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 //Thanks ChatGPT for the important parts!
-public class VideoTouchHandler implements View.OnTouchListener {
+public class VideoTouchHandlerOld implements View.OnTouchListener {
 
 	private final TextureView mediaView;
 	private final GestureDetector gestureDetector;
@@ -43,7 +43,7 @@ public class VideoTouchHandler implements View.OnTouchListener {
 
 	private boolean doubleTapZoomEnabled = false;
 
-	public VideoTouchHandler(Context context, TextureView mediaView) {
+	public VideoTouchHandlerOld(Context context, TextureView mediaView) {
 		this.mediaView = mediaView;
 
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
