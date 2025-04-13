@@ -4,7 +4,9 @@ import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.widget.ImageView;
@@ -69,6 +71,10 @@ public class GifFragment extends Fragment {
 	}
 
 
+
+	private int touchSlop;
+	private float downX, downY;
+
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -78,12 +84,33 @@ public class GifFragment extends Fragment {
 		ImageView media = binding.viewA.findViewById(R.id.media);
 		zoomPanHandler = new ZoomPanHandler(media);
 
+		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 		binding.viewA.setOnTouchListener((v, event) -> {
+			if(event.getAction() == MotionEvent.ACTION_DOWN) {
+				downX = event.getX();
+				downY = event.getY();
+			}
+
 			if(!dragPage.isActive()) {
 				boolean handled = zoomPanHandler.onTouch(v, event);
-				handled = handled || zoomPanHandler.isScaled();
+				handled |= zoomPanHandler.isScaled();
 
-				if(handled) dragPage.requestDisallowInterceptTouchEvent(true);
+				if(handled) {
+					float moveX = event.getX();
+					float moveY = event.getY();
+					float deltaX = moveX - downX;
+					float deltaY = moveY - downY;
+
+					//If we're edge swiping, allow parent to intercept
+					if(Math.abs(deltaX) > touchSlop && deltaX < 0 && zoomPanHandler.isEdgeSwipingEnd())
+						dragPage.requestDisallowInterceptTouchEvent(false);
+					else if(Math.abs(deltaX) > touchSlop && deltaX > 0 && zoomPanHandler.isEdgeSwipingStart())
+						dragPage.requestDisallowInterceptTouchEvent(false);
+						//else if(Math.abs(deltaY) > touchSlop && zoomPanHandler.isEdgeSwipingY())
+						//dragPage.requestDisallowInterceptTouchEvent(false);
+					else
+						dragPage.requestDisallowInterceptTouchEvent(true);
+				}
 			}
 
 			return true;
