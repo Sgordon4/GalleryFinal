@@ -33,6 +33,23 @@ public class DragPage extends MotionLayout {
 	private View dimBackground;
 
 
+
+	public void onMediaReady(float intrinsicHeight) {
+		dragHelper.onMediaReady(intrinsicHeight);
+	}
+
+	public boolean isActive() {
+		return dragHelper.isActive() || dragHelper.isDragging() || scaleHelper.isScaling();
+	}
+
+	public void setOnDismissListener(OnDismissListener listener) {
+		this.dismissListener = listener;
+	}
+	public interface OnDismissListener {
+		void onDismiss();
+	}
+
+
 	@Override
 	protected void onFinishInflate() {
 		super.onFinishInflate();
@@ -51,69 +68,38 @@ public class DragPage extends MotionLayout {
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {
-		if(interceptor != null) interceptor.onInterceptTouchEvent(event);
-
-		if(childRequestedDisallowInterceptTouchEvent) return false;
+		switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL:
+				scaleHelper.onInterceptTouchEvent(event);
+				dragHelper.onInterceptTouchEvent(event);
+				return false;
+		}
 		if(event.getPointerCount() > 1) return false;	//Ignore multitouch events
 
-		System.out.println("Intercepting!");
-		if(!scaleHelper.isScaling())
-			dragHelper.onMotionEvent(event);
-		if(!dragHelper.isDragging())
-			scaleHelper.onMotionEvent(event);
 
-		return dragHelper.isDragging() || scaleHelper.isScaling();
+		boolean handled = false;
+		if(!dragHelper.isActive())
+			handled |= scaleHelper.onInterceptTouchEvent(event);
+		if(!scaleHelper.isScaling())
+			handled |= dragHelper.onInterceptTouchEvent(event);
+
+		return handled;
 	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		System.out.println("Touching!");
+		boolean handled = false;
+		if(!dragHelper.isActive())
+			handled |= scaleHelper.onTouchEvent(event);
 		if(!scaleHelper.isScaling())
-			dragHelper.onMotionEvent(event);
-		if(!dragHelper.isDragging())
-			scaleHelper.onMotionEvent(event);
+			handled |= dragHelper.onTouchEvent(event);
 
 		if(dragHelper.isDragging() || scaleHelper.isScaling())
 			getParent().requestDisallowInterceptTouchEvent(true);
 
-		if(event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL)
-			getParent().requestDisallowInterceptTouchEvent(false);
-
-		return true;
-	}
-
-
-	boolean childRequestedDisallowInterceptTouchEvent = false;
-	@Override
-	public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-		childRequestedDisallowInterceptTouchEvent = disallowIntercept;
-		super.requestDisallowInterceptTouchEvent(disallowIntercept);
-	}
-
-	public boolean isHandlingTouch() {
-		return dragHelper.isDragging() || scaleHelper.isScaling();
-	}
-
-	public void onMediaReady(float intrinsicHeight) {
-		dragHelper.onMediaReady(intrinsicHeight);
-	}
-
-
-	public void setOnDismissListener(OnDismissListener listener) {
-		this.dismissListener = listener;
-	}
-	public interface OnDismissListener {
-		void onDismiss();
-	}
-
-
-
-	private Interceptor interceptor;
-	public void setInterceptForPhotoViewsBitchAss(Interceptor interceptor) {
-		this.interceptor = interceptor;
-	}
-	public interface Interceptor {
-		void onInterceptTouchEvent(MotionEvent event);
+		return handled;
 	}
 }
 

@@ -18,15 +18,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.fragment.app.Fragment;
-import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.VideoSize;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.LegacyPlayerControlView;
-import androidx.media3.ui.PlayerControlView;
-import androidx.viewpager2.widget.ViewPager2;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -44,8 +41,6 @@ public class VideoFragment extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
 
-	private ViewPager2 viewPager;
-
 	private DragPage dragPage;
 	private ZoomPanHandler zoomPanHandler;
 
@@ -58,12 +53,6 @@ public class VideoFragment extends Fragment {
 		this.item = item;
 	}
 
-
-	@Override
-	public void onCreate(@Nullable Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		viewPager = requireParentFragment().requireView().findViewById(R.id.viewpager);
-	}
 
 	@Nullable
 	@Override
@@ -154,26 +143,14 @@ public class VideoFragment extends Fragment {
 		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
 			detector.onTouchEvent(event);
 
-			boolean handled = zoomPanHandler.onTouch(v, event);
-			handled = handled || zoomPanHandler.isScaled();
+			if(!dragPage.isActive()) {
+				boolean handled = zoomPanHandler.onTouch(v, event);
+				handled = handled || zoomPanHandler.isScaled();
 
-
-			//Shit straight up isn't working unless I filter to these
-			//ACTION_POINTER_DOWN/UP aren't firing on my emulator :(
-			switch (event.getActionMasked()) {
-				case MotionEvent.ACTION_POINTER_DOWN:
-				case MotionEvent.ACTION_MOVE:
-				case MotionEvent.ACTION_POINTER_UP:
-					dragPage.requestDisallowInterceptTouchEvent(handled);
-					viewPager.setUserInputEnabled(event.getPointerCount() == 1);	//Stop ViewPager input if multi-touching
-					break;
-				case MotionEvent.ACTION_UP:
-				case MotionEvent.ACTION_CANCEL:
-					dragPage.requestDisallowInterceptTouchEvent(false);
-					viewPager.setUserInputEnabled(true);
+				if(handled) dragPage.requestDisallowInterceptTouchEvent(true);
 			}
 
-			return handled || event.getActionMasked() == MotionEvent.ACTION_DOWN;
+			return true;
 		});
 
 		initializePlayer();

@@ -181,36 +181,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 				applyTransform();
 
 				return true;
-
-
-				/*
-				float newScale = currentScale * detector.getScaleFactor();
-				newScale = Math.max(minScale, Math.min(newScale, maxScale));
-
-
-				// Compute scale change
-				float newFactor = newScale / currentScale;
-
-				// Pivot (focal point of the pinch gesture)
-				float focusX = detector.getFocusX() - mediaView.getWidth() / 2f;
-				float focusY = detector.getFocusY() - mediaView.getHeight() / 2f;
-
-				// Adjust translation to keep zoom centered on the fingers
-				currentTranslationX = newFactor * (currentTranslationX - focusX) + focusX;
-				currentTranslationY = newFactor * (currentTranslationY - focusY) + focusY;
-
-
-				currentScale = newScale;
-
-
-				applyTransform();
-
-				if (scaleChangedListener != null) {
-					scaleChangedListener.onScaleChanged(currentScale);
-				}
-				return true;
-
-				 */
 			}
 
 			@Override
@@ -256,10 +226,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 				//If the movement between down and up is larger than TouchSlop, we treat it as a single-pointer zoom gesture too
 				if(deltaX > touchSlop || deltaY > touchSlop) return false;
 
-
-
-				//We are looking for a double tap without a longPress
-				//if(e.getAction() != MotionEvent.ACTION_UP || longPress) return false;
 
 				//Cycle between 3 zoom states when double tapping
 				float targetScale;
@@ -316,7 +282,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 
 
 			case MotionEvent.ACTION_MOVE: {
-				System.out.println("Here");
 				int pointerIndex = event.findPointerIndex(activePointerId);
 				if (pointerIndex == -1) break;
 
@@ -326,9 +291,8 @@ public class ZoomPanHandler implements View.OnTouchListener {
 				float dy = y - activePointerLastY;
 
 
-				System.out.println(Math.hypot(dx, dy) > touchSlop);
-
-				if (!isDragging && isScaled() && Math.hypot(dx, dy) > touchSlop) {
+				//if (!isDragging && isScaled() && Math.hypot(dx, dy) > touchSlop) {
+				if (!isDragging && isScaled()) {
 					isDragging = true;
 				}
 
@@ -365,43 +329,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 			}
 		}
 
-		/*
-		switch (event.getActionMasked()) {
-			case MotionEvent.ACTION_DOWN:
-				lastTouchX = event.getX();
-				lastTouchY = event.getY();
-				isDragging = false;
-				break;
-
-			//Drag, even when scaling
-			case MotionEvent.ACTION_MOVE:
-				float dx = event.getX() - lastTouchX;
-				float dy = event.getY() - lastTouchY;
-
-				if (!isDragging && isScaled() && Math.hypot(dx, dy) > touchSlop) {
-					isDragging = true;
-				}
-
-				if (isDragging) {
-					currentTranslationX += dx;
-					currentTranslationY += dy;
-
-					applyTransform();
-				}
-
-				lastTouchX = event.getX();
-				lastTouchY = event.getY();
-				break;
-
-			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL:
-				isDragging = false;
-				break;
-		}
-
-		 */
-
-		//System.out.println(scaleHandled +" vs "+ gestureHandled +" vs "+ isDragging);
 		return scaleHandled || gestureHandled || isDragging;
 	}
 

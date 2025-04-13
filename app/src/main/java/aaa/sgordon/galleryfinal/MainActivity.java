@@ -111,8 +111,8 @@ public class MainActivity extends AppCompatActivity {
 	private void launchActual() {
 		Thread thread = new Thread(() -> {
 			//UUID that happened to be generated that we're using now
-			//UUID rootDirectoryUID = UUID.fromString("2799d7ef-321d-436c-83d8-e28a31e41099");
-			UUID rootDirectoryUID = UUID.fromString("f289604e-8796-4668-a084-dc7147ca68bf");
+			UUID rootDirectoryUID = UUID.fromString("2799d7ef-321d-436c-83d8-e28a31e41099");
+			//UUID rootDirectoryUID = UUID.fromString("f289604e-8796-4668-a084-dc7147ca68bf");
 
 			Uri storageDir = MainStorageHandler.getStorageTreeUri(this);
 			if(storageDir == null) throw new RuntimeException("Storage directory is null!");

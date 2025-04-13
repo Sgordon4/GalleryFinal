@@ -2,7 +2,6 @@ package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.util.Pair;
 import android.view.Choreographer;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -146,63 +145,15 @@ public class DragHelper {
 	}
 
 
-	public boolean onMotionEvent(MotionEvent event) {
-		float currMediaBottom = mediaBottom + viewA.getTranslationY();
 
-		//Drag the views based on touch
+
+	public boolean onInterceptTouchEvent(MotionEvent event) {
 		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_DOWN:
 				downX = event.getX();
 				downY = event.getY();
 				startProgress = motionLayout.getProgress();
 
-				break;
-			case MotionEvent.ACTION_MOVE:
-				velocityTracker.addMovement(event);
-
-				float moveX = event.getX();
-				float moveY = event.getY();
-
-				float deltaX = moveX - downX;
-				float deltaY = moveY - downY;
-
-				//If we're not currently dragging...
-				if(!isDragging()) {
-					//Make sure there's enough vertical intent
-					if(Math.abs(deltaY) < touchSlop)// || Math.abs(deltaY) > Math.abs(deltaX))
-						return false;
-
-					//If we're at the bottom and dragging down, don't interfere with other gestures
-					if (motionLayout.getProgress() == 0f && deltaY > touchSlop)
-						return false;
-
-
-					downX = moveX;
-					downY = moveY;
-
-					isDragging = true;
-				}
-
-
-				float dy = downY - event.getY();
-				float dPercent = dy / transitionDistance;
-
-				float newProgress = startProgress + dPercent;
-				newProgress = Math.max(0f, Math.min(1f, newProgress));
-				motionLayout.setProgress(newProgress);
-
-				return true;
-			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL:
-				//if(!isDragging) return false;
-				isDragging = false;
-		}
-
-
-
-		//Fling logic
-		switch (event.getActionMasked()) {
-			case MotionEvent.ACTION_DOWN:
 				//Stop any current fling
 				choreographer.removeFrameCallback(flingCallback);
 				scroller.abortAnimation();
@@ -214,17 +165,73 @@ public class DragHelper {
 				velocityTracker.clear();
 				velocityTracker.addMovement(event);
 
-				break;
+				isDragging = false;
+
+				return false;
+			case MotionEvent.ACTION_MOVE:
+				float moveX = event.getX();
+				float moveY = event.getY();
+				float deltaX = moveX - downX;
+				float deltaY = moveY - downY;
+
+				//Make sure there's enough vertical intent
+				if (Math.abs(deltaY) < touchSlop || Math.abs(deltaX) > Math.abs(deltaY)) {
+					velocityTracker.addMovement(event);
+					return false;
+				}
+
+				downX = moveX;
+				downY = moveY;
+
+				isDragging = true;
+				return true;
 			case MotionEvent.ACTION_UP:
-			//case MotionEvent.ACTION_CANCEL:	Don't fling if we get cancelled
+			case MotionEvent.ACTION_CANCEL:
+				snapToClosestThreshold();
+		}
+		return false;
+	}
+
+
+	public boolean onTouchEvent(MotionEvent event) {
+		float currMediaBottom = mediaBottom + viewA.getTranslationY();
+
+		//Drag the views based on touch
+		switch (event.getActionMasked()) {
+			case MotionEvent.ACTION_MOVE:
+				//If we aren't dragging yet, use the setup logic in onInterceptTouchEvent's ACTION_MOVE case.
+				//This can happen if we don't intercept, then the touch event loops back up from bottom because a child didn't take it.
+				if(!isDragging()) return onInterceptTouchEvent(event);
+
+				velocityTracker.addMovement(event);
+
+				float dy = downY - event.getY();
+				float dPercent = dy / transitionDistance;
+
+				float newProgress = startProgress + dPercent;
+				newProgress = Math.max(0f, Math.min(1f, newProgress));
+				motionLayout.setProgress(newProgress);
+
+				return true;
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL:
+				isDragging = false;
+		}
+
+
+
+		//Fling logic
+		switch (event.getActionMasked()) {
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL:
 				velocityTracker.addMovement(event);
 
 				velocityTracker.computeCurrentVelocity(1000);
 				float velocityY = velocityTracker.getYVelocity();
 
+				//If this is not a fling, continue
 				boolean isFling = Math.abs(velocityY) > ViewConfiguration.get(motionLayout.getContext()).getScaledMinimumFlingVelocity();
 				if(!isFling) break;
-
 
 				//Bottom above threshold Open, perform a normal fling
 				if(currMediaBottom < thresholdOpen) {
@@ -266,32 +273,37 @@ public class DragHelper {
 
 		//Snap between open/closed based on drag ending position
 		switch (event.getActionMasked()) {
-			case MotionEvent.ACTION_DOWN:
-				//If a snap is already in progress, cancel it
-				if (snapAnimator != null && snapAnimator.isRunning())
-					snapAnimator.cancel();
-				break;
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL:
-
-				//Bottom below threshold Change
-				if (currMediaBottom >= thresholdChange) {
-					//Snap to Closed
-					animateSnapTo(0);
-					return true;
-				}
-				//Bottom above threshold Change, but below threshold Open
-				else if (currMediaBottom < thresholdChange && currMediaBottom > thresholdOpen) {
-					//Snap to Open
-					animateSnapTo(progressAtOpen);
-					return true;
-				}
-				//Bottom above threshold Open
-				//else {//if(mediaBottom <= thresholdOpen) {
-					//Do nothing
-				//}
+				boolean snapped = snapToClosestThreshold();
+				if(snapped) return true;
 		}
 
+		return true;
+	}
+
+
+
+
+	private boolean snapToClosestThreshold() {
+		float currMediaBottom = mediaBottom + viewA.getTranslationY();
+
+		//Bottom below threshold Change
+		if (currMediaBottom >= thresholdChange) {
+			//Snap to Closed
+			animateSnapTo(0);
+			return true;
+		}
+		//Bottom above threshold Change, but below threshold Open
+		else if (currMediaBottom < thresholdChange && currMediaBottom > thresholdOpen) {
+			//Snap to Open
+			animateSnapTo(progressAtOpen);
+			return true;
+		}
+		//Bottom above threshold Open
+		//else {//if(mediaBottom <= thresholdOpen) {
+		//Do nothing
+		//}
 
 		return false;
 	}

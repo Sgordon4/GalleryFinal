@@ -1,13 +1,11 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
-import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
@@ -17,7 +15,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -26,7 +23,6 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
-import com.github.chrisbanes.photoview.PhotoView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -43,7 +39,6 @@ public class ImageFragment extends Fragment {
 	private VpViewpageBinding binding;
 	private final ListItem item;
 
-	private ViewPager2 viewPager;
 	private DragPage dragPage;
 	private ZoomPanHandler zoomPanHandler;
 
@@ -52,12 +47,6 @@ public class ImageFragment extends Fragment {
 		this.item = item;
 	}
 
-
-	@Override
-	public void onCreate(@Nullable Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		viewPager = requireParentFragment().requireView().findViewById(R.id.viewpager);
-	}
 
 	@Nullable
 	@Override
@@ -113,31 +102,18 @@ public class ImageFragment extends Fragment {
 
 		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
 
-
 		ImageView media = binding.viewA.findViewById(R.id.media);
 		zoomPanHandler = new ZoomPanHandler(media);
 
 		binding.viewA.setOnTouchListener((v, event) -> {
-			boolean handled = zoomPanHandler.onTouch(v, event);
-			handled = handled || zoomPanHandler.isScaled();
+			if(!dragPage.isActive()) {
+				boolean handled = zoomPanHandler.onTouch(v, event);
+				handled = handled || zoomPanHandler.isScaled();
 
-
-			//Shit straight up isn't working unless I filter to these
-			//ACTION_POINTER_DOWN/UP aren't firing on my emulator :(
-			switch (event.getActionMasked()) {
-				case MotionEvent.ACTION_POINTER_DOWN:
-				case MotionEvent.ACTION_MOVE:
-				case MotionEvent.ACTION_POINTER_UP:
-					dragPage.requestDisallowInterceptTouchEvent(handled);
-					viewPager.setUserInputEnabled(event.getPointerCount() == 1);	//Stop ViewPager input if multi-touching
-					break;
-				case MotionEvent.ACTION_UP:
-				case MotionEvent.ACTION_CANCEL:
-					dragPage.requestDisallowInterceptTouchEvent(false);
-					viewPager.setUserInputEnabled(true);
+				if(handled) dragPage.requestDisallowInterceptTouchEvent(true);
 			}
 
-			return handled || event.getActionMasked() == MotionEvent.ACTION_DOWN;
+			return true;
 		});
 
 
