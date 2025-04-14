@@ -118,9 +118,7 @@ public class EdgeAwareHorizontalScrollView extends HorizontalScrollView {
 						boolean atStart = !canScrollLeft();
 						boolean atEnd = !canScrollRight();
 
-						System.out.println(goingRight+" and "+atStart);
 						if ((goingRight && atStart) || (goingLeft && atEnd)) {
-							System.out.println("Here");
 							allowParentIntercept = true;
 						}
 					}

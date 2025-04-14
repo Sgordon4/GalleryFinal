@@ -13,12 +13,12 @@ import android.widget.OverScroller;
 
 import androidx.appcompat.widget.AppCompatEditText;
 
-public class EdgeAwareEditText extends AppCompatEditText {
+public class EdgeAwareEditTextOld extends AppCompatEditText {
 
 	private float startY;
 	private float startX;
 	private float lastY;
-	private boolean isScrolling = false;
+	private boolean gestureDetected = false;
 	private boolean allowParentIntercept = false;
 
 	private final int touchSlop;
@@ -27,8 +27,7 @@ public class EdgeAwareEditText extends AppCompatEditText {
 	private final int minimumFlingVelocity;
 	private final int maximumFlingVelocity;
 
-	private final GestureDetector enabler;
-	private final GestureDetector longPressDetector;
+	private final GestureDetector gestureDetector;
 
 	private final Runnable flingRunnable = new Runnable() {
 		@Override
@@ -40,16 +39,15 @@ public class EdgeAwareEditText extends AppCompatEditText {
 		}
 	};
 
-	public EdgeAwareEditText(Context context) {
+	public EdgeAwareEditTextOld(Context context) {
 		this(context, null);
 	}
 
-	public EdgeAwareEditText(Context context, AttributeSet attrs) {
+	public EdgeAwareEditTextOld(Context context, AttributeSet attrs) {
 		this(context, attrs, android.R.attr.editTextStyle);
 	}
 
-	public boolean longPress = false;
-	public EdgeAwareEditText(Context context, AttributeSet attrs, int defStyleAttr) {
+	public EdgeAwareEditTextOld(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
 		setVerticalScrollBarEnabled(true);
 		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
@@ -61,33 +59,17 @@ public class EdgeAwareEditText extends AppCompatEditText {
 		minimumFlingVelocity = config.getScaledMinimumFlingVelocity();
 		maximumFlingVelocity = config.getScaledMaximumFlingVelocity();
 
-		enabler = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+		gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
 			@Override
 			public boolean onSingleTapConfirmed(MotionEvent e) {
+				System.out.println("Single tap confirmed");
 				if (!isFocused()) {
-					setFocusable(true);               // Make sure it's focusable
-					setFocusableInTouchMode(true);    // Allow it to receive touch-based focus
-					requestFocus();                   // Request focus
-					return true;
+					requestFocus();
+					return true; // consume single tap to activate
 				}
 				return false;
 			}
 		});
-		longPressDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
-			@Override
-			public boolean onDown(MotionEvent e) {
-				longPress = false;
-				return false;
-			}
-			@Override
-			public void onLongPress(MotionEvent e) {
-				longPress = true;
-			}
-		});
-
-		setFocusableInTouchMode(false);
-		setFocusable(false);
-
 	}
 
 
@@ -95,6 +77,8 @@ public class EdgeAwareEditText extends AppCompatEditText {
 	protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
 		super.onFocusChanged(focused, direction, previouslyFocusedRect);
 		// Enable interaction only when focused
+
+		System.out.println("Focus changed: "+focused);
 
 		if (focused) {
 			post(() -> {
@@ -108,17 +92,12 @@ public class EdgeAwareEditText extends AppCompatEditText {
 
 
 
-
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
+		System.out.println(event.getActionMasked());
 		if (!isFocused()) {
-			enabler.onTouchEvent(event);
+			gestureDetector.onTouchEvent(event);
 			//return true; // Let parent handle unless single tap confirmed
-		}
-		longPressDetector.onTouchEvent(event);
-		if(isFocused() && longPress) {
-			getParent().requestDisallowInterceptTouchEvent(true);
-			return super.onTouchEvent(event);
 		}
 
 		initVelocityTrackerIfNotExists();
@@ -130,7 +109,7 @@ public class EdgeAwareEditText extends AppCompatEditText {
 			case MotionEvent.ACTION_DOWN:
 				startX = event.getX();
 				startY = lastY = event.getY();
-				isScrolling = false;
+				gestureDetected = false;
 				allowParentIntercept = false;
 				getParent().requestDisallowInterceptTouchEvent(true);
 
@@ -144,28 +123,27 @@ public class EdgeAwareEditText extends AppCompatEditText {
 				float dy = currentY - startY;
 				float dx = event.getX() - startX;
 
-				if(!isScrolling) {
+				if (!gestureDetected && (Math.abs(dy) > touchSlop || Math.abs(dx) > touchSlop)) {
+					gestureDetected = true;
+
 					boolean isVertical = Math.abs(dy) > Math.abs(dx);
-					if(isVertical && Math.abs(dy) > touchSlop) {
-						isScrolling = true;
+					if (isVertical) {
+						boolean scrollingUp = dy > 0;
+						boolean scrollingDown = dy < 0;
+
+						boolean atTop = !canScrollUp();
+						boolean atBottom = !canScrollDown();
+
+						if ((scrollingUp && atTop) || (scrollingDown && atBottom)) {
+							System.out.println("Setting true");
+							allowParentIntercept = true;
+						}
 					}
-					else if(!isVertical && Math.abs(dx) > touchSlop) {
-						allowParentIntercept = !isFocused();
-					}
-				}
-
-				if(isScrolling) {
-					boolean scrollingUp = dy > 0;
-					boolean scrollingDown = dy < 0;
-
-					boolean atTop = !canScrollUp();
-					boolean atBottom = !canScrollDown();
-
-					if ((scrollingUp && atTop) || (scrollingDown && atBottom)) {
-						allowParentIntercept = true;
+					else {
+						if(!isFocused())
+							allowParentIntercept = true;
 					}
 				}
-
 
 				getParent().requestDisallowInterceptTouchEvent(!allowParentIntercept);
 				lastY = currentY;
@@ -180,14 +158,14 @@ public class EdgeAwareEditText extends AppCompatEditText {
 				}
 
 				recycleVelocityTracker();
-				isScrolling = false;
+				gestureDetected = false;
 				allowParentIntercept = false;
 				getParent().requestDisallowInterceptTouchEvent(false);
 				break;
 
 			case MotionEvent.ACTION_CANCEL:
 				recycleVelocityTracker();
-				isScrolling = false;
+				gestureDetected = false;
 				allowParentIntercept = false;
 				getParent().requestDisallowInterceptTouchEvent(false);
 				break;

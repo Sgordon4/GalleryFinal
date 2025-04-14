@@ -1,7 +1,9 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,6 +15,8 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -199,6 +203,7 @@ public class VideoFragment extends Fragment {
 
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
+			unfocusEditTextOnTapOutside(event);
 			detector.onTouchEvent(event);
 
 			if(event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -228,6 +233,10 @@ public class VideoFragment extends Fragment {
 				}
 			}
 
+			return true;
+		});
+		binding.viewB.setOnTouchListener((v, event) -> {
+			unfocusEditTextOnTapOutside(event);
 			return true;
 		});
 
@@ -312,6 +321,26 @@ public class VideoFragment extends Fragment {
 		});
 		load.start();
 	}
+
+
+	private void unfocusEditTextOnTapOutside(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			View focused = binding.motionLayout.findFocus();
+			if (focused instanceof EditText) {
+				Rect rect = new Rect();
+				focused.getGlobalVisibleRect(rect);
+				if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
+					focused.clearFocus();
+
+					InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+					if (imm != null) {
+						imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
+					}
+				}
+			}
+		}
+	}
+
 
 	private void toggleControls() {
 		if(controls.isVisible())

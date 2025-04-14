@@ -1,7 +1,9 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,6 +13,8 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -209,6 +213,8 @@ public class ImageFragment extends Fragment {
 
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 		binding.viewA.setOnTouchListener((v, event) -> {
+			unfocusEditTextOnTapOutside(event);
+
 			if(event.getAction() == MotionEvent.ACTION_DOWN) {
 				downX = event.getX();
 				downY = event.getY();
@@ -238,6 +244,12 @@ public class ImageFragment extends Fragment {
 
 			return true;
 		});
+		binding.viewB.setOnTouchListener((v, event) -> {
+			unfocusEditTextOnTapOutside(event);
+			return true;
+		});
+
+
 
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
@@ -294,6 +306,24 @@ public class ImageFragment extends Fragment {
 					}
 				})
 				.into(media);
+	}
+
+	private void unfocusEditTextOnTapOutside(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			View focused = binding.motionLayout.findFocus();
+			if (focused instanceof EditText) {
+				Rect rect = new Rect();
+				focused.getGlobalVisibleRect(rect);
+				if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
+					focused.clearFocus();
+
+					InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+					if (imm != null) {
+						imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
+					}
+				}
+			}
+		}
 	}
 
 
