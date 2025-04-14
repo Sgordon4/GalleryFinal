@@ -79,7 +79,6 @@ public class GifFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 		ImageView media = binding.viewA.findViewById(R.id.media);
 		zoomPanHandler = new ZoomPanHandler(media);

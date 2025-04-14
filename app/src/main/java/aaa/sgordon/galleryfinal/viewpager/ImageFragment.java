@@ -82,7 +82,6 @@ public class ImageFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
 
 		if(item.fileSize < SIZE_THRESHOLD)
 			usePhotoView();

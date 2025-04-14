@@ -85,7 +85,6 @@ public class DragHelper {
 	public void onViewCreated() {
 		touchSlop = ViewConfiguration.get(motionLayout.getContext()).getScaledTouchSlop();
 		touchSlop *= 2;
-		onMediaReady(motionLayout.getHeight());
 	}
 
 	public void onMediaReady(float mediaHeight) {
@@ -107,7 +106,8 @@ public class DragHelper {
 		//To do this, shift the translation in the motionConstraints
 		float mediaBottomToScreenBottom = mediaHeight/2 - screenHeight/2;
 
-		transitionDistance = viewB.getHeight() + mediaBottomToScreenBottom;
+		ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) viewB.getLayoutParams();
+		transitionDistance = viewB.getHeight() + marginParams.topMargin + marginParams.bottomMargin + mediaBottomToScreenBottom;
 
 		ConstraintSet startConstraintSet = motionLayout.getConstraintSet(R.id.start);
 		ConstraintSet endConstraintSet = motionLayout.getConstraintSet(R.id.end);

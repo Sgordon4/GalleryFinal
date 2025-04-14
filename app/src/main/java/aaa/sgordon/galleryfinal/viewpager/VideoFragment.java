@@ -98,8 +98,6 @@ public class VideoFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
-		dragPage.post(() -> dragPage.onMediaReady(dragPage.getHeight()));
-
 
 		zoomPanHandler = new ZoomPanHandler(textureView);
 		zoomPanHandler.setDoubleTapZoomEnabled(false);

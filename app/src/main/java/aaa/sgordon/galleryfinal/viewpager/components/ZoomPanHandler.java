@@ -305,9 +305,6 @@ public class ZoomPanHandler implements View.OnTouchListener {
 				edgeSwipingEnd = currentTranslationX == -maxTranslations.getWidth();
 				edgeSwipingTop = currentTranslationY == maxTranslations.getHeight();
 				edgeSwipingBottom = currentTranslationY == -maxTranslations.getHeight();
-				System.out.println("Max: "+maxTranslations.getWidth()+" "+maxTranslations.getHeight());
-				System.out.println("Curr: "+currentTranslationX+" "+currentTranslationY);
-				System.out.println("At edges: "+edgeSwipingStart+" "+edgeSwipingEnd+" "+edgeSwipingTop+" "+edgeSwipingBottom);
 				break;
 			}
 
@@ -340,15 +337,11 @@ public class ZoomPanHandler implements View.OnTouchListener {
 					currentTranslationY += dy;
 					applyTransform();
 
-					System.out.println("Edges 1: "+edgeSwipingStart+" "+edgeSwipingEnd+" "+edgeSwipingTop+" "+edgeSwipingBottom);
-					System.out.println("Ds: "+dx+" "+dy);
 					SizeF maxTranslations = getMaxTranslations();
 					edgeSwipingStart &= currentTranslationX == maxTranslations.getWidth() && dx >= 0;
 					edgeSwipingEnd &= currentTranslationX == -maxTranslations.getWidth() && dx <= 0;
 					edgeSwipingTop &= currentTranslationY == maxTranslations.getHeight() && dy >= 0;
 					edgeSwipingBottom &= currentTranslationY == maxTranslations.getHeight() && dy <= 0;
-					System.out.println("Edges 2: "+edgeSwipingStart+" "+edgeSwipingEnd+" "+edgeSwipingTop+" "+edgeSwipingBottom);
-
 				}
 
 				activePointerLastX = x;
