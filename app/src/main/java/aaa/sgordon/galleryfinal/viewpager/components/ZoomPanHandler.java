@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.graphics.Matrix;
+import android.graphics.PointF;
 import android.os.SystemClock;
 import android.util.SizeF;
 import android.view.Choreographer;
@@ -14,6 +15,9 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ZoomPanHandler implements View.OnTouchListener {
 
@@ -182,7 +186,7 @@ public class ZoomPanHandler implements View.OnTouchListener {
 			}
 
 			@Override
-			public boolean onScale(ScaleGestureDetector detector) {
+			public boolean onScale(@NonNull ScaleGestureDetector detector) {
 				float newScale = currentScale * detector.getScaleFactor();
 				newScale = Math.max(minScale, Math.min(newScale, maxScale));
 
@@ -281,10 +285,9 @@ public class ZoomPanHandler implements View.OnTouchListener {
 	private boolean edgeSwipingStart;
 	private boolean edgeSwipingEnd;
 
+	private final Map<Integer, PointF> activePointers = new HashMap<>();
+	private final PointF lastAvgPosition = new PointF();
 
-	private int activePointerId = MotionEvent.INVALID_POINTER_ID;
-	private float activePointerLastX;
-	private float activePointerLastY;
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		scaleDetector.onTouchEvent(event);
@@ -292,13 +295,13 @@ public class ZoomPanHandler implements View.OnTouchListener {
 		boolean gestureHandled = gestureDetector.onTouchEvent(event);
 
 
-		switch (event.getAction()) {
+		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_DOWN: {
-				activePointerId = event.getPointerId(0);
-				activePointerLastX = event.getX();
-				activePointerLastY = event.getY();
-				isDragging = false;
-				stopFling();
+				int index = event.getActionIndex();
+				int pointerId = event.getPointerId(index);
+				activePointers.put(pointerId, new PointF(event.getX(index), event.getY(index)));
+
+				updateLastAveragePosition();
 
 				SizeF maxTranslations = getMaxTranslations();
 				edgeSwipingStart = currentTranslationX == maxTranslations.getWidth();
@@ -309,69 +312,98 @@ public class ZoomPanHandler implements View.OnTouchListener {
 			}
 
 			case MotionEvent.ACTION_POINTER_DOWN: {
-				int newIndex = event.getActionIndex();
-				activePointerId = event.getPointerId(newIndex);
-				activePointerLastX = event.getX(newIndex);
-				activePointerLastY = event.getY(newIndex);
+				int index = event.getActionIndex();
+				int pointerId = event.getPointerId(index);
+				activePointers.put(pointerId, new PointF(event.getX(index), event.getY(index)));
+
+				updateLastAveragePosition();
 				break;
 			}
 
 
 			case MotionEvent.ACTION_MOVE: {
-				int pointerIndex = event.findPointerIndex(activePointerId);
-				if (pointerIndex == -1) break;
 
-				float x = event.getX(pointerIndex);
-				float y = event.getY(pointerIndex);
-				float dx = x - activePointerLastX;
-				float dy = y - activePointerLastY;
+				if (!activePointers.isEmpty()) {
+					// Update all pointers' positions
+					for (int i = 0; i < event.getPointerCount(); i++) {
+						int id = event.getPointerId(i);
+						PointF point = activePointers.get(id);
+						if (point != null) {
+							point.set(event.getX(i), event.getY(i));
+						}
+					}
 
+					// Calculate average of all active pointers
+					float sumX = 0, sumY = 0;
+					int count = 0;
+					for (PointF point : activePointers.values()) {
+						sumX += point.x;
+						sumY += point.y;
+						count++;
+					}
 
-				//if (!isDragging && isScaled() && Math.hypot(dx, dy) > touchSlop) {
-				if (!isDragging && isScaled()) {
-					isDragging = true;
+					if (count > 0) {
+						float avgX = sumX / count;
+						float avgY = sumY / count;
+
+						float dx = avgX - lastAvgPosition.x;
+						float dy = avgY - lastAvgPosition.y;
+
+						currentTranslationX += dx;
+						currentTranslationY += dy;
+						applyTransform();
+						lastAvgPosition.set(avgX, avgY);
+
+						SizeF maxTranslations = getMaxTranslations();
+						edgeSwipingStart &= currentTranslationX == maxTranslations.getWidth() && dx >= 0;
+						edgeSwipingEnd &= currentTranslationX == -maxTranslations.getWidth() && dx <= 0;
+						edgeSwipingTop &= currentTranslationY == maxTranslations.getHeight() && dy >= 0;
+						edgeSwipingBottom &= currentTranslationY == maxTranslations.getHeight() && dy <= 0;
+
+					}
 				}
 
-				if (isDragging) {
-					currentTranslationX += dx;
-					currentTranslationY += dy;
-					applyTransform();
-
-					SizeF maxTranslations = getMaxTranslations();
-					edgeSwipingStart &= currentTranslationX == maxTranslations.getWidth() && dx >= 0;
-					edgeSwipingEnd &= currentTranslationX == -maxTranslations.getWidth() && dx <= 0;
-					edgeSwipingTop &= currentTranslationY == maxTranslations.getHeight() && dy >= 0;
-					edgeSwipingBottom &= currentTranslationY == maxTranslations.getHeight() && dy <= 0;
-				}
-
-				activePointerLastX = x;
-				activePointerLastY = y;
 				break;
 			}
 
 			case MotionEvent.ACTION_POINTER_UP: {
-				int pointerIndex = event.getActionIndex();
-				int pointerId = event.getPointerId(pointerIndex);
+				int index = event.getActionIndex();
+				int pointerId = event.getPointerId(index);
+				activePointers.remove(pointerId);
 
-				if (pointerId == activePointerId) {
-					// Switch to a different pointer
-					int newIndex = pointerIndex == 0 ? 1 : 0;
-					activePointerId = event.getPointerId(newIndex);
-					activePointerLastX = event.getX(newIndex);
-					activePointerLastY = event.getY(newIndex);
-				}
+				updateLastAveragePosition();
 				break;
 			}
 
 			case MotionEvent.ACTION_UP:
 			case MotionEvent.ACTION_CANCEL: {
 				isDragging = false;
-				activePointerId = MotionEvent.INVALID_POINTER_ID;
+				int index = event.getActionIndex();
+				int pointerId = event.getPointerId(index);
+				activePointers.remove(pointerId);
+
+				updateLastAveragePosition();
 				break;
 			}
 		}
 
 		return scaleHandled || gestureHandled || isDragging;
+	}
+
+
+	private void updateLastAveragePosition() {
+		if (activePointers.isEmpty()) return;
+
+		float sumX = 0f, sumY = 0f;
+		for (PointF point : activePointers.values()) {
+			sumX += point.x;
+			sumY += point.y;
+		}
+
+		lastAvgPosition.set(
+				sumX / activePointers.size(),
+				sumY / activePointers.size()
+		);
 	}
 
 

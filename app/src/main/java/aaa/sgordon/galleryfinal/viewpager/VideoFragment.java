@@ -217,9 +217,9 @@ public class VideoFragment extends Fragment {
 					float deltaY = moveY - downY;
 
 					//If we're edge swiping, allow parent to intercept
-					if(Math.abs(deltaX) > touchSlop && deltaX < 0 && zoomPanHandler.isEdgeSwipingEnd())
+					if(Math.abs(deltaX) > touchSlop && deltaX < 0 && Math.abs(deltaX) > Math.abs(deltaY) && zoomPanHandler.isEdgeSwipingEnd())
 						dragPage.requestDisallowInterceptTouchEvent(false);
-					else if(Math.abs(deltaX) > touchSlop && deltaX > 0 && zoomPanHandler.isEdgeSwipingStart())
+					else if(Math.abs(deltaX) > touchSlop && deltaX > 0 && Math.abs(deltaX) > Math.abs(deltaY) && zoomPanHandler.isEdgeSwipingStart())
 						dragPage.requestDisallowInterceptTouchEvent(false);
 						//else if(Math.abs(deltaY) > touchSlop && zoomPanHandler.isEdgeSwipingY())
 						//dragPage.requestDisallowInterceptTouchEvent(false);
