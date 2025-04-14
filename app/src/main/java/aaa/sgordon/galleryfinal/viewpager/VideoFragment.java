@@ -13,7 +13,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,12 +28,17 @@ import androidx.media3.ui.LegacyPlayerControlView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
@@ -66,27 +71,78 @@ public class VideoFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_video);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		textureView = binding.viewA.findViewById(R.id.media);
+		textureView.setTransitionName(item.filePath.toString());
 
 
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
 
-		binding.viewB.findViewById(R.id.test_button).setOnClickListener(v -> {
-			Toast.makeText(requireContext(), "Test Button Clicked", Toast.LENGTH_SHORT).show();
-		});
+		setBottomSheetInfo();
 
 
 		dragPage = binding.motionLayout;
 		dragPage.setOnDismissListener(() -> {
-			getParentFragment().getParentFragmentManager().popBackStack();
+			requireParentFragment().getParentFragmentManager().popBackStack();
 		});
 
-
-		textureView = binding.viewA.findViewById(R.id.media);
-
 		return binding.getRoot();
+	}
+
+
+	private void setBottomSheetInfo() {
+		Thread thread = new Thread(() -> {
+			try {
+				HybridAPI hAPI = HybridAPI.getInstance();
+				HFile fileProps = hAPI.getFileProps(item.fileUID);
+
+
+				//Show the filename
+				TextView filename = binding.viewB.findViewById(R.id.filename);
+				filename.setText(item.name);
+
+
+
+				//Format the creation date
+				SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
+				Date date = new Date(fileProps.createtime*1000);
+				String formattedDateTime = sdf.format(date);
+
+				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
+				String timeText = getString(R.string.vp_time, formattedDateTime);
+				creationTime.setText(timeText);
+
+
+
+				//Format the fileSize and zoning information
+				float fileSizeBytes = fileProps.filesize;
+				float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+				String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+				String zone = "On Device";
+				HZone zoning = hAPI.getZoningInfo(item.fileUID);
+				if(zoning != null) {
+					if (zoning.isLocal && zoning.isRemote)
+						zone = "On Device & Cloud";
+					else if (zoning.isLocal)
+						zone = "On Device";
+					else //if (zoning.isRemote)
+						zone = "On Cloud";
+				}
+
+				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
+				String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+				zoningText.setText(backupText);
+
+
+
+
+			} catch (FileNotFoundException | ConnectException e) {
+				//Just skip setting some properties
+			}
+		});
+		thread.start();
 	}
 
 

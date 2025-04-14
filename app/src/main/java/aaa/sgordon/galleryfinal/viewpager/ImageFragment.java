@@ -11,8 +11,10 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,12 +30,17 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
@@ -59,18 +66,109 @@ public class ImageFragment extends Fragment {
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
 
-		binding.viewB.findViewById(R.id.test_button).setOnClickListener(v -> {
-			Toast.makeText(requireContext(), "Test Button Clicked", Toast.LENGTH_SHORT).show();
-		});
+		setBottomSheetInfo();
 
 
 		dragPage = binding.motionLayout;
 		dragPage.setOnDismissListener(() -> {
-			getParentFragment().getParentFragmentManager().popBackStack();
+			requireParentFragment().getParentFragmentManager().popBackStack();
 		});
 
 
 		return binding.getRoot();
+	}
+
+
+	private void setBottomSheetInfo() {
+		Thread thread = new Thread(() -> {
+			try {
+				HybridAPI hAPI = HybridAPI.getInstance();
+				HFile fileProps = hAPI.getFileProps(item.fileUID);
+
+
+				//Show the filename
+				TextView filename = binding.viewB.findViewById(R.id.filename);
+				filename.setText(item.name);
+
+
+
+				//Format the creation date
+				SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
+				Date date = new Date(fileProps.createtime*1000);
+				String formattedDateTime = sdf.format(date);
+
+				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
+				String timeText = getString(R.string.vp_time, formattedDateTime);
+				creationTime.post(() -> creationTime.setText(timeText));
+
+
+
+				//Format the fileSize and zoning information
+				float fileSizeBytes = fileProps.filesize;
+				float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+				String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+				String zone = "On Device";
+				HZone zoning = hAPI.getZoningInfo(item.fileUID);
+				if(zoning != null) {
+					if (zoning.isLocal && zoning.isRemote)
+						zone = "On Device & Cloud";
+					else if (zoning.isLocal)
+						zone = "On Device";
+					else //if (zoning.isRemote)
+						zone = "On Cloud";
+				}
+
+				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
+				String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+				zoningText.post(() -> zoningText.setText(backupText));
+
+
+
+
+
+				LinearLayout share = binding.viewB.findViewById(R.id.share);
+				LinearLayout move = binding.viewB.findViewById(R.id.move);
+				LinearLayout copy = binding.viewB.findViewById(R.id.copy);
+				LinearLayout export = binding.viewB.findViewById(R.id.export);
+				LinearLayout trash = binding.viewB.findViewById(R.id.trash);
+				LinearLayout backup = binding.viewB.findViewById(R.id.backup);
+
+				share.post(() -> share.setOnClickListener(v -> System.out.println("Share")));
+				move.post(() -> move.setOnClickListener(v -> System.out.println("Move")));
+				copy.post(() -> copy.setOnClickListener(v -> System.out.println("Copy")));
+				export.post(() -> export.setOnClickListener(v -> System.out.println("Export")));
+				trash.post(() -> trash.setOnClickListener(v -> System.out.println("Trash")));
+				backup.post(() -> backup.setOnClickListener(v -> System.out.println("Backup")));
+
+
+
+
+				/*
+				share.post(() -> share.setOnClickListener(v -> {
+					v.getParent().requestDisallowInterceptTouchEvent(true);
+					System.out.println("AAA");
+				}));
+				move.post(() -> move.setOnClickListener(v -> {
+					v.getParent().requestDisallowInterceptTouchEvent(true);
+					System.out.println("AAA");
+				}));
+				copy.post(() -> copy.setOnClickListener(v -> {
+					v.getParent().requestDisallowInterceptTouchEvent(true);
+					System.out.println("AAA");
+				}));
+				export.post(() -> export.setOnClickListener(v -> {
+					v.getParent().requestDisallowInterceptTouchEvent(true);
+					System.out.println("AAA");
+				}));
+ 				*/
+
+
+			} catch (FileNotFoundException | ConnectException e) {
+				//Just skip setting some properties
+			}
+		});
+		thread.start();
 	}
 
 

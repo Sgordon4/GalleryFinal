@@ -1,25 +1,26 @@
 package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.content.Context;
-import android.util.AttributeSet;
-import android.view.MotionEvent;
-
-import androidx.appcompat.widget.AppCompatEditText;
-import androidx.core.view.ViewCompat;
-
-import android.content.Context;
+import android.graphics.Rect;
+import android.text.Layout;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
-import android.widget.EditText;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.OverScroller;
 
-import androidx.core.view.ViewCompat;
+import androidx.appcompat.widget.AppCompatEditText;
 
 public class EdgeAwareEditText extends AppCompatEditText {
 
+	private float startY;
+	private float startX;
 	private float lastY;
+	private boolean gestureDetected = false;
+	private boolean allowParentIntercept = false;
+
+	private final int touchSlop;
 	private final OverScroller scroller;
 	private VelocityTracker velocityTracker;
 	private final int minimumFlingVelocity;
@@ -30,7 +31,7 @@ public class EdgeAwareEditText extends AppCompatEditText {
 		public void run() {
 			if (scroller.computeScrollOffset()) {
 				scrollTo(0, scroller.getCurrY());
-				ViewCompat.postOnAnimation(EdgeAwareEditText.this, this);
+				postOnAnimation(this);
 			}
 		}
 	};
@@ -45,86 +46,120 @@ public class EdgeAwareEditText extends AppCompatEditText {
 
 	public EdgeAwareEditText(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		scroller = new OverScroller(context);
+		setVerticalScrollBarEnabled(true);
+		setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
+		setFocusableInTouchMode(true);
+
 		ViewConfiguration config = ViewConfiguration.get(context);
+		touchSlop = config.getScaledTouchSlop();
+		scroller = new OverScroller(context);
 		minimumFlingVelocity = config.getScaledMinimumFlingVelocity();
 		maximumFlingVelocity = config.getScaledMaximumFlingVelocity();
-		setVerticalScrollBarEnabled(true);
 	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (canScrollVertically()) {
-			initVelocityTrackerIfNotExists();
-			velocityTracker.addMovement(event);
+		initVelocityTrackerIfNotExists();
+		velocityTracker.addMovement(event);
 
-			switch (event.getActionMasked()) {
-				case MotionEvent.ACTION_DOWN:
-					lastY = event.getY();
-					getParent().requestDisallowInterceptTouchEvent(true);
-					if (!scroller.isFinished()) {
-						scroller.abortAnimation(); // Stop ongoing fling
+		int action = event.getActionMasked();
+
+		switch (action) {
+			case MotionEvent.ACTION_DOWN:
+				startX = event.getX();
+				startY = lastY = event.getY();
+				gestureDetected = false;
+				allowParentIntercept = false;
+				getParent().requestDisallowInterceptTouchEvent(true);
+
+				if (!scroller.isFinished()) {
+					scroller.abortAnimation();
+				}
+				break;
+
+			case MotionEvent.ACTION_MOVE:
+				float currentY = event.getY();
+				float dy = currentY - startY;
+				float dx = event.getX() - startX;
+
+				if (!gestureDetected && (Math.abs(dy) > touchSlop || Math.abs(dx) > touchSlop)) {
+					gestureDetected = true;
+
+					boolean isVertical = Math.abs(dy) > Math.abs(dx);
+					if (isVertical) {
+						boolean scrollingUp = dy > 0;
+						boolean scrollingDown = dy < 0;
+
+						boolean atTop = !canScrollUp();
+						boolean atBottom = !canScrollDown();
+
+						if ((scrollingUp && atTop) || (scrollingDown && atBottom)) {
+							allowParentIntercept = true;
+						}
 					}
-					break;
+				}
 
-				case MotionEvent.ACTION_MOVE:
-					float currentY = event.getY();
-					float dy = currentY - lastY;
+				getParent().requestDisallowInterceptTouchEvent(!allowParentIntercept);
+				lastY = currentY;
+				break;
 
-					boolean scrollingUp = dy > 0;
-					boolean scrollingDown = dy < 0;
-					boolean atTop = !canScrollVertically(-1);
-					boolean atBottom = !canScrollVertically(1);
+			case MotionEvent.ACTION_UP:
+				velocityTracker.computeCurrentVelocity(1000, maximumFlingVelocity);
+				float velocityY = velocityTracker.getYVelocity();
 
-					if ((scrollingUp && atTop) || (scrollingDown && atBottom)) {
-						getParent().requestDisallowInterceptTouchEvent(false);
-					} else {
-						getParent().requestDisallowInterceptTouchEvent(true);
-					}
+				if (Math.abs(velocityY) > minimumFlingVelocity) {
+					fling((int) -velocityY);
+				}
 
-					lastY = currentY;
-					break;
+				recycleVelocityTracker();
+				gestureDetected = false;
+				allowParentIntercept = false;
+				getParent().requestDisallowInterceptTouchEvent(false);
+				break;
 
-				case MotionEvent.ACTION_UP:
-					velocityTracker.computeCurrentVelocity(1000, maximumFlingVelocity);
-					float velocityY = velocityTracker.getYVelocity();
-
-					if (Math.abs(velocityY) > minimumFlingVelocity) {
-						fling((int) -velocityY); // Negative because Android scrolls down with negative
-					}
-
-					recycleVelocityTracker();
-					getParent().requestDisallowInterceptTouchEvent(false);
-					break;
-
-				case MotionEvent.ACTION_CANCEL:
-					recycleVelocityTracker();
-					getParent().requestDisallowInterceptTouchEvent(false);
-					break;
-			}
+			case MotionEvent.ACTION_CANCEL:
+				recycleVelocityTracker();
+				gestureDetected = false;
+				allowParentIntercept = false;
+				getParent().requestDisallowInterceptTouchEvent(false);
+				break;
 		}
 
 		return super.onTouchEvent(event);
 	}
 
 	private void fling(int velocityY) {
-		int maxScrollY = getLayout() != null
-				? getLayout().getHeight() - (getHeight() - getPaddingTop() - getPaddingBottom())
-				: 0;
-
+		int maxScrollY = computeVerticalScrollRange() - getHeight();
 		if (maxScrollY <= 0) return;
 
 		scroller.fling(
-				0, getScrollY(),         // startX, startY
-				0, velocityY,            // velocityX, velocityY
-				0, 0,                    // minX, maxX
-				0, maxScrollY            // minY, maxY
+				0, getScrollY(),
+				0, velocityY,
+				0, 0,
+				0, maxScrollY
 		);
-		ViewCompat.postOnAnimation(this, flingRunnable);
+
+		postOnAnimation(flingRunnable);
 	}
 
-	private boolean canScrollVertically() {
-		return ViewCompat.canScrollVertically(this, 1) || ViewCompat.canScrollVertically(this, -1);
+	@Override
+	public void scrollTo(int x, int y) {
+		int maxY = computeVerticalScrollRange() - getHeight();
+		y = Math.max(0, Math.min(y, maxY));
+		super.scrollTo(x, y);
+	}
+
+	private boolean canScrollUp() {
+		return getScrollY() > 0;
+	}
+
+	private boolean canScrollDown() {
+		Layout layout = getLayout();
+		if (layout == null) return false;
+
+		int scrollY = getScrollY();
+		int maxScrollY = layout.getHeight() - getHeight();
+		return scrollY < maxScrollY;
 	}
 
 	private void initVelocityTrackerIfNotExists() {
@@ -141,12 +176,15 @@ public class EdgeAwareEditText extends AppCompatEditText {
 	}
 
 	@Override
-	public void scrollTo(int x, int y) {
-		// Clamp scroll range manually
-		int maxY = getLayout() != null
-				? getLayout().getHeight() - (getHeight() - getPaddingTop() - getPaddingBottom())
-				: 0;
-		y = Math.max(0, Math.min(y, maxY));
-		super.scrollTo(x, y);
+	protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
+		super.onFocusChanged(focused, direction, previouslyFocusedRect);
+		if (focused) {
+			post(() -> {
+				InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+				if (imm != null) {
+					imm.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT);
+				}
+			});
+		}
 	}
 }
