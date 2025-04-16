@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/rich_toolbar_top_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/rich_toolbar_top"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:menu="@menu/rich_toolbar_top"/>
+
+        <com.google.android.material.divider.MaterialDivider android:layout_width="match_parent" android:layout_height="1dp" android:layout_gravity="bottom"/>
+
+    </FrameLayout>
+
+
+
+    <ScrollView
+        android:id="@+id/scroll_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rich_toolbar_top_container"
+        app:layout_constraintBottom_toTopOf="@id/rich_toolbar_bottom_container"
+        android:scrollbarStyle="outsideOverlay"
+        android:paddingHorizontal="16dp"
+        android:background="?attr/colorSurface">
+
+        <!-- Text editor goes here :) -->
+
+    </ScrollView>
+
+
+
+    <FrameLayout
+        android:id="@+id/rich_toolbar_bottom_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout
+            android:id="@+id/rich_toolbar_bottom_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="?attr/colorSurface">
+
+            <ImageButton android:id="@+id/action_clear" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@android:color/transparent" android:src="@drawable/ic_format_clear_30dp" android:contentDescription="Clear Format" />
+
+            <com.google.android.material.divider.MaterialDivider android:layout_width="2dp" android:layout_height="match_parent" android:layout_marginVertical="8dp" />
+
+            <ImageButton android:id="@+id/action_heading1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_h1_30dp" android:contentDescription="Heading 1" />
+            <ImageButton android:id="@+id/action_heading2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_h2_30dp" android:contentDescription="Heading 2" />
+
+            <com.google.android.material.divider.MaterialDivider android:layout_width="2dp" android:layout_height="match_parent" android:layout_marginVertical="8dp" />
+
+            <ImageButton android:id="@+id/action_bold" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_bold_30dp" android:contentDescription="Bold" />
+            <ImageButton android:id="@+id/action_italic" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_italic_30dp" android:contentDescription="Italicize" />
+            <Space android:layout_width="2dp" android:layout_height="0dp"/>
+            <ImageButton android:id="@+id/action_underline" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_underlined_30dp" android:contentDescription="Underline" />
+            <ImageButton android:id="@+id/action_strikethrough" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_strikethrough_30dp" android:contentDescription="Strikethrough" />
+
+            <com.google.android.material.divider.MaterialDivider android:layout_width="2dp" android:layout_height="match_parent" android:layout_marginVertical="8dp" />
+
+            <ImageButton android:id="@+id/toolbar_swap_1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@android:color/transparent" android:src="@drawable/ic_more_horiz_30dp" android:contentDescription="Swap Toolbars" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/rich_toolbar_bottom_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:orientation="horizontal"
+            android:background="?attr/colorSurface"
+            android:visibility="gone">
+
+            <ImageButton android:id="@+id/action_align_left" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_align_left_no_mirror_30dp" android:contentDescription="Align Left" />
+            <ImageButton android:id="@+id/action_align_center" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_align_center_30dp" android:contentDescription="Align Center" />
+            <ImageButton android:id="@+id/action_align_right" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_format_align_right_no_mirror_30dp" android:contentDescription="Align Right" />
+
+            <Space android:layout_width="2dp" android:layout_height="0dp"/>
+            <com.google.android.material.divider.MaterialDivider android:layout_width="2dp" android:layout_height="match_parent" android:layout_marginVertical="8dp" />
+
+            <ImageButton android:id="@+id/action_font_increase" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@android:color/transparent" android:src="@drawable/ic_text_increase_30dp" android:contentDescription="Font Size Up" />
+            <ImageButton android:id="@+id/action_font_decrease" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@android:color/transparent" android:src="@drawable/ic_text_decrease_30dp" android:contentDescription="Font Size Down" />
+
+            <com.google.android.material.divider.MaterialDivider android:layout_width="2dp" android:layout_height="match_parent" android:layout_marginVertical="8dp" />
+
+            <ImageButton android:id="@+id/action_superscript" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_superscript_30dp" android:contentDescription="Superscript" />
+            <ImageButton android:id="@+id/action_subscript" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@drawable/rich_icon_bg_selector" app:tint="@color/rich_icon_tint_selector" android:src="@drawable/ic_subscript_30dp" android:contentDescription="Subscript" />
+
+            <com.google.android.material.divider.MaterialDivider android:layout_width="2dp" android:layout_height="match_parent" android:layout_marginVertical="8dp" />
+
+            <ImageButton android:id="@+id/toolbar_swap_2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:padding="8dp" android:background="@android:color/transparent" android:src="@drawable/ic_more_horiz_30dp" android:contentDescription="Swap Toolbars" />
+
+        </LinearLayout>
+
+
+        <com.google.android.material.divider.MaterialDivider android:layout_width="match_parent" android:layout_height="1dp"/>
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

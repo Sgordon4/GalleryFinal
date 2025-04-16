@@ -117,7 +117,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 		if(currPath.getNameCount() <= 1)
 			toolbar.setNavigationIcon(R.drawable.icon_close);
 		else
-			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
+			toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
 
 		toolbar.setOnMenuItemClickListener(item -> {
 			if(item.getItemId() == R.id.refresh)
@@ -201,7 +201,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 		if(parentDirUID == null)
 			toolbar.setNavigationIcon(R.drawable.icon_close);
 		else
-			toolbar.setNavigationIcon(R.drawable.icon_arrow_back);
+			toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
 	}
 
 	private void changeDirectory(UUID fileUID, Path newPath) {

@@ -19,7 +19,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/icon_arrow_back"
+            app:navigationIcon="@drawable/ic_arrow_back"
             app:menu="@menu/gallery_menu_main"/>
 
 
@@ -27,7 +27,7 @@
             android:id="@+id/selection_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/icon_arrow_back"
+            app:navigationIcon="@drawable/ic_arrow_back"
             app:menu="@menu/gallery_menu_selection"
             android:visibility="gone" />
 

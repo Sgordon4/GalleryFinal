@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -153,8 +154,8 @@ public class DirSampleData {
 		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 7");
 		DirItem r_f8 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 8");
 		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
-		DirItem r_f9 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 9");
-		DirItem r_f10 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 10");
+		DirItem r_f9 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Normal Text.txt");
+		DirItem r_f10 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Richest Guy.rtf");
 		DirItem r_f11 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 11");
 		DirItem r_f12 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 12");
 		DirItem r_f13 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 13");
@@ -184,6 +185,11 @@ public class DirSampleData {
 		writeUriToFile(r_f1.fileUID, externalUri_Jpg_1MB, externalUri_Jpg_1MB_Checksum);
 		writeUriToFile(r_f2.fileUID, externalUri_Gif_40KB, externalUri_Gif_40KB_Checksum);
 		writeUriToFile(r_f3.fileUID, externalUri_MP4_1MB, externalUri_MP4_1MB_Checksum);
+
+		writeTextToFile(r_f9.fileUID, "This is a real, genuine, bona fide, Buona Beef text file. \nRealest one you've ever seen.");
+		String mystring = context.getResources().getString(R.string.lorem_ipsum_small_html);
+		writeTextToFile(r_f10.fileUID, mystring);
+
 
 
 		//Add tags to some root files
@@ -309,6 +315,20 @@ public class DirSampleData {
 		catch (IOException e) { /*Skip, can't connect*/ }
 		finally { hapi.unlockLocal(fileUID); }
 	}
+
+
+	private static void writeTextToFile(UUID fileUID, String content) {
+		HybridAPI hapi = HybridAPI.getInstance();
+
+		try {
+			hapi.lockLocal(fileUID);
+			hapi.writeFile(fileUID, content.getBytes(), HFile.defaultChecksum);
+		}
+		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }
+		catch (IOException e) { /*Skip, can't connect*/ }
+		finally { hapi.unlockLocal(fileUID); }
+	}
+
 
 
 	private static void writeAttrToFile(UUID fileUID, JsonObject attr) {

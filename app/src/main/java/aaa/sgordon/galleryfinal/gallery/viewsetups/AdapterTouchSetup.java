@@ -50,7 +50,9 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
+import aaa.sgordon.galleryfinal.texteditor.RTEditorFragment;
 import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 
 public class AdapterTouchSetup {
@@ -102,6 +104,10 @@ public class AdapterTouchSetup {
 					else if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder) {
 						launchViewPager(dirFragment, holder);
 					}
+					else if(holder instanceof RichTextViewHolder) {
+						launchRichTextEditor(dirFragment, holder);
+					}
+
 					return true;
 				}
 
@@ -169,6 +175,18 @@ public class AdapterTouchSetup {
 
 
 
+	private static void launchRichTextEditor(DirFragment dirFragment, BaseViewHolder holder) {
+		ListItem listItem = holder.getListItem();
+
+		dirFragment.setExitTransition(null);
+		dirFragment.setExitSharedElementCallback(null);
+
+		RTEditorFragment fragment = new RTEditorFragment();
+		dirFragment.getParentFragmentManager().beginTransaction()
+				.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
+				.addToBackStack(null)
+				.commit();
+	}
 
 
 	private static void launchDirectory(DirFragment dirFragment, BaseViewHolder holder) {

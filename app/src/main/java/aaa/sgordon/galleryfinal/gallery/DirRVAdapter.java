@@ -24,6 +24,8 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolderSmall;
+import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.TextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
@@ -133,50 +135,49 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	}
 
 
-	/*
+
+
 	private boolean isFullSpan(int viewType) {
-		return viewType == 4 || viewType == 5 || viewType == 6 || viewType == 7 ||
-				viewType == 8 || viewType == 9 || viewType == 10;
-	}
-	 */
-	private boolean isFullSpan(int viewType) {
-		return viewType == 4 || viewType == 5 || viewType == 6 ||
-				//viewType == 7 || viewType == 8 || viewType == 9 ||
-				viewType == 10;
+		return viewType == 1 || viewType == 2 || viewType == 6 ||
+				viewType == 12;
 	}
 	@Override
 	public int getItemViewType(int position) {
 		ListItem item = list.get(position);
 
 		if(item.type.equals(ListItem.ListItemType.LINKDIRECTORY))
+			return 1;
+		else if(item.type.equals(ListItem.ListItemType.LINKEND))
+			return 2;
+		else if(item.type.equals(ListItem.ListItemType.LINKBROKEN))
+			return 3;
+		else if(item.type.equals(ListItem.ListItemType.LINKCYCLE))
+			return 4;
+		else if(item.type.equals(ListItem.ListItemType.LINKUNREACHABLE))
 			return 5;
 		else if(item.type.equals(ListItem.ListItemType.LINKDIVIDER))
 			return 6;
-		else if(item.type.equals(ListItem.ListItemType.LINKBROKEN))
-			return 7;
-		else if(item.type.equals(ListItem.ListItemType.LINKCYCLE))
-			return 8;
-		else if(item.type.equals(ListItem.ListItemType.LINKUNREACHABLE))
-			return 9;
-		else if(item.type.equals(ListItem.ListItemType.LINKEND)) {
-			return 10;
-		}
 
 		if(item.isDir)
 			return 0;			//Directory
 
-		//Get the filename extension, maybe we need fileNameUtils for this idk
+
+		//Get the filename extension
 		String extension = FilenameUtils.getExtension(item.name);
 		switch (extension) {
+			case "txt":
+				return 7;    //Text
+			case "rtf":
+				return 8;    //Rich Text
 			case "jpg":
 			case "jpeg":
-				return 1;    //Image
+				return 9;    //Image
 			case "gif":
-				return 2;    //Gif
+				return 10;    //Gif
 			case "mp4":
-				return 3;    //Video
+				return 11;    //Video
 			case "div":
-				return 4;	//Divider
+				return 12;	//Divider
 		}
 
 		return -1;					//Unknown
@@ -192,29 +193,43 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		switch(viewType) {
 			case 0: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_vh_directory, parent, false));
 				break;
-			case 1: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
+
+
+			case 1: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
 				break;
-			case 2: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
+			case 2: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
 				break;
-			case 3: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
+			//case 3: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_broken, parent, false));
+			case 3: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_broken_small, parent, false));
 				break;
-			case 4: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
+			//case 4: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+			case 4: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_cycle_small, parent, false));
 				break;
-			case 5: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link, parent, false));
+			//case 5: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
+			case 5: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_cycle_small, parent, false));
 				break;
 			case 6: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_divider, parent, false));
 				break;
-			//case 7: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_broken, parent, false));
-			case 7: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_broken_small, parent, false));
+
+
+			case 7: holder = new TextViewHolder(inflater.inflate(R.layout.dir_vh_text, parent, false));
 				break;
-			//case 8: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
-			case 8: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_cycle_small, parent, false));
+			case 8: holder = new RichTextViewHolder(inflater.inflate(R.layout.dir_vh_rich_text, parent, false));
 				break;
-			//case 9: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_vh_link_cycle, parent, false));
-			case 9: holder = new LinkViewHolderSmall(inflater.inflate(R.layout.dir_vh_link_cycle_small, parent, false));
+
+
+			case 9: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
 				break;
-			case 10: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
+			case 10: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
 				break;
+			case 11: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
+				break;
+
+
+			case 12: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
+				break;
+
+
 			case -1:
 			default: holder = new UnknownViewHolder(inflater.inflate(R.layout.dir_vh_unknown, parent, false));
 				break;
