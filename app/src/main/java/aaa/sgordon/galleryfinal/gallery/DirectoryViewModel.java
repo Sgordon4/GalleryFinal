@@ -29,7 +29,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 public class DirectoryViewModel extends ViewModel {
-	private final static String TAG = "Gal.DirVM";
+	private final static String TAG = "Gal.Dir.VM";
 	private final UUID currDirUID;
 
 	private final DirCache dirCache;
