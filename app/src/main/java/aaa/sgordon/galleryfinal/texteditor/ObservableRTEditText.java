@@ -4,7 +4,15 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 
+import androidx.annotation.NonNull;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsAnimationCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 import com.onegravity.rteditor.RTEditText;
+
+import java.util.List;
 
 public class ObservableRTEditText extends RTEditText {
 	public ObservableRTEditText(Context context) {
@@ -18,14 +26,12 @@ public class ObservableRTEditText extends RTEditText {
 	}
 
 
-	public interface OnSelectionChangedListener {
-		void onSelectionChanged(int selStart, int selEnd);
-	}
-
-	private OnSelectionChangedListener selectionListener;
-
 	public void setOnSelectionChangedListener(OnSelectionChangedListener listener) {
 		this.selectionListener = listener;
+	}
+	private OnSelectionChangedListener selectionListener;
+	public interface OnSelectionChangedListener {
+		void onSelectionChanged(int selStart, int selEnd);
 	}
 
 	@Override
@@ -37,8 +43,44 @@ public class ObservableRTEditText extends RTEditText {
 	}
 
 
+	//---------------------------------------------------------------------------------------------
+
+	//Sole purpose is to listen to whether the keyboard is opening or closing
+	private boolean isKeyboardOpen = false;
+	@Override
+	protected void onAttachedToWindow() {
+		super.onAttachedToWindow();
+
+		ViewCompat.setWindowInsetsAnimationCallback(this, new WindowInsetsAnimationCompat
+				.Callback(WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+			@NonNull
+			@Override
+			public WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets, @NonNull List<WindowInsetsAnimationCompat> runningAnimations) {
+				//Look for an IME animation
+				for (WindowInsetsAnimationCompat animation : runningAnimations) {
+					if (animation.getTypeMask() == WindowInsetsCompat.Type.ime()) {
+						//Wait for the animation to finish
+						float progress = animation.getInterpolatedFraction();
+						if(progress != 1) break;
+
+						//If the IME bottom is > 0, assume the soft keyboard is open
+						Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime());
+						isKeyboardOpen = imeInsets.bottom > 0;
+
+						break;
+					}
+				}
+				return insets;
+			}
+		});
+	}
+
+	//Controls panning for windowSoftInputMode
 	@Override
 	public boolean requestRectangleOnScreen(Rect rectangle, boolean immediate) {
+		//Skip panning when the keyboard is closing
+		if (isKeyboardOpen) return false;
+
 		//Because we use a FrameLayout + top padding to make room for a title (which avoids hiding the title every tap),
 		// the top is always too high when selecting the first line. This shit really gotta consider padding, dog.
 		if(rectangle.top == 0)
