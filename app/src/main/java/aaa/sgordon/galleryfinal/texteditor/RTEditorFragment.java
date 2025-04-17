@@ -5,12 +5,15 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.Layout;
+import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
@@ -20,6 +23,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsAnimationCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.onegravity.rteditor.RTEditText;
@@ -33,12 +37,15 @@ import com.onegravity.rteditor.effects.Effects;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.TextRichBinding;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class RTEditorFragment extends Fragment {
-	TextRichBinding binding;
+	private TextRichBinding binding;
+	private RTViewModel viewModel;
 
 	private RTManager rtManager;
 	private RTEditText rtEditText;
@@ -48,6 +55,35 @@ public class RTEditorFragment extends Fragment {
 	private LinearLayout toolbarBottom1;
 	private LinearLayout toolbarBottom2;
 
+
+	private HFile tempFilePropsDoNotUse;
+	public static RTEditorFragment initialize(String content, HFile fileProps, String filename, UUID dirUID) {
+		RTEditorFragment fragment = new RTEditorFragment();
+
+		Bundle bundle = new Bundle();
+		bundle.putString("content", content);
+		bundle.putString("dirUID", dirUID.toString());
+		bundle.putString("filename", filename);
+		fragment.setArguments(bundle);
+		fragment.tempFilePropsDoNotUse = fileProps;
+
+		return fragment;
+	}
+
+
+	@Override
+	public void onCreate(@Nullable Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		Bundle bundle = requireArguments();
+		String content = bundle.getString("content");
+		UUID dirUID = UUID.fromString(bundle.getString("dirUID"));
+		String filename = bundle.getString("filename");
+
+		viewModel = new ViewModelProvider(this,
+				new RTViewModel.Factory(content, tempFilePropsDoNotUse, filename, dirUID))
+				.get(RTViewModel.class);
+	}
 
 	@Nullable
 	@Override
@@ -76,17 +112,44 @@ public class RTEditorFragment extends Fragment {
 		}
 
 		//Add the editor to the ScrollView
-		binding.scrollContainer.addView(rtEditText, 0);
+		binding.scrollContent.addView(rtEditText, 0);
 
 
 		//Register editor & set text
 		rtManager.registerEditor(rtEditText, true);
-
-		//String lorem = getResources().getString(R.string.lorem_ipsum_html);
-		String lorem = getResources().getString(R.string.lorem_ipsum_small_html);
-		rtEditText.setRichTextEditing(true, lorem);
-
+		rtEditText.setRichTextEditing(true, viewModel.content);
 		textSizePx = (int) rtEditText.getTextSize();
+
+
+		rtEditText.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.content = rtEditText.getText(RTFormat.HTML);
+				viewModel.persistContents();
+			}
+		});
+
+
+
+		EditText title = binding.title;
+		title.setText(viewModel.fileName);
+		title.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.fileName = s.toString();
+				viewModel.persistTitle();
+			}
+		});
 
 
 
@@ -99,9 +162,13 @@ public class RTEditorFragment extends Fragment {
 			//Once the ScrollView is laid out, add space to the scroll content so it can scroll past its last line
 			int parentHeight = binding.scrollContainer.getHeight();
 			int lineHeight = rtEditText.getLineHeight();
-			int desiredPadding = Math.max(parentHeight - lineHeight, 0);
+			int scrollPastEndPadding = Math.max(parentHeight - lineHeight, 0);
 
-			rtEditText.setPadding(rtEditText.getPaddingLeft(), rtEditText.getPaddingTop(), rtEditText.getPaddingRight(), desiredPadding);
+			//There is a title above the RTEditText. If we use a LinearLayout like a normal person, the window panning on tap will always hide it.
+			//Wrapping both views in a FrameLayout and setting the title height as padding works though. Wack af.
+			int titleHeight = binding.title.getHeight();
+
+			rtEditText.setPadding(rtEditText.getPaddingLeft(), titleHeight, rtEditText.getPaddingRight(), scrollPastEndPadding);
 		});
 
 
@@ -121,7 +188,6 @@ public class RTEditorFragment extends Fragment {
 			public WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets, @NonNull List<WindowInsetsAnimationCompat> runningAnimations) {
 				Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime()).toPlatformInsets();
 				Insets sysBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars()).toPlatformInsets();
-				System.out.println(imeInsets.bottom+" and "+sysBarInsets.bottom);
 				int keyboardHeight = Math.max(imeInsets.bottom - sysBarInsets.bottom, 0);
 
 				FrameLayout.LayoutParams toolParams1 = (FrameLayout.LayoutParams) toolbarBottom1.getLayoutParams();
@@ -142,6 +208,12 @@ public class RTEditorFragment extends Fragment {
 		return binding.getRoot();
 	}
 
+	@Override
+	public void onPause() {
+		viewModel.persistTitleImmediately();
+		viewModel.persistContentsImmediately();
+		super.onPause();
+	}
 
 	private void printContents() {
 		System.out.println(rtEditText.getText(RTFormat.HTML));

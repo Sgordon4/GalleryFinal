@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Handler;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -33,6 +34,8 @@ import com.google.android.material.transition.Hold;
 import com.google.android.material.transition.MaterialContainerTransform;
 import com.google.android.material.transition.MaterialFadeThrough;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -52,7 +55,12 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
+import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.texteditor.RTEditorFragment;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 
 public class AdapterTouchSetup {
@@ -181,11 +189,30 @@ public class AdapterTouchSetup {
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
-		RTEditorFragment fragment = new RTEditorFragment();
-		dirFragment.getParentFragmentManager().beginTransaction()
-				.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
-				.addToBackStack(null)
-				.commit();
+
+		//Note: This current setup won't work if the note is a link to a note.
+		//We don't have those atm, but if we add them later (doubt it) we'll need to change this.
+		Thread launch = new Thread(() -> {
+			HybridAPI hAPI = HybridAPI.getInstance();
+			try {
+				HFile fileProps = hAPI.getFileProps(listItem.fileUID);
+				Uri contentUri = hAPI.getFileContent(listItem.fileUID).first;
+				String content = Utilities.readFile(contentUri);
+
+				Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
+				handler.post(() -> {
+					RTEditorFragment fragment = RTEditorFragment.initialize(content, fileProps, listItem.name, dirFragment.dirViewModel.getDirUID());
+					dirFragment.getParentFragmentManager().beginTransaction()
+							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
+							.addToBackStack(null)
+							.commit();
+				});
+
+			} catch (FileNotFoundException | ConnectException | ContentsNotFoundException e) {
+				throw new RuntimeException(e);
+			}
+		});
+		launch.start();
 	}
 
 

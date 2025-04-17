@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
 	private void launchActual() {
 		Thread thread = new Thread(() -> {
 			//UUID that happened to be generated that we're using now
-			UUID rootDirectoryUID = UUID.fromString("45269c8c-a10f-4411-a35c-5b1e8994ec3a");
+			UUID rootDirectoryUID = UUID.fromString("69e7819d-f567-4cab-84fe-1faa0201ce8b");
 			//UUID rootDirectoryUID = UUID.fromString("f289604e-8796-4668-a084-dc7147ca68bf");
 
 			Uri storageDir = MainStorageHandler.getStorageTreeUri(this);

@@ -108,6 +108,7 @@ public class FilterController {
 			if(item.attr.has("hidden") && item.attr.get("hidden").getAsBoolean()) {
 				System.out.println(item.name+" is hidden");
 				//Make sure the filename matches the filter query exactly
+				//TODO Exclude file extensions
 				return item.name.equalsIgnoreCase(filterQuery);
 			}
 			//Otherwise, continue

@@ -37,7 +37,35 @@
         android:paddingHorizontal="16dp"
         android:background="?attr/colorSurface">
 
-        <!-- Text editor goes here :) -->
+
+        <!--
+        We're using a FrameLayout + top padding on the RTEditText to make room for the title
+        We do this because if we use a LinearLayout like a normal person, the window soft input panning always hides the title. -->
+        <FrameLayout
+            android:id="@+id/scroll_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <EditText
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:hint="Title"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:importantForAutofill="no"
+                android:background="@android:color/transparent" />
+
+            <!-- Text editor goes here :) -->
+
+        </FrameLayout>
+
+
 
     </ScrollView>
 

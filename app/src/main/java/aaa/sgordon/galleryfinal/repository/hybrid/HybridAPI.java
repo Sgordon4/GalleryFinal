@@ -377,6 +377,7 @@ public class HybridAPI {
 	}
 
 
+
 	//Returns SHA-256 checksum of the given contents. Referenced as checksum in the file properties
 	public String writeFile(@NonNull UUID fileUID, @NonNull Uri content, @NonNull String checksum, @NonNull String prevChecksum) throws FileNotFoundException, ConnectException, IOException {
 		localRepo.ensureLockHeld(fileUID);

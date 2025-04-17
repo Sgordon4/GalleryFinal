@@ -28,6 +28,7 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Utilities {
 
@@ -90,6 +91,37 @@ public class Utilities {
 
 		return new Pair<>(options.outWidth, options.outHeight);
 	}
+
+
+	@NonNull
+	public static String readFile(Uri uri){
+		InputStream in = null;
+		try {
+			//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
+			try {
+				in = MyApplication.getAppContext().getContentResolver().openInputStream(uri);
+			} catch (FileNotFoundException e) {
+				in = new URL(uri.toString()).openStream();
+			}
+
+			String content;
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+				content = reader.lines().collect(Collectors.joining());
+				return content;
+			}
+		}
+		catch (IOException e) { throw new RuntimeException(e); }
+		finally {
+			try {
+				if(in != null) in.close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+
+
 
 
 	//Thanks ChatGPT!
