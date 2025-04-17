@@ -52,7 +52,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingVertical="8dp"
-                android:textSize="20sp"
+                android:textSize="24sp"
                 android:textStyle="bold"
                 android:hint="Title"
                 android:maxLines="1"

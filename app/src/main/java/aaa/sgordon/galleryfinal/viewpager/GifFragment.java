@@ -19,6 +19,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -38,21 +39,33 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
 public class GifFragment extends Fragment {
 	private VpViewpageBinding binding;
-	private final ListItem item;
+	private ViewPageViewModel viewModel;
 
 	private DragPage dragPage;
 	private ZoomPanHandler zoomPanHandler;
 
-
-	public GifFragment(ListItem item) {
-		this.item = item;
+	private ListItem tempItemDoNotUse;
+	public static GifFragment initialize(ListItem item) {
+		GifFragment fragment = new GifFragment();
+		fragment.tempItemDoNotUse = item;
+		return fragment;
 	}
 
+
+	@Override
+	public void onCreate(@Nullable Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		viewModel = new ViewModelProvider(this,
+				new ViewPageViewModel.Factory(tempItemDoNotUse))
+				.get(ViewPageViewModel.class);
+	}
 
 	@Nullable
 	@Override
@@ -63,7 +76,7 @@ public class GifFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_image);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.listItem.filePath.toString());
 
 
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
@@ -86,12 +99,12 @@ public class GifFragment extends Fragment {
 		Thread thread = new Thread(() -> {
 			try {
 				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(item.fileUID);
+				HFile fileProps = hAPI.getFileProps(viewModel.listItem.fileUID);
 
 
 				//Show the filename
 				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(item.name);
+				filename.setText(viewModel.listItem.name);
 
 
 
@@ -101,30 +114,34 @@ public class GifFragment extends Fragment {
 				String formattedDateTime = sdf.format(date);
 
 				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-				String timeText = getString(R.string.vp_time, formattedDateTime);
-				creationTime.setText(timeText);
+				creationTime.post(() -> {
+					String timeText = getString(R.string.vp_time, formattedDateTime);
+					creationTime.setText(timeText);
+				});
 
 
 
-				//Format the fileSize and zoning information
-				float fileSizeBytes = fileProps.filesize;
-				float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-				String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-				String zone = "On Device";
-				HZone zoning = hAPI.getZoningInfo(item.fileUID);
-				if(zoning != null) {
-					if (zoning.isLocal && zoning.isRemote)
-						zone = "On Device & Cloud";
-					else if (zoning.isLocal)
-						zone = "On Device";
-					else //if (zoning.isRemote)
-						zone = "On Cloud";
-				}
-
+				HZone zoning = hAPI.getZoningInfo(viewModel.listItem.fileUID);
 				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-				String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-				zoningText.setText(backupText);
+				zoningText.post(() -> {
+					//Format the fileSize and zoning information
+					float fileSizeBytes = fileProps.filesize;
+					float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+					String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+					String zone = "On Device";
+					if(zoning != null) {
+						if (zoning.isLocal && zoning.isRemote)
+							zone = "On Device & Cloud";
+						else if (zoning.isLocal)
+							zone = "On Device";
+						else //if (zoning.isRemote)
+							zone = "On Cloud";
+					}
+
+					String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+					zoningText.setText(backupText);
+				});
 
 
 
@@ -190,7 +207,7 @@ public class GifFragment extends Fragment {
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
-				.load(item.fileUID)
+				.load(viewModel.listItem.fileUID)
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {

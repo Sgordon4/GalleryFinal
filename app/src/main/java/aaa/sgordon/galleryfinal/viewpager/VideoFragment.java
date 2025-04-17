@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.VideoSize;
@@ -43,13 +44,17 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
+
+//TODO Right now we're moving the controls out of the bottom system bar with a 20dp view.
+// This will not work if the bottom bar is a different height, or in pretty much any other situation.
 
 @UnstableApi
 public class VideoFragment extends Fragment {
 	private VpViewpageBinding binding;
-	private final ListItem item;
+	private ViewPageViewModel viewModel;
 
 	private DragPage dragPage;
 	private ZoomPanHandler zoomPanHandler;
@@ -59,8 +64,21 @@ public class VideoFragment extends Fragment {
 	private LegacyPlayerControlView controls;
 
 
-	public VideoFragment(ListItem item) {
-		this.item = item;
+	private ListItem tempItemDoNotUse;
+	public static VideoFragment initialize(ListItem item) {
+		VideoFragment fragment = new VideoFragment();
+		fragment.tempItemDoNotUse = item;
+		return fragment;
+	}
+
+
+	@Override
+	public void onCreate(@Nullable Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		viewModel = new ViewModelProvider(this,
+				new ViewPageViewModel.Factory(tempItemDoNotUse))
+				.get(ViewPageViewModel.class);
 	}
 
 
@@ -76,7 +94,7 @@ public class VideoFragment extends Fragment {
 		mediaStub.inflate();
 
 		textureView = binding.viewA.findViewById(R.id.media);
-		textureView.setTransitionName(item.filePath.toString());
+		textureView.setTransitionName(viewModel.listItem.filePath.toString());
 
 
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
@@ -99,12 +117,12 @@ public class VideoFragment extends Fragment {
 		Thread thread = new Thread(() -> {
 			try {
 				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(item.fileUID);
+				HFile fileProps = hAPI.getFileProps(viewModel.listItem.fileUID);
 
 
 				//Show the filename
 				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(item.name);
+				filename.setText(viewModel.listItem.name);
 
 
 
@@ -114,30 +132,33 @@ public class VideoFragment extends Fragment {
 				String formattedDateTime = sdf.format(date);
 
 				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-				String timeText = getString(R.string.vp_time, formattedDateTime);
-				creationTime.setText(timeText);
+				creationTime.post(() -> {
+					String timeText = getString(R.string.vp_time, formattedDateTime);
+					creationTime.setText(timeText);
+				});
 
 
-
-				//Format the fileSize and zoning information
-				float fileSizeBytes = fileProps.filesize;
-				float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-				String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-				String zone = "On Device";
-				HZone zoning = hAPI.getZoningInfo(item.fileUID);
-				if(zoning != null) {
-					if (zoning.isLocal && zoning.isRemote)
-						zone = "On Device & Cloud";
-					else if (zoning.isLocal)
-						zone = "On Device";
-					else //if (zoning.isRemote)
-						zone = "On Cloud";
-				}
-
+				HZone zoning = hAPI.getZoningInfo(viewModel.listItem.fileUID);
 				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-				String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-				zoningText.setText(backupText);
+				zoningText.post(() -> {
+					//Format the fileSize and zoning information
+					float fileSizeBytes = fileProps.filesize;
+					float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+					String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+					String zone = "On Device";
+					if(zoning != null) {
+						if (zoning.isLocal && zoning.isRemote)
+							zone = "On Device & Cloud";
+						else if (zoning.isLocal)
+							zone = "On Device";
+						else //if (zoning.isRemote)
+							zone = "On Cloud";
+					}
+
+					String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+					zoningText.setText(backupText);
+				});
 
 
 
@@ -304,7 +325,7 @@ public class VideoFragment extends Fragment {
 
 		Thread load = new Thread(() -> {
 			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(item.fileUID).first;
+				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.listItem.fileUID).first;
 
 				textureView.post(() -> {
 					//MediaItem mediaItem = MediaItem.fromUri(uri);

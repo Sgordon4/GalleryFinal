@@ -15,27 +15,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 //LogCat filter:
-//((level:debug & tag:Hyb) | (tag:System | is:stacktrace )) & package:mine & -line:ClassLoaderContext & name:hybridRepo
-
-//https://developer.android.com/guide/navigation/use-graph/animate-transitions
+//(level:verbose ) & (tag:Hyb & -tag:Hyb | tag:Gal. | System.out | (tag:AndroidRuntime & level:error ))
 
 public class MainActivity extends AppCompatActivity {
 	private final String TAG = "Gal.Main";
@@ -45,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 
 		EdgeToEdge.enable(this);
 
@@ -61,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
 		});
 
 
+
 		//If the storage directory is not accessible...
 		if(!MainStorageHandler.isStorageAccessible(this)) {
 			Log.w(TAG, "Storage directory is inaccessible. Prompting user to reselect.");
@@ -68,11 +63,83 @@ public class MainActivity extends AppCompatActivity {
 		}
 		else {
 			Log.i(TAG, "Using saved directory.");
-			//launchEverything();
-			launchActual();
+			if (savedInstanceState == null) {
+				launch();
+			}
+		}
+	}
+	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(),
+			result -> {
+				MainStorageHandler.onStorageLocationPicked(this, result);
+				launch();
+			});
+
+
+	//---------------------------------------------------------------------------------------------
+
+	//Go off main thread to setup the database and root dir
+	//Later this will be done in a login activity before this one, so this won't be necessary
+	private void launch() {
+		Thread launchThread = new Thread(() -> {
+			//Get the root directory UID from the shared preferences if it already exists, or create the test setup if not
+			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
+			String rootUIDString = prefs.getString("UUID", null);
+			if(rootUIDString == null)
+				rootUIDString = createTestSetup();
+
+			UUID rootDirectoryUID = UUID.fromString(rootUIDString);
+
+
+			//Make sure the storage directory was created before we launch
+			Uri storageDir = MainStorageHandler.getStorageTreeUri(this);
+			if(storageDir == null) throw new RuntimeException("Storage directory is null!");
+
+			//Initialize the Hybrid API
+			LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(this);
+			HybridAPI.initialize(db, storageDir);
+
+
+			//For funsies
+			viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+			viewModel.testInt += 1;
+
+
+			//Use the rootDirectoryUID to start the first fragment
+			Handler mainHandler = new Handler(getMainLooper());
+			mainHandler.post(() -> {
+				DirFragment fragment = DirFragment.initialize(rootDirectoryUID, "Gallery App");
+
+				getSupportFragmentManager()
+						.beginTransaction()
+						.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
+						.addToBackStack(null)
+						.commit();
+			});
+
+		});
+		launchThread.start();
+	}
+
+
+	private String createTestSetup() {
+		try {
+			//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
+			// or an actual database will be created.
+			UUID rootDirectoryUID = DirSampleData.setupDatabase(this);
+			//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(this);
+
+			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
+			prefs.edit().putString("UUID", rootDirectoryUID.toString()).apply();
+			return rootDirectoryUID.toString();
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
+
+	//---------------------------------------------------------------------------------------------
 
 	@Override
 	protected void onStart() {
@@ -94,181 +161,5 @@ public class MainActivity extends AppCompatActivity {
 			hAPI.stopSyncService(hAPI.getCurrentAccount());
 		}
 		catch (IllegalStateException ignored) { }
-	}
-
-
-
-
-	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
-			new ActivityResultContracts.StartActivityForResult(),
-			result -> {
-				MainStorageHandler.onStorageLocationPicked(this, result);
-				launchEverything();
-				//launchActual();
-			});
-
-
-	private void launchActual() {
-		Thread thread = new Thread(() -> {
-			//UUID that happened to be generated that we're using now
-			UUID rootDirectoryUID = UUID.fromString("69e7819d-f567-4cab-84fe-1faa0201ce8b");
-			//UUID rootDirectoryUID = UUID.fromString("f289604e-8796-4668-a084-dc7147ca68bf");
-
-			Uri storageDir = MainStorageHandler.getStorageTreeUri(this);
-			if(storageDir == null) throw new RuntimeException("Storage directory is null!");
-
-			LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(this);
-			HybridAPI.initialize(db, storageDir);
-
-
-			Handler mainHandler = new Handler(getMainLooper());
-			mainHandler.post(() -> {
-				launch(rootDirectoryUID);
-			});
-		});
-		thread.start();
-	}
-
-
-
-	private void launchEverything() {
-		//Go off main thread to setup the database and root dir
-		// Later this will be done in a login activity before this one, so this won't be necessary
-		Thread thread = new Thread(() -> {
-			try {
-				//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
-				// or an actual database will be created.
-				UUID rootDirectoryUID = DirSampleData.setupDatabase(getApplicationContext());
-				//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(getApplicationContext());
-
-				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-				viewModel.testInt += 1;
-
-				System.out.println("Using rootdir: "+rootDirectoryUID);
-
-				HybridAPI hAPI = HybridAPI.getInstance();
-				//hAPI.startSyncService(hAPI.getCurrentAccount());
-
-
-				//Use the directoryUID returned to start the first fragment
-				Handler mainHandler = new Handler(getMainLooper());
-				mainHandler.post(() -> {
-					/*
-					AppStartPassword passwordFrag = AppStartPassword.newInstance("Root", "1234", () -> {
-						launchNavGraph(rootDirectoryUID);
-					});
-					FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-					transaction.replace(R.id.app_password_container, passwordFrag);
-					transaction.commit();
-					/**/
-
-					//launchNavGraph(rootDirectoryUID);
-					launch(rootDirectoryUID);
-				});
-			}
-			catch (FileNotFoundException e) { throw new RuntimeException(e); }
-			catch (IOException e) { throw new RuntimeException(e); }
-		});
-
-		thread.start();
-	}
-
-
-	private void launch(UUID rootDirectoryUID) {
-		DirFragment fragment = DirFragment.initialize(rootDirectoryUID, "Gallery App");
-
-		getSupportFragmentManager()
-				.beginTransaction()
-				.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
-				.addToBackStack(null)
-				.commit();
-	}
-
-
-
-
-	private void testMaking() throws FileNotFoundException {
-		System.out.println("Inside");
-		Uri rootDocUri = MainStorageHandler.getStorageTreeUri(this);
-
-		DocumentFile file = DocumentFile.fromTreeUri(this, rootDocUri);
-		String fileName = "1:?/\\; SuperDuper File.txt";
-		String sanitizedName = SAFGoFuckYourself.sanitizeFilename(fileName);
-		file.createFile("*/*", sanitizedName);
-		DocumentFile newFile = file.createFile("*/*", sanitizedName);
-
-		System.out.println(newFile.getName());
-
-
-		System.out.println("Finished");
-		throw new RuntimeException();
-	}
-
-
-
-
-	private void testBullshit() throws FileNotFoundException {
-		System.out.println("Inside");
-		Uri rootDocUri = MainStorageHandler.getStorageTreeUri(this);
-
-		Uri actualRoot = SAFGoFuckYourself.makeDocUriFromTreeUri(rootDocUri, ".Gallery");
-		System.out.println(rootDocUri);
-		System.out.println(actualRoot);
-
-
-		Uri deepUri = SAFGoFuckYourself.makeDocUriFromTreeUri(rootDocUri, ".Gallery", "Superduper", "Innit");
-		System.out.println(deepUri);
-		System.out.println(SAFGoFuckYourself.getParentFromDocUri(deepUri));
-
-
-		System.out.println("Dirs ----------------------------------------------------------------");
-		//Try making a new directory
-		System.out.println("Creating directory: ");
-		Uri newDirUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "NewDir");
-		System.out.println(newDirUri.toString());
-		System.out.println(SAFGoFuckYourself.directoryExists(this, newDirUri));
-		SAFGoFuckYourself.createDirectory(this, newDirUri);
-		System.out.println(SAFGoFuckYourself.directoryExists(this, newDirUri));
-		assert SAFGoFuckYourself.directoryExists(this, newDirUri);
-
-
-		//Try making a nested directory in a directory that doesn't exist
-		System.out.println("Creating nested dir: ");
-		Uri nestedDirUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "DirParent", "Inside Dir");
-		System.out.println(nestedDirUri.toString());
-		System.out.println(SAFGoFuckYourself.directoryExists(this, nestedDirUri));
-		SAFGoFuckYourself.createDirectory(this, nestedDirUri);
-		System.out.println(SAFGoFuckYourself.directoryExists(this, nestedDirUri));
-		assert SAFGoFuckYourself.directoryExists(this, nestedDirUri);
-
-
-		System.out.println("Files ---------------------------------------------------------------");
-		//Try making a new file
-		System.out.println("Creating File: ");
-		Uri newFileUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "NewText.txt");
-		System.out.println(newFileUri.toString());
-		System.out.println(SAFGoFuckYourself.fileExists(this, newFileUri));
-		SAFGoFuckYourself.createFile(this, newFileUri);
-		System.out.println(SAFGoFuckYourself.fileExists(this, newFileUri));
-		assert SAFGoFuckYourself.fileExists(this, newFileUri);
-
-
-		//Try making a nested file in a directory that doesn't exist
-		System.out.println("Creating nested file: ");
-		Uri nestedFileUri = SAFGoFuckYourself.makeDocUriFromDocUri(rootDocUri, "FileParent", "InsideFile.jpg");
-		System.out.println(nestedFileUri.toString());
-		System.out.println(SAFGoFuckYourself.fileExists(this, nestedFileUri));
-		SAFGoFuckYourself.createFile(this, nestedFileUri);
-		System.out.println(SAFGoFuckYourself.fileExists(this, nestedFileUri));
-		assert SAFGoFuckYourself.fileExists(this, nestedFileUri);
-
-
-
-
-		System.out.println("Actual total success... Huh...");
-		fuckShitUp();
-	}
-	private void fuckShitUp() {
-		throw new RuntimeException();
 	}
 }

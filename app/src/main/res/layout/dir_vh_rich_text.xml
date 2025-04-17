@@ -50,7 +50,7 @@
                 android:text="Rich Text"
                 android:gravity="center_vertical"
                 android:textSize="16sp"
-                android:ellipsize="middle"
+                android:ellipsize="end"
                 android:maxLines="1" />
 
         </androidx.cardview.widget.CardView>

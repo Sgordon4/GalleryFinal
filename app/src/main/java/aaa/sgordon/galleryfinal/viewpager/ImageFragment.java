@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -23,6 +22,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -50,14 +50,27 @@ import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
 public class ImageFragment extends Fragment {
 	private VpViewpageBinding binding;
-	private final ListItem item;
+	private ViewPageViewModel viewModel;
 
 	private DragPage dragPage;
 	private ZoomPanHandler zoomPanHandler;
 
 
-	public ImageFragment(ListItem item) {
-		this.item = item;
+	private ListItem tempItemDoNotUse;
+	public static ImageFragment initialize(ListItem item) {
+		ImageFragment fragment = new ImageFragment();
+		fragment.tempItemDoNotUse = item;
+		return fragment;
+	}
+
+
+	@Override
+	public void onCreate(@Nullable Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		viewModel = new ViewModelProvider(this,
+				new ViewPageViewModel.Factory(tempItemDoNotUse))
+				.get(ViewPageViewModel.class);
 	}
 
 
@@ -87,12 +100,12 @@ public class ImageFragment extends Fragment {
 		Thread thread = new Thread(() -> {
 			try {
 				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(item.fileUID);
+				HFile fileProps = hAPI.getFileProps(viewModel.listItem.fileUID);
 
 
 				//Show the filename
 				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(item.name);
+				filename.setText(viewModel.listItem.name);
 
 
 
@@ -102,30 +115,34 @@ public class ImageFragment extends Fragment {
 				String formattedDateTime = sdf.format(date);
 
 				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-				String timeText = getString(R.string.vp_time, formattedDateTime);
-				creationTime.post(() -> creationTime.setText(timeText));
+				creationTime.post(() -> {
+					String timeText = getString(R.string.vp_time, formattedDateTime);
+					creationTime.setText(timeText);
+				});
 
 
 
-				//Format the fileSize and zoning information
-				float fileSizeBytes = fileProps.filesize;
-				float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-				String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-				String zone = "On Device";
-				HZone zoning = hAPI.getZoningInfo(item.fileUID);
-				if(zoning != null) {
-					if (zoning.isLocal && zoning.isRemote)
-						zone = "On Device & Cloud";
-					else if (zoning.isLocal)
-						zone = "On Device";
-					else //if (zoning.isRemote)
-						zone = "On Cloud";
-				}
-
+				HZone zoning = hAPI.getZoningInfo(viewModel.listItem.fileUID);
 				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-				String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-				zoningText.post(() -> zoningText.setText(backupText));
+				zoningText.post(() -> {
+					//Format the fileSize and zoning information
+					float fileSizeBytes = fileProps.filesize;
+					float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+					String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+					String zone = "On Device";
+					if(zoning != null) {
+						if (zoning.isLocal && zoning.isRemote)
+							zone = "On Device & Cloud";
+						else if (zoning.isLocal)
+							zone = "On Device";
+						else //if (zoning.isRemote)
+							zone = "On Cloud";
+					}
+
+					String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+					zoningText.setText(backupText);
+				});
 
 
 
@@ -185,7 +202,7 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		if(item.fileSize < SIZE_THRESHOLD)
+		if(viewModel.listItem.fileSize < SIZE_THRESHOLD)
 			usePhotoView();
 		else
 			useSubsamplingScaleImageView();
@@ -206,7 +223,7 @@ public class ImageFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_image);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.listItem.filePath.toString());
 
 		ImageView media = binding.viewA.findViewById(R.id.media);
 		zoomPanHandler = new ZoomPanHandler(media);
@@ -254,7 +271,7 @@ public class ImageFragment extends Fragment {
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
-				.load(item.fileUID)
+				.load(viewModel.listItem.fileUID)
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
@@ -335,7 +352,7 @@ public class ImageFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_image_subsampling);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.listItem.filePath.toString());
 
 
 		SubsamplingScaleImageView media = binding.viewA.findViewById(R.id.media);
@@ -385,7 +402,7 @@ public class ImageFragment extends Fragment {
 
 		Thread load = new Thread(() -> {
 			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(item.fileUID).first;
+				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.listItem.fileUID).first;
 
 				media.post(() -> {
 					media.setImage(ImageSource.uri(uri));

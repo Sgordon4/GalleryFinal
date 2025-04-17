@@ -188,7 +188,7 @@ public class DirSampleData {
 
 		writeTextToFile(r_f9.fileUID, "This is a real, genuine, bona fide, Buona Beef text file. \nRealest one you've ever seen.");
 		String mystring = context.getResources().getString(R.string.lorem_ipsum_small_html);
-		writeTextToFile(r_f10.fileUID, "This is a custom string straight from JC Pennys. "+mystring);
+		writeTextToFile(r_f10.fileUID, "This is a custom string straight from JC Penney. "+mystring);
 
 
 

@@ -43,6 +43,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.TextRichBinding;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
+//TODO Add a character limit
 public class RTEditorFragment extends Fragment {
 	private TextRichBinding binding;
 	private RTViewModel viewModel;

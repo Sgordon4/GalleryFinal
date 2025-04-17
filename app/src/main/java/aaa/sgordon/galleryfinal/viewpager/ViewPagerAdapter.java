@@ -60,11 +60,11 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
 		switch (fileExtension) {
 			case "gif":
-				return new GifFragment(item);
+				return GifFragment.initialize(item);
 			case "mp4":
-				return new VideoFragment(item);
+				return VideoFragment.initialize(item);
 			default:
-				return new ImageFragment(item);
+				return ImageFragment.initialize(item);
 		}
 	}
 
