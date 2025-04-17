@@ -49,8 +49,8 @@ public class ObservableRTEditText extends RTEditText {
 		rectangle.bottom = rectangle.top + getLineHeight();
 
 
-		//Add two line height's worth of space to the bottom to make things look nicer.
-		rectangle.bottom += getLineHeight() * 2;
+		//Add three line height's worth of space to the bottom to give more context when auto-panning.
+		rectangle.bottom += getLineHeight() * 3;
 
 
 		return super.requestRectangleOnScreen(rectangle, immediate);

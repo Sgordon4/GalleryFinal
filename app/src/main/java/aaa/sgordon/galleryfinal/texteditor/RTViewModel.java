@@ -111,6 +111,7 @@ public class RTViewModel extends ViewModel {
 
 
 	private void renameFile() throws IOException {
+		Log.v(TAG, "Writing rich text title for fileUID='"+fileUID+"'");
 		String fullFileName = fileName + "." + fileExtension;
 		DirUtilities.renameFile(fileUID, dirUID, fullFileName);
 	}
