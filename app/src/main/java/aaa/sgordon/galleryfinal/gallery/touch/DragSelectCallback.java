@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -149,9 +148,9 @@ public class DragSelectCallback extends ItemTouchHelper.Callback {
 			//ListItems in the adapter can be updated with things like new attr, but otherwise stay the same
 			//So we want to compare properties instead of the objects themselves
 			//Compare both path and type instead of just path in case we're selecting a linkEnd vs a link
-			if(item.filePath.equals(startItem.filePath) && item.type.equals(startItem.type))
+			if(item.pathFromRoot.equals(startItem.pathFromRoot) && item.type.equals(startItem.type))
 				startPos = i;
-			if(item.filePath.equals(lastItem.filePath) && item.type.equals(lastItem.type))
+			if(item.pathFromRoot.equals(lastItem.pathFromRoot) && item.type.equals(lastItem.type))
 				lastPos = i;
 
 			if(startPos != -1 && lastPos != -1)

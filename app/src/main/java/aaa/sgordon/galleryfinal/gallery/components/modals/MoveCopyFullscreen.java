@@ -315,7 +315,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 			ListItem parent = null;
 
 			//If the item comes from a link, find the parent
-			if(item.filePath.getNameCount() > 2) {
+			if(item.pathFromRoot.getNameCount() > 2) {
 				for(int i = position-1; i >= 0; i--) {
 					if(item.parentUID.equals( list.get(i).fileUID) ) {
 						parent = list.get(i);
@@ -344,8 +344,8 @@ public class MoveCopyFullscreen extends DialogFragment {
 			boolean isDirLink = item.type.equals(ListItem.ListItemType.LINKDIRECTORY);
 			boolean isDivLink = item.type.equals(ListItem.ListItemType.LINKDIVIDER);
 
-			boolean isDir = item.isDir;
-			boolean isLink = item.isLink;
+			boolean isDir = item.fileProps.isdir;
+			boolean isLink = item.fileProps.islink;
 
 
 			if(isDirLink)

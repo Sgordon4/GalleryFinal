@@ -30,6 +30,8 @@ import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 public class DirectoryViewModel extends ViewModel {
 	private final static String TAG = "Gal.Dir.VM";
+	private final String dirName;
+	private final Path pathFromRoot;
 	private final UUID currDirUID;
 
 	private final DirCache dirCache;
@@ -50,6 +52,12 @@ public class DirectoryViewModel extends ViewModel {
 	public ListItem viewPagerCurrItem = null;
 
 
+	public String getDirName() {
+		return dirName;
+	}
+	public Path getPathFromRoot() {
+		return pathFromRoot;
+	}
 	public UUID getDirUID() {
 		return currDirUID;
 	}
@@ -64,23 +72,18 @@ public class DirectoryViewModel extends ViewModel {
 		return attrCache;
 	}
 
-
 	public FilterController.FilterRegistry getFilterRegistry() {
 		return filterRegistry;
 	}
-
 	public SelectionController.SelectionRegistry getSelectionRegistry() {
 		return selectionRegistry;
 	}
 
 
-
-
-
-
-
-	public DirectoryViewModel(UUID currDirUID) {
-		this.currDirUID = currDirUID;
+	public DirectoryViewModel(String dirName, Path pathFromRoot) {
+		this.dirName = dirName;
+		this.pathFromRoot = pathFromRoot;
+		this.currDirUID = UUID.fromString(pathFromRoot.getFileName().toString());
 
 		this.dirCache = DirCache.getInstance();
 		this.linkCache = LinkCache.getInstance();
@@ -159,7 +162,9 @@ public class DirectoryViewModel extends ViewModel {
 						//If the file has an attribute update...
 						if(item.fileUID.equals(uuid)) {
 							//Replace the list item with a new one, containing the updated attributes
-							updatedList.set(i, new ListItem.Builder(item).setAttr(newAttr).build());
+							ListItem updated = new ListItem.Builder(item).build();
+							updated.fileProps.userattr = newAttr;
+							updatedList.set(i, updated);
 						}
 					}
 
@@ -205,7 +210,7 @@ public class DirectoryViewModel extends ViewModel {
 				for(ListItem item : newFileList) {
 					//Print only the first 8 digits of the UUID
 					Path printPath = Paths.get("");
-					for(Path path : item.filePath) {
+					for(Path path : item.pathFromRoot) {
 						printPath = printPath.resolve(path.getFileName().toString().substring(0, 8));
 					}
 					System.out.println(printPath+"   "+item.type+" "+item.name);
@@ -255,16 +260,19 @@ public class DirectoryViewModel extends ViewModel {
 //=================================================================================================
 
 	public static class Factory implements ViewModelProvider.Factory {
-		private final UUID dirUID;
-		public Factory(UUID dirUID) {
-			this.dirUID = dirUID;
+		private final String dirName;
+		private final Path pathFromRoot;
+
+		public Factory(String dirName, Path pathFromRoot) {
+			this.dirName = dirName;
+			this.pathFromRoot = pathFromRoot;
 		}
 
 		@NonNull
 		@Override
 		public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
 			if (modelClass.isAssignableFrom(DirectoryViewModel.class)) {
-				return (T) new DirectoryViewModel(dirUID);
+				return (T) new DirectoryViewModel(dirName, pathFromRoot);
 			}
 			throw new IllegalArgumentException("Unknown ViewModel class");
 		}

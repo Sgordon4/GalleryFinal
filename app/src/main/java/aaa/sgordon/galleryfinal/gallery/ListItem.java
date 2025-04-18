@@ -1,20 +1,29 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import com.google.gson.JsonObject;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.nio.file.Path;
 import java.util.UUID;
 
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+
 public class ListItem {
+	@NonNull
 	public final UUID fileUID;
+	@Nullable
 	public final UUID parentUID;
+	@NonNull
 	public final String name;
-	public final Path filePath;
-	public final int fileSize;
-	public final boolean isDir;
-	public final boolean isLink;
-	public final JsonObject attr;
+	@NonNull
+	public final Path pathFromRoot;
+	@NonNull
 	public final ListItemType type;
+	@NonNull
+	public final HFile fileProps;
+	@Nullable
+	public final HZone zoning;
 
 	public enum ListItemType {
 		NORMAL,
@@ -31,30 +40,29 @@ public class ListItem {
 	}
 	
 
-	public ListItem(Path filePath, UUID fileUID, UUID parentUID, String name, int fileSize,
-					boolean isDir, boolean isLink, JsonObject attr, ListItemType type) {
+	public ListItem(@NonNull UUID fileUID, @Nullable UUID parentUID, @NonNull String name, @NonNull Path pathFromRoot,
+					@NonNull HFile fileProps, @Nullable HZone zoning, @NonNull ListItemType type) {
 		this.fileUID = fileUID;
 		this.parentUID = parentUID;
 		this.name = name;
-		this.filePath = filePath;
-		this.fileSize = fileSize;
-		this.isDir = isDir;
-		this.isLink = isLink;
-		this.attr = attr;
+		this.pathFromRoot = pathFromRoot;
+		this.fileProps = fileProps;
+		this.zoning = zoning;
 		this.type = type;
 	}
 
+	@NonNull
 	@Override
 	public String toString() {
 		return "ListItem{" +
 				"fileUID=" + fileUID +
 				", parentUID=" + parentUID +
-				", isDir=" + isDir +
-				", isLink=" + isLink +
+				", isDir=" + fileProps.isdir +
+				", isLink=" + fileProps.islink +
+				", zoning=" + zoning +
 				", type=" + type +
 				", name='" + name + '\'' +
-				", fileSize=" + fileSize +
-				", filePath=" + filePath +
+				", filePath=" + pathFromRoot +
 				'}';
 	}
 
@@ -64,64 +72,51 @@ public class ListItem {
 		private UUID parentUID;
 		private String name;
 		private Path filePath;
-		private int fileSize;
-		private boolean isDir;
-		private boolean isLink;
-		private JsonObject attr;
+		private HFile fileProps;
+		private HZone zoning;
 		private ListItemType type;
 
-		public Builder() {}
-		public Builder(ListItem item) {
+		public Builder(@NonNull ListItem item) {
 			this.fileUID = item.fileUID;
 			this.parentUID = item.parentUID;
 			this.name = item.name;
-			this.filePath = item.filePath;
-			this.fileSize = item.fileSize;
-			this.isDir = item.isDir;
-			this.isLink = item.isLink;
-			this.attr = item.attr;
+			this.filePath = item.pathFromRoot;
+			this.fileProps = item.fileProps;
+			this.zoning = item.zoning;
 			this.type = item.type;
 		}
 
-		public Builder setFileUID(UUID fileUID) {
+		public Builder setFileUID(@NonNull UUID fileUID) {
 			this.fileUID = fileUID;
 			return this;
 		}
-		public Builder setParentUID(UUID parentUID) {
+		public Builder setParentUID(@Nullable UUID parentUID) {
 			this.parentUID = parentUID;
 			return this;
 		}
-		public Builder setName(String name) {
+		public Builder setName(@NonNull String name) {
 			this.name = name;
 			return this;
 		}
-		public Builder setFilePath(Path filePath) {
+		public Builder setFilePath(@NonNull Path filePath) {
 			this.filePath = filePath;
 			return this;
 		}
-		public Builder setFileSize(int fileSize) {
-			this.fileSize = fileSize;
+		public Builder setFileProps(@NonNull HFile fileProps) {
+			this.fileProps = fileProps;
 			return this;
 		}
-		public Builder setIsDir(boolean isDir) {
-			this.isDir = isDir;
+		public Builder setZoning(@Nullable HZone zoning) {
+			this.zoning = zoning;
 			return this;
 		}
-		public Builder setIsLink(boolean isLink) {
-			this.isLink = isLink;
-			return this;
-		}
-		public Builder setAttr(JsonObject attr) {
-			this.attr = attr;
-			return this;
-		}
-		public Builder setType(ListItemType type) {
+		public Builder setType(@NonNull ListItemType type) {
 			this.type = type;
 			return this;
 		}
 
 		public ListItem build() {
-			return new ListItem(filePath, fileUID, parentUID, name, fileSize, isDir, isLink, attr, type);
+			return new ListItem(fileUID, parentUID, name, filePath, fileProps, zoning, type);
 		}
 	}
 }

@@ -20,6 +20,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
@@ -66,6 +68,10 @@ public class MainActivity extends AppCompatActivity {
 			if (savedInstanceState == null) {
 				launch();
 			}
+			else {
+				viewModel = new ViewModelProvider(this).get(MainViewModel.class);
+				viewModel.testInt += 1;
+			}
 		}
 	}
 	private final ActivityResultLauncher<Intent> directoryPickerLauncher = registerForActivityResult(
@@ -108,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
 			//Use the rootDirectoryUID to start the first fragment
 			Handler mainHandler = new Handler(getMainLooper());
 			mainHandler.post(() -> {
-				DirFragment fragment = DirFragment.initialize(rootDirectoryUID, "Gallery App");
+				DirFragment fragment = DirFragment.initialize("Gallery App", Paths.get(rootDirectoryUID.toString()));
 
 				getSupportFragmentManager()
 						.beginTransaction()

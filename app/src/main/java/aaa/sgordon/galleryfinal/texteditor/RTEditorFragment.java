@@ -35,13 +35,14 @@ import com.onegravity.rteditor.api.format.RTFormat;
 import com.onegravity.rteditor.effects.Effect;
 import com.onegravity.rteditor.effects.Effects;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.TextRichBinding;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 //TODO Add a character limit
 public class RTEditorFragment extends Fragment {
@@ -57,16 +58,14 @@ public class RTEditorFragment extends Fragment {
 	private LinearLayout toolbarBottom2;
 
 
-	private HFile tempFilePropsDoNotUse;
-	public static RTEditorFragment initialize(String content, HFile fileProps, String filename, UUID dirUID) {
+	private ListItem tempItemDoNotUse;
+	public static RTEditorFragment initialize(@NonNull ListItem listItem, @NonNull String content) {
 		RTEditorFragment fragment = new RTEditorFragment();
 
 		Bundle bundle = new Bundle();
 		bundle.putString("content", content);
-		bundle.putString("dirUID", dirUID.toString());
-		bundle.putString("filename", filename);
 		fragment.setArguments(bundle);
-		fragment.tempFilePropsDoNotUse = fileProps;
+		fragment.tempItemDoNotUse = listItem;
 
 		return fragment;
 	}
@@ -78,11 +77,9 @@ public class RTEditorFragment extends Fragment {
 
 		Bundle bundle = requireArguments();
 		String content = bundle.getString("content");
-		UUID dirUID = UUID.fromString(bundle.getString("dirUID"));
-		String filename = bundle.getString("filename");
 
 		viewModel = new ViewModelProvider(this,
-				new RTViewModel.Factory(content, tempFilePropsDoNotUse, filename, dirUID))
+				new RTViewModel.Factory(tempItemDoNotUse, content))
 				.get(RTViewModel.class);
 	}
 
@@ -214,10 +211,6 @@ public class RTEditorFragment extends Fragment {
 		viewModel.persistTitleImmediately();
 		viewModel.persistContentsImmediately();
 		super.onPause();
-	}
-
-	private void printContents() {
-		System.out.println(rtEditText.getText(RTFormat.HTML));
 	}
 
 

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,8 +29,6 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -36,10 +36,8 @@ import java.util.Locale;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
-import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
@@ -51,9 +49,10 @@ public class GifFragment extends Fragment {
 	private ZoomPanHandler zoomPanHandler;
 
 	private ListItem tempItemDoNotUse;
-	public static GifFragment initialize(ListItem item) {
+	public static GifFragment initialize(ListItem listItem) {
 		GifFragment fragment = new GifFragment();
-		fragment.tempItemDoNotUse = item;
+		fragment.tempItemDoNotUse = listItem;
+
 		return fragment;
 	}
 
@@ -65,6 +64,23 @@ public class GifFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
+
+		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
+			@Override
+			public void onDataReady(HFile fileProps, HZone zoning) {
+				setBottomSheetInfo();
+			}
+
+			@Override
+			public void onConnectException() {
+
+			}
+
+			@Override
+			public void onFileNotFoundException() {
+
+			}
+		});
 	}
 
 	@Nullable
@@ -76,14 +92,12 @@ public class GifFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_image);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.listItem.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.pathFromRoot.toString());
 
 
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
-
-		setBottomSheetInfo();
 
 
 		dragPage = binding.motionLayout;
@@ -91,68 +105,13 @@ public class GifFragment extends Fragment {
 			requireParentFragment().getParentFragmentManager().popBackStack();
 		});
 
+
+		setBottomSheetInfo();
+		viewModel.refreshData();
+
+
 		return binding.getRoot();
 	}
-
-
-	private void setBottomSheetInfo() {
-		Thread thread = new Thread(() -> {
-			try {
-				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(viewModel.listItem.fileUID);
-
-
-				//Show the filename
-				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(viewModel.listItem.name);
-
-
-
-				//Format the creation date
-				SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
-				Date date = new Date(fileProps.createtime*1000);
-				String formattedDateTime = sdf.format(date);
-
-				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-				creationTime.post(() -> {
-					String timeText = getString(R.string.vp_time, formattedDateTime);
-					creationTime.setText(timeText);
-				});
-
-
-
-				HZone zoning = hAPI.getZoningInfo(viewModel.listItem.fileUID);
-				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-				zoningText.post(() -> {
-					//Format the fileSize and zoning information
-					float fileSizeBytes = fileProps.filesize;
-					float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-					String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-					String zone = "On Device";
-					if(zoning != null) {
-						if (zoning.isLocal && zoning.isRemote)
-							zone = "On Device & Cloud";
-						else if (zoning.isLocal)
-							zone = "On Device";
-						else //if (zoning.isRemote)
-							zone = "On Cloud";
-					}
-
-					String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-					zoningText.setText(backupText);
-				});
-
-
-
-
-			} catch (FileNotFoundException | ConnectException e) {
-				//Just skip setting some properties
-			}
-		});
-		thread.start();
-	}
-
 
 
 	private int touchSlop;
@@ -162,6 +121,41 @@ public class GifFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+
+
+		//Show the filename in the BottomSheet
+		TextView filename = binding.viewB.findViewById(R.id.filename);
+		//filename.post(() -> filename.setText(viewModel.fileName));
+		filename.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				//viewModel.fileName = s.toString();
+				//viewModel.persistFileName();
+			}
+		});
+
+		EditText description = binding.viewB.findViewById(R.id.description);
+		//description.post(() -> description.setText(viewModel.description));
+		description.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.description = s.toString();
+				viewModel.persistDescription();
+			}
+		});
+		//TODO Update description in the BottomSheet
+
+
 
 		ImageView media = binding.viewA.findViewById(R.id.media);
 		zoomPanHandler = new ZoomPanHandler(media);
@@ -207,7 +201,7 @@ public class GifFragment extends Fragment {
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
-				.load(viewModel.listItem.fileUID)
+				.load(viewModel.fileUID)
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
@@ -260,6 +254,52 @@ public class GifFragment extends Fragment {
 				})
 				.into(media);
 	}
+
+
+	@Override
+	public void onPause() {
+		viewModel.persistFileNameImmediately();
+		viewModel.persistDescriptionImmediately();
+		super.onPause();
+	}
+
+
+
+	private void setBottomSheetInfo() {
+		//Format the creation date
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
+		Date date = new Date(viewModel.fileProps.createtime*1000);
+		String formattedDateTime = sdf.format(date);
+
+		TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
+		creationTime.post(() -> {
+			String timeText = getString(R.string.vp_time, formattedDateTime);
+			creationTime.setText(timeText);
+		});
+
+
+		TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
+		zoningText.post(() -> {
+			//Format the fileSize and zoning information
+			float fileSizeBytes = viewModel.fileProps.filesize;
+			float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+			String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+			String zone = "On Device";
+			if(viewModel.zoning != null) {
+				if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
+					zone = "On Device & Cloud";
+				else if (viewModel.zoning.isLocal)
+					zone = "On Device";
+				else //if (zoning.isRemote)
+					zone = "On Cloud";
+			}
+
+			String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+			zoningText.setText(backupText);
+		});
+	}
+
 
 	private void unfocusEditTextOnTapOutside(MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_DOWN) {

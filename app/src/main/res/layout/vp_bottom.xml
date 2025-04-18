@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:paddingHorizontal="20dp"
     android:background="@drawable/rounded_top_corners">
@@ -14,7 +15,7 @@
 
 
     <aaa.sgordon.galleryfinal.viewpager.components.EdgeAwareHorizontalScrollView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbarStyle="insideInset"
         android:scrollIndicators="start|end">
@@ -26,7 +27,6 @@
                 android:id="@+id/carousel"
                 layout="@layout/vp_bottom_carousel" />
         </FrameLayout>
-
 
     </aaa.sgordon.galleryfinal.viewpager.components.EdgeAwareHorizontalScrollView>
 
@@ -48,16 +48,34 @@
         android:layout_width="0dp"
         android:layout_height="20dp"/>
 
-    <TextView
-        android:id="@+id/filename"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingVertical="2dp"
+        android:orientation="horizontal">
 
-        android:text="Filename"
-        android:textSize="22sp"
-        android:ellipsize="end"
-        android:maxLines="1" />
+        <aaa.sgordon.galleryfinal.viewpager.components.EdgeAwareEditText
+            android:id="@+id/filename"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingVertical="2dp"
+            android:layout_weight="1"
+            android:textSize="22sp"
+            android:singleLine="true"
+            android:maxLines="1"
+            app:edgeScrollCatch="true"
+            android:text="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAdjhbswjhbdjehbAAAAAAAAAAAAAAAAAhjbdjw"
+            android:background="@android:color/transparent"/>
+
+        <TextView
+            android:id="@+id/extension"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingVertical="2dp"
+            android:textSize="22sp"
+            android:alpha="0.7"
+            android:text=".jpg"/>
+
+    </LinearLayout>
 
     <Space
         android:layout_width="0dp"
@@ -84,6 +102,11 @@
         android:background="@null"/>
 
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="3"
+        android:text="AAAAAAAAAAAAAAAAAAfhieuhiduheiwuhsiduhrei3uwhsiudhireuwhsiuhdiruehwisuhdiurehwisuhdiuehiwushdiurheiwuhsdiuhreiuwhiewisduhifruehwisuhddiurhewiushidudhieuwhsiudhieuhwisuhdiuehwisuhdiurheiuwhiduhfrieuhwiduhfiruehiudhiuhreiuhdiuhrieuhdiuhiruehiduhiurheiuhiduhiuhrieuhdiuhiuhi"/>
 
 
 

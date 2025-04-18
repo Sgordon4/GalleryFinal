@@ -1,40 +1,28 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.ChangeBounds;
 import androidx.transition.ChangeClipBounds;
 import androidx.transition.ChangeImageTransform;
 import androidx.transition.ChangeTransform;
-import androidx.transition.Fade;
-import androidx.transition.Transition;
-import androidx.transition.TransitionInflater;
 import androidx.transition.TransitionSet;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.transition.MaterialContainerTransform;
-import com.google.android.material.transition.MaterialFade;
-import com.google.android.material.transition.MaterialFadeThrough;
 
-import java.util.Arrays;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
@@ -53,11 +41,10 @@ public class ViewPagerFragment extends Fragment {
 	private int currPos = -1;
 
 
-	public static ViewPagerFragment initialize(UUID dirUID, int fromPosition) {
+	public static ViewPagerFragment initialize(int fromPosition) {
 		ViewPagerFragment fragment = new ViewPagerFragment();
 
 		Bundle bundle = new Bundle();
-		bundle.putSerializable("directoryUID", dirUID);
 		bundle.putInt("fromPosition", fromPosition);
 		fragment.setArguments(bundle);
 
@@ -81,13 +68,7 @@ public class ViewPagerFragment extends Fragment {
 		Fragment dirFragment = getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
 		if(dirFragment == null) throw new RuntimeException("Directory fragment not found");
 
-
-		ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
-		UUID directoryUID = args.getDirectoryUID();
-
-		dirViewModel = new ViewModelProvider(dirFragment,
-				new DirectoryViewModel.Factory(directoryUID))
-				.get(DirectoryViewModel.class);
+		dirViewModel = new ViewModelProvider(dirFragment).get(DirectoryViewModel.class);
 
 
 
@@ -169,8 +150,8 @@ public class ViewPagerFragment extends Fragment {
 		((ViewPagerAdapter) binding.viewpager.getAdapter()).setList(mediaOnly);
 
 		if(currPos == -1) {
-			ViewPagerFragmentArgs args = ViewPagerFragmentArgs.fromBundle(getArguments());
-			int fromPos = args.getFromPosition();
+			Bundle args = requireArguments();
+			int fromPos = args.getInt("fromPosition");
 
 			currPos = mediaOnly.indexOf(newList.get(fromPos));
 			binding.viewpager.setCurrentItem(currPos, false);

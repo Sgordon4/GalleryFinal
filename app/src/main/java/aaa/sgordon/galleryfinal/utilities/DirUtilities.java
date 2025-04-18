@@ -208,7 +208,7 @@ public class DirUtilities {
 		Iterator<ListItem> iterator = toDelete.iterator();
 		while (iterator.hasNext()) {
 			ListItem item = iterator.next();
-			if(!item.isDir || item.isLink) continue;
+			if(!item.fileProps.isdir || item.fileProps.islink) continue;
 
 			//If the file is a directory, recursively delete all files within
 			try {
@@ -562,7 +562,7 @@ public class DirUtilities {
 			ListItem item = toExport.get(i);
 
 			//Skip directories and links
-			if(item.isDir || item.isLink) {
+			if(item.fileProps.isdir || item.fileProps.islink) {
 				toExport.remove(i);
 				continue;
 			}

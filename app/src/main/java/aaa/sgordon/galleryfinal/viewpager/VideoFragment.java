@@ -33,9 +33,12 @@ import androidx.media3.ui.LegacyPlayerControlView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
@@ -44,7 +47,6 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
-import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
@@ -63,11 +65,11 @@ public class VideoFragment extends Fragment {
 	private TextureView textureView;
 	private LegacyPlayerControlView controls;
 
-
 	private ListItem tempItemDoNotUse;
-	public static VideoFragment initialize(ListItem item) {
+	public static VideoFragment initialize(ListItem listItem) {
 		VideoFragment fragment = new VideoFragment();
-		fragment.tempItemDoNotUse = item;
+		fragment.tempItemDoNotUse = listItem;
+
 		return fragment;
 	}
 
@@ -75,6 +77,11 @@ public class VideoFragment extends Fragment {
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		Bundle bundle = requireArguments();
+		UUID fileUID = UUID.fromString(bundle.getString("fileUID"));
+		String filename = bundle.getString("filename");
+		Path pathFromRoot = Paths.get(bundle.getString("pathFromRoot"));
 
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
@@ -94,7 +101,7 @@ public class VideoFragment extends Fragment {
 		mediaStub.inflate();
 
 		textureView = binding.viewA.findViewById(R.id.media);
-		textureView.setTransitionName(viewModel.listItem.filePath.toString());
+		textureView.setTransitionName(viewModel.pathFromRoot.toString());
 
 
 		ViewStub bottomSliderStub = binding.bottomSliderStub;
@@ -117,12 +124,12 @@ public class VideoFragment extends Fragment {
 		Thread thread = new Thread(() -> {
 			try {
 				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(viewModel.listItem.fileUID);
+				HFile fileProps = hAPI.getFileProps(viewModel.fileUID);
 
 
 				//Show the filename
 				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(viewModel.listItem.name);
+				filename.setText(viewModel.fileName);
 
 
 
@@ -138,7 +145,7 @@ public class VideoFragment extends Fragment {
 				});
 
 
-				HZone zoning = hAPI.getZoningInfo(viewModel.listItem.fileUID);
+				HZone zoning = hAPI.getZoningInfo(viewModel.fileUID);
 				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
 				zoningText.post(() -> {
 					//Format the fileSize and zoning information
@@ -325,7 +332,7 @@ public class VideoFragment extends Fragment {
 
 		Thread load = new Thread(() -> {
 			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.listItem.fileUID).first;
+				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.fileUID).first;
 
 				textureView.post(() -> {
 					//MediaItem mediaItem = MediaItem.fromUri(uri);

@@ -31,6 +31,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,12 +64,12 @@ public class DirFragment extends Fragment {
 	private SelectionController selectionController;
 
 
-	public static DirFragment initialize(UUID dirUID, String dirName) {
+	public static DirFragment initialize(String dirName, Path pathFromRoot) {
 		DirFragment fragment = new DirFragment();
 
 		Bundle bundle = new Bundle();
-		bundle.putSerializable("directoryUID", dirUID);
 		bundle.putString("directoryName", dirName);
+		bundle.putString("pathFromRoot", pathFromRoot.toString());
 		fragment.setArguments(bundle);
 
 		return fragment;
@@ -82,11 +84,12 @@ public class DirFragment extends Fragment {
 		MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
 
-		DirFragmentArgs args = DirFragmentArgs.fromBundle(getArguments());
-		UUID directoryUID = args.getDirectoryUID();
+		Bundle args = requireArguments();
+		String directoryName = args.getString("directoryName");
+		Path pathFromRoot = Paths.get(args.getString("pathFromRoot"));
 
 		dirViewModel = new ViewModelProvider(this,
-				new DirectoryViewModel.Factory(directoryUID))
+				new DirectoryViewModel.Factory(directoryName, pathFromRoot))
 				.get(DirectoryViewModel.class);
 
 

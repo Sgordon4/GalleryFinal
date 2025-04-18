@@ -34,9 +34,12 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
@@ -55,11 +58,11 @@ public class ImageFragment extends Fragment {
 	private DragPage dragPage;
 	private ZoomPanHandler zoomPanHandler;
 
-
 	private ListItem tempItemDoNotUse;
-	public static ImageFragment initialize(ListItem item) {
+	public static ImageFragment initialize(ListItem listItem) {
 		ImageFragment fragment = new ImageFragment();
-		fragment.tempItemDoNotUse = item;
+		fragment.tempItemDoNotUse = listItem;
+
 		return fragment;
 	}
 
@@ -68,9 +71,31 @@ public class ImageFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		Bundle bundle = requireArguments();
+		UUID fileUID = UUID.fromString(bundle.getString("fileUID"));
+		String filename = bundle.getString("filename");
+		Path pathFromRoot = Paths.get(bundle.getString("pathFromRoot"));
+
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
+
+		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
+			@Override
+			public void onDataReady(HFile fileProps, HZone zoning) {
+				setBottomSheetInfo();
+			}
+
+			@Override
+			public void onConnectException() {
+
+			}
+
+			@Override
+			public void onFileNotFoundException() {
+
+			}
+		});
 	}
 
 
@@ -83,14 +108,11 @@ public class ImageFragment extends Fragment {
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
 
-		setBottomSheetInfo();
-
 
 		dragPage = binding.motionLayout;
 		dragPage.setOnDismissListener(() -> {
 			requireParentFragment().getParentFragmentManager().popBackStack();
 		});
-
 
 		return binding.getRoot();
 	}
@@ -100,12 +122,12 @@ public class ImageFragment extends Fragment {
 		Thread thread = new Thread(() -> {
 			try {
 				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(viewModel.listItem.fileUID);
+				HFile fileProps = hAPI.getFileProps(viewModel.fileUID);
 
 
 				//Show the filename
 				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(viewModel.listItem.name);
+				filename.setText(viewModel.fileName);
 
 
 
@@ -122,7 +144,7 @@ public class ImageFragment extends Fragment {
 
 
 
-				HZone zoning = hAPI.getZoningInfo(viewModel.listItem.fileUID);
+				HZone zoning = hAPI.getZoningInfo(viewModel.fileUID);
 				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
 				zoningText.post(() -> {
 					//Format the fileSize and zoning information
@@ -202,7 +224,9 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		if(viewModel.listItem.fileSize < SIZE_THRESHOLD)
+		viewModel.refreshData();
+
+		if(viewModel.fileProps.filesize < SIZE_THRESHOLD)
 			usePhotoView();
 		else
 			useSubsamplingScaleImageView();
@@ -223,7 +247,7 @@ public class ImageFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_image);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.listItem.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.pathFromRoot.toString());
 
 		ImageView media = binding.viewA.findViewById(R.id.media);
 		zoomPanHandler = new ZoomPanHandler(media);
@@ -271,7 +295,7 @@ public class ImageFragment extends Fragment {
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
-				.load(viewModel.listItem.fileUID)
+				.load(viewModel.fileUID)
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
@@ -352,7 +376,7 @@ public class ImageFragment extends Fragment {
 		mediaStub.setLayoutResource(R.layout.vp_image_subsampling);
 		mediaStub.inflate();
 
-		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.listItem.filePath.toString());
+		binding.viewA.findViewById(R.id.media).setTransitionName(viewModel.pathFromRoot.toString());
 
 
 		SubsamplingScaleImageView media = binding.viewA.findViewById(R.id.media);
@@ -402,7 +426,7 @@ public class ImageFragment extends Fragment {
 
 		Thread load = new Thread(() -> {
 			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.listItem.fileUID).first;
+				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.fileUID).first;
 
 				media.post(() -> {
 					media.setImage(ImageSource.uri(uri));

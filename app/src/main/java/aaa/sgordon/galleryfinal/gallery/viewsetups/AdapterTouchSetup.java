@@ -1,41 +1,23 @@
 package aaa.sgordon.galleryfinal.gallery.viewsetups;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.Path;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.PathInterpolator;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
-import androidx.core.view.animation.PathInterpolatorCompat;
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.transition.ChangeBounds;
-import androidx.transition.ChangeClipBounds;
-import androidx.transition.ChangeImageTransform;
-import androidx.transition.ChangeTransform;
-import androidx.transition.Fade;
-import androidx.transition.PathMotion;
-import androidx.transition.Transition;
-import androidx.transition.TransitionInflater;
-import androidx.transition.TransitionSet;
 
-import com.google.android.material.transition.Hold;
-import com.google.android.material.transition.MaterialContainerTransform;
 import com.google.android.material.transition.MaterialFadeThrough;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -59,7 +41,6 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.texteditor.RTEditorFragment;
-import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 
@@ -195,21 +176,30 @@ public class AdapterTouchSetup {
 		Thread launch = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
+				//Get updated file props just in case
 				HFile fileProps = hAPI.getFileProps(listItem.fileUID);
-				Uri contentUri = hAPI.getFileContent(listItem.fileUID).first;
+				ListItem item = new ListItem.Builder(listItem).setFileProps(fileProps).build();
+
+				Uri contentUri = hAPI.getFileContent(item.fileUID).first;
 				String content = Utilities.readFile(contentUri);
 
-				Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
+				Handler handler = new Handler(Looper.getMainLooper());
 				handler.post(() -> {
-					RTEditorFragment fragment = RTEditorFragment.initialize(content, fileProps, listItem.name, dirFragment.dirViewModel.getDirUID());
+					RTEditorFragment fragment = RTEditorFragment.initialize(item, content);
 					dirFragment.getParentFragmentManager().beginTransaction()
 							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 							.addToBackStack(null)
 							.commit();
 				});
-
-			} catch (FileNotFoundException | ConnectException | ContentsNotFoundException e) {
-				throw new RuntimeException(e);
+			}
+			catch (FileNotFoundException e) {
+				Toast.makeText(dirFragment.requireContext(), "The file is not accessible from this device!", Toast.LENGTH_SHORT).show();
+			}
+			catch (ConnectException e) {
+				Toast.makeText(dirFragment.requireContext(), "Could not connect to the server!", Toast.LENGTH_SHORT).show();
+			}
+			catch (ContentsNotFoundException e) {
+				Toast.makeText(dirFragment.requireContext(), "The file contents could not be found!", Toast.LENGTH_SHORT).show();
 			}
 		});
 		launch.start();
@@ -222,12 +212,14 @@ public class AdapterTouchSetup {
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
-		if(listItem.attr.has("password")) {
-			String password = listItem.attr.get("password").getAsString();
+		if(listItem.fileProps.userattr.has("password")) {
+			String password = listItem.fileProps.userattr.get("password").getAsString();
 
 			if(!password.isEmpty()) {
 				PasswordModal.launch(dirFragment, listItem.name, password, () -> {
-					DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
+					Path pathFromRoot = dirFragment.dirViewModel.getPathFromRoot().resolve(listItem.fileUID.toString());
+					DirFragment fragment = DirFragment.initialize(listItem.name, pathFromRoot);
+
 					dirFragment.getParentFragmentManager().beginTransaction()
 							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 							.addToBackStack(null)
@@ -237,7 +229,9 @@ public class AdapterTouchSetup {
 		}
 		//If there is no password, launch the directory fragment
 		else {
-			DirFragment fragment = DirFragment.initialize(listItem.fileUID, listItem.name);
+			Path pathFromRoot = dirFragment.dirViewModel.getPathFromRoot().resolve(listItem.fileUID.toString());
+			DirFragment fragment = DirFragment.initialize(listItem.name, pathFromRoot);
+
 			dirFragment.getParentFragmentManager().beginTransaction()
 					.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 					.addToBackStack(null)
@@ -250,7 +244,7 @@ public class AdapterTouchSetup {
 		//int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
 		int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
 
-		ViewPagerFragment fragment = ViewPagerFragment.initialize(dirFragment.dirViewModel.getDirUID(), pos);
+		ViewPagerFragment fragment = ViewPagerFragment.initialize(pos);
 
 		View media = holder.itemView.findViewById(R.id.media);
 
@@ -270,7 +264,7 @@ public class AdapterTouchSetup {
 				DirRVAdapter adapter = (DirRVAdapter) dirFragment.binding.recyclerview.getAdapter();
 				int adapterPos = -1;
 				for(int i = 0; i < adapter.list.size(); i++) {
-					if(adapter.list.get(i).filePath.equals(vpItem.filePath)) {
+					if(adapter.list.get(i).pathFromRoot.equals(vpItem.pathFromRoot)) {
 						adapterPos = i;
 						break;
 					}

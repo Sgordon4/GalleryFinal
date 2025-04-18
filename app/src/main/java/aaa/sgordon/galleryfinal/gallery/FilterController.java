@@ -104,8 +104,9 @@ public class FilterController {
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
 	public static List<ListItem> filterListByQuery(String filterQuery, List<ListItem> list) {
 		list = list.stream().filter(item -> {
+			//TODO Change the way we hide shit to just be via filename. Avoids connection and FileNotFound issues.
 			//If the file is hidden...
-			if(item.attr.has("hidden") && item.attr.get("hidden").getAsBoolean()) {
+			if(item.fileProps.userattr.has("hidden") && item.fileProps.userattr.get("hidden").getAsBoolean()) {
 				System.out.println(item.name+" is hidden");
 				//Make sure the filename matches the filter query exactly
 				//TODO Exclude file extensions

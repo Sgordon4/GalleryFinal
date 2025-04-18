@@ -39,8 +39,8 @@ public class LinkViewHolder extends BaseViewHolder {
 
 
 
-		if(listItem.attr.has("color")) {
-			divider.setDividerColor(listItem.attr.get("color").getAsInt());
+		if(listItem.fileProps.userattr.has("color")) {
+			divider.setDividerColor(listItem.fileProps.userattr.get("color").getAsInt());
 		} else {
 			//Get the default card background color from the theme
 			TypedValue typedValue = new TypedValue();

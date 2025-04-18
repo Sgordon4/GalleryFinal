@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -8,6 +9,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
@@ -44,10 +48,8 @@ public class ToolbarStyler {
 			toolbar.setNavigationIcon(null);
 
 
-		//TODO Have DirViewModel store a ListItem and use that here instead of directly grabbing args
 		//Must set title after configuration
-		DirFragmentArgs args = DirFragmentArgs.fromBundle(dirFragment.getArguments());
-		String directoryName = args.getDirectoryName();
+		String directoryName = dirFragment.dirViewModel.getDirName();
 		toolbar.setTitle(directoryName);
 
 

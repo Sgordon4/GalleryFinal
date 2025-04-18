@@ -40,8 +40,8 @@ public class RichTextViewHolder extends BaseViewHolder {
 
 
 		//Change the background color of the card
-		if(listItem.attr.has("color")) {
-			color.setBackgroundColor(listItem.attr.get("color").getAsInt());
+		if(listItem.fileProps.userattr.has("color")) {
+			color.setBackgroundColor(listItem.fileProps.userattr.get("color").getAsInt());
 		} else {
 			TypedValue typedValue = new TypedValue();
 
@@ -57,11 +57,11 @@ public class RichTextViewHolder extends BaseViewHolder {
 
 
 		//Change the border color of the child
-		if(parent != null && parent.attr.has("color")) {
+		if(parent != null && parent.fileProps.userattr.has("color")) {
 			Drawable background = child.getBackground();
 			if (background instanceof GradientDrawable) {
 				GradientDrawable shapeDrawable = (GradientDrawable) background;
-				shapeDrawable.setStroke(4, parent.attr.get("color").getAsInt());
+				shapeDrawable.setStroke(4, parent.fileProps.userattr.get("color").getAsInt());
 			}
 		} else {
 			//Reset the default background color

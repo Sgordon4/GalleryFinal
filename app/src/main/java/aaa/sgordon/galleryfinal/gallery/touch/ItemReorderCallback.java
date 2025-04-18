@@ -3,9 +3,7 @@ package aaa.sgordon.galleryfinal.gallery.touch;
 import android.annotation.SuppressLint;
 import android.os.SystemClock;
 import android.util.Log;
-import android.util.Pair;
 import android.view.MotionEvent;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,11 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
@@ -159,18 +155,18 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		if(nextItem != null) {
 			//If the nextItem is a link end, we want to put draggedItem at the end of the link
 			if(LinkCache.isLinkEnd(nextItem)) {
-				destination = nextItem.filePath;
+				destination = nextItem.pathFromRoot;
 				nextItem = null;
 			}
 			//If nextItem is just a normal item, we want to put draggedItem before nextItem in nextItem's parent
 			else {
-				destination = nextItem.filePath.getParent();
+				destination = nextItem.pathFromRoot.getParent();
 			}
 		}
 		else {
 			//The nextItem is only null if draggedItem was moved to the very end of the list,
 			// and should therefore be placed in its relative root
-			destination = draggedItem.filePath.getName(0);
+			destination = draggedItem.pathFromRoot.getName(0);
 		}
 
 
@@ -181,7 +177,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 
 		//We do not want to move links directly inside themselves or things will visually disappear. Exclude any.
-		if(destination.startsWith(draggedItem.filePath)) {
+		if(destination.startsWith(draggedItem.pathFromRoot)) {
 			Log.d(TAG, "Drag failed, not allowed to move links inside themselves");
 			//Toast.makeText(recyclerView.getContext(), "Not allowed to move links inside themselves!", Toast.LENGTH_SHORT).show();
 			callback.onReorderFailed();
@@ -195,13 +191,13 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 
 		//To avoid *most* flickering when moving the dragged item across directories, change its parent to the destination dir
-		Path newPath = destination.resolve(draggedItem.filePath.getFileName());
+		Path newPath = destination.resolve(draggedItem.pathFromRoot.getFileName());
 		ListItem updatedItem = new ListItem.Builder(draggedItem)
 				.setFilePath(newPath)
 				.setName(draggedItem.name+" ")	//Add a space to force a DiffUtil update
 				.build();
 
-		if(!newPath.equals(draggedItem.filePath))
+		if(!newPath.equals(draggedItem.pathFromRoot))
 			adapter.list.set(draggedItemPos, updatedItem);
 
 		//System.out.println("OWA OWA");

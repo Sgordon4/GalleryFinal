@@ -31,11 +31,11 @@ public class GifViewHolder extends BaseViewHolder {
 		super.bind(listItem, parent);
 
 		//Change the border color of the child
-		if(parent != null && parent.attr.has("color")) {
+		if(parent != null && parent.fileProps.userattr.has("color")) {
 			Drawable background = child.getBackground();
 			if (background instanceof GradientDrawable) {
 				GradientDrawable shapeDrawable = (GradientDrawable) background;
-				shapeDrawable.setStroke(4, parent.attr.get("color").getAsInt());
+				shapeDrawable.setStroke(4, parent.fileProps.userattr.get("color").getAsInt());
 			}
 		} else {
 			//Reset the default background color

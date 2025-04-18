@@ -48,8 +48,6 @@ public class EdgeAwareHorizontalScrollView extends HorizontalScrollView {
 		scroller = new OverScroller(context);
 		minimumFlingVelocity = config.getScaledMinimumFlingVelocity();
 		maximumFlingVelocity = config.getScaledMaximumFlingVelocity();
-
-		velocityTracker = VelocityTracker.obtain();
 	}
 
 
@@ -63,8 +61,7 @@ public class EdgeAwareHorizontalScrollView extends HorizontalScrollView {
 				if (!scroller.isFinished())
 					scroller.abortAnimation();
 
-				velocityTracker.clear();
-				velocityTracker.addMovement(event);
+				initVelocityTrackerIfNotExists();
 
 				gestureDetected = false;
 				allowParentIntercept = false;
@@ -139,6 +136,7 @@ public class EdgeAwareHorizontalScrollView extends HorizontalScrollView {
 				}
 
 			case MotionEvent.ACTION_CANCEL:
+				recycleVelocityTracker();
 				gestureDetected = false;
 				allowParentIntercept = false;
 				getParent().requestDisallowInterceptTouchEvent(false);
@@ -181,5 +179,18 @@ public class EdgeAwareHorizontalScrollView extends HorizontalScrollView {
 		int childWidth = child.getWidth();
 		int viewWidth = getWidth();
 		return scrollX < (childWidth - viewWidth);
+	}
+
+
+	private void initVelocityTrackerIfNotExists() {
+		if (velocityTracker == null) {
+			velocityTracker = VelocityTracker.obtain();
+		}
+	}
+	private void recycleVelocityTracker() {
+		if (velocityTracker != null) {
+			velocityTracker.recycle();
+			velocityTracker = null;
+		}
 	}
 }

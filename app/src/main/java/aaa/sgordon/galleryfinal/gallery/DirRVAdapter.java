@@ -28,7 +28,6 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.TextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 
 public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public List<ListItem> list;
@@ -85,9 +84,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
 				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name) &&
-						list.get(oldItemPosition).filePath.equals(newList.get(newItemPosition).filePath) &&
+						list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot) &&
 						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type) &&
-						list.get(oldItemPosition).attr.equals(newList.get(newItemPosition).attr);
+						list.get(oldItemPosition).fileProps.userattr.equals(newList.get(newItemPosition).fileProps.userattr);
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator
@@ -108,7 +107,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		ListItem parent = null;
 
 		//If the item comes from a link, find the parent
-		if(item.filePath.getNameCount() > 2) {
+		if(item.pathFromRoot.getNameCount() > 2) {
 			for(int i = position-1; i >= 0; i--) {
 				if(item.parentUID.equals( list.get(i).fileUID) ) {
 					parent = list.get(i);
@@ -119,7 +118,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 
 		if(holder instanceof ImageViewHolder || holder instanceof GifViewHolder || holder instanceof VideoViewHolder)
-			holder.itemView.findViewById(R.id.media).setTransitionName(item.filePath.toString());
+			holder.itemView.findViewById(R.id.media).setTransitionName(item.pathFromRoot.toString());
 
 		holder.bind(item, parent);
 
@@ -158,7 +157,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		else if(item.type.equals(ListItem.ListItemType.LINKDIVIDER))
 			return 6;
 
-		if(item.isDir)
+		if(item.fileProps.isdir)
 			return 0;			//Directory
 
 
@@ -166,21 +165,21 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		String extension = FilenameUtils.getExtension(item.name);
 		switch (extension) {
 			case "txt":
-				return 7;    //Text
+				return 7;		//Text
 			case "rtf":
-				return 8;    //Rich Text
+				return 8;		//Rich Text
 			case "jpg":
 			case "jpeg":
-				return 9;    //Image
+				return 9;		//Image
 			case "gif":
-				return 10;    //Gif
+				return 10;		//Gif
 			case "mp4":
-				return 11;    //Video
+				return 11;		//Video
 			case "div":
-				return 12;	//Divider
+				return 12;		//Divider
 		}
 
-		return -1;					//Unknown
+		return -1;				//Unknown
 	}
 
 

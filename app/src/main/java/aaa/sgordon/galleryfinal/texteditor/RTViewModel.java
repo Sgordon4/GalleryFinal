@@ -12,11 +12,13 @@ import org.apache.commons.io.FilenameUtils;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
@@ -28,13 +30,14 @@ public class RTViewModel extends ViewModel {
 	public final UUID fileUID;
 	public final UUID dirUID;
 
+	public final Path pathFromRoot;
+	public ListItem listItem;
+
 	public String content;
 	public String fileName;
 	public String fileExtension;
 
-	public HFile lastProps;
-
-	private final Runnable writeRunnable;
+	private final Runnable contentChangeRunnable;
 	private final Runnable titleChangeRunnable;
 
 	private final ScheduledExecutorService scheduler;
@@ -42,18 +45,19 @@ public class RTViewModel extends ViewModel {
 	private ScheduledFuture<?> scheduledTitleChange = null;
 
 
-	public RTViewModel(String content, HFile fileProps, String fileName, UUID dirUID) {
+	public RTViewModel(@NonNull ListItem listItem, @NonNull String content) {
+		this.listItem = listItem;
+		this.fileUID = listItem.fileUID;
 		this.content = content;
-		this.fileUID = fileProps.fileuid;
-		this.lastProps = fileProps;
-		this.dirUID = dirUID;
+		this.pathFromRoot = listItem.pathFromRoot;
+		this.dirUID = UUID.fromString(pathFromRoot.getParent().getFileName().toString());
 
-		this.fileName = FilenameUtils.getBaseName(fileName);
-		this.fileExtension = FilenameUtils.getExtension(fileName);
+		this.fileName = FilenameUtils.getBaseName(listItem.name);
+		this.fileExtension = FilenameUtils.getExtension(listItem.name);
 
 
 		scheduler = Executors.newScheduledThreadPool(2);
-		writeRunnable = () -> {
+		contentChangeRunnable = () -> {
 			try {
 				writeContents();
 			}
@@ -111,7 +115,7 @@ public class RTViewModel extends ViewModel {
 
 
 	private void renameFile() throws IOException {
-		Log.v(TAG, "Writing rich text title for fileUID='"+fileUID+"'");
+		Log.v(TAG, "Writing title for fileUID='"+fileUID+"'");
 		String fullFileName = fileName + "." + fileExtension;
 		DirUtilities.renameFile(fileUID, dirUID, fullFileName);
 	}
@@ -122,7 +126,7 @@ public class RTViewModel extends ViewModel {
 	public void persistContents() {
 		if(scheduledWrite != null && !scheduledWrite.isDone()) return;
 
-		scheduledWrite = scheduler.schedule(writeRunnable, 5, java.util.concurrent.TimeUnit.SECONDS);
+		scheduledWrite = scheduler.schedule(contentChangeRunnable, 5, java.util.concurrent.TimeUnit.SECONDS);
 	}
 
 	public void persistContentsImmediately() {
@@ -150,7 +154,7 @@ public class RTViewModel extends ViewModel {
 	//---------------------------------------------------------------------------------------------
 
 	private void writeContents() throws IOException {
-		Log.v(TAG, "Writing rich text contents for fileUID='"+fileUID+"'");
+		Log.v(TAG, "Writing contents for fileUID='"+fileUID+"'");
 		HybridAPI hAPI = HybridAPI.getInstance();
 
 		try {
@@ -177,7 +181,7 @@ public class RTViewModel extends ViewModel {
 				//This will only ever occur on the first write after launching the fragment,
 				// or if the file is deleted and then we can't connect. I only really care about the first one.
 				LocalRepo localRepo = LocalRepo.getInstance();
-				localRepo.putFileProps(lastProps.toLocalFile(), "", "");
+				localRepo.putFileProps(listItem.fileProps.toLocalFile(), "", "");
 			}
 			catch (IllegalStateException ignored) {
 				//This only gets thrown if the passed checksums don't match the current file's,
@@ -203,23 +207,19 @@ public class RTViewModel extends ViewModel {
 //=================================================================================================
 
 	public static class Factory implements ViewModelProvider.Factory {
-		private final HFile fileProps;
+		private final ListItem listItem;
 		private final String content;
-		private final UUID dirUID;
-		private final String filename;
 
-		public Factory(String content, HFile fileProps, String filename, UUID dirUID) {
+		public Factory(@NonNull ListItem listItem, @NonNull String content) {
+			this.listItem = listItem;
 			this.content = content;
-			this.fileProps = fileProps;
-			this.dirUID = dirUID;
-			this.filename = filename;
 		}
 
 		@NonNull
 		@Override
 		public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
 			if (modelClass.isAssignableFrom(RTViewModel.class)) {
-				return (T) new RTViewModel(content, fileProps, filename, dirUID);
+				return (T) new RTViewModel(listItem, content);
 			}
 			throw new IllegalArgumentException("Unknown ViewModel class");
 		}
