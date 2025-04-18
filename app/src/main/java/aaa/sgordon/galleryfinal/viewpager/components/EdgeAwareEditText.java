@@ -186,7 +186,7 @@ public class EdgeAwareEditText extends AppCompatEditText {
 				if(gestureDetected && !edgeScrollCatch) {
 					//If we're horizontal, horizontally dragging past an edge, let parent take over
 					if(isSingleLine() && isHorizontal && ((atStart && swipingLeft) || (atEnd && swipingRight)) && Math.abs(deltaX) > touchSlop) {
-						allowParentIntercept = true;
+						//allowParentIntercept = true;
 					}
 					//If we're vertical, vertically dragging past an edge, let parent take over
 					else if(!isSingleLine() && !isHorizontal && ((atTop && swipingUp) || (atBottom && swipingDown)) && Math.abs(deltaY) > touchSlop) {
@@ -198,54 +198,27 @@ public class EdgeAwareEditText extends AppCompatEditText {
 				if(!gestureDetected && (Math.abs(deltaX) > touchSlop || Math.abs(deltaY) > touchSlop)) {
 					gestureDetected = true;
 
-					MotionEvent cancelEvent = MotionEvent.obtain(
-							event.getDownTime(),
-							event.getEventTime(),
-							MotionEvent.ACTION_CANCEL,
-							event.getX(),
-							event.getY(),
-							event.getMetaState()
-					);
-					super.onTouchEvent(cancelEvent);
-					cancelEvent.recycle();
-
-					// ✅ Reset downX/downY to current finger position
-					downX = event.getX();
-					downY = event.getY();
-
-					// ✅ Send new synthetic ACTION_DOWN to "restart" touch handling
-					MotionEvent fakeDown = MotionEvent.obtain(
-							event.getDownTime(),
-							event.getEventTime(),
-							MotionEvent.ACTION_DOWN,
-							downX,
-							downY,
-							event.getMetaState()
-					);
-					super.onTouchEvent(fakeDown);
-					fakeDown.recycle();
-
-					/* Putting the fake ACTION_DOWN here doesn't seem to work */
-
 					//If the EditText is a horizontal scroller...
 					if(isSingleLine()) {
 						//Vertical swiping does nothing in a horizontal EditText, allow the parent to take over
-						if(!isHorizontal)
+						if(!isHorizontal) {
 							allowParentIntercept = true;
-
+						}
 						//If we've started at an edge and are scrolling past it, let parent take over
-						else if ((atStart && swipingLeft) || (atEnd && swipingRight))
-							allowParentIntercept = true;
+						else if ((atStart && swipingLeft) || (atEnd && swipingRight)) {
+							allowParentIntercept = !isFocused();
+						}
 					}
 					//If the EditText is a vertical scroller...
 					else {
 						//Horizontal swiping can select text if the EditText is focused, don't allow parent intercept unless unfocused
-						if(isHorizontal)
+						if(isHorizontal) {
 							allowParentIntercept = !isFocused();
-
+						}
 						//If we've started at an edge and are scrolling past it, let parent take over
-						else if ((atTop && swipingUp) || (atBottom && swipingDown))
+						else if ((atTop && swipingUp) || (atBottom && swipingDown)) {
 							allowParentIntercept = true;
+						}
 					}
 				}
 
@@ -256,7 +229,8 @@ public class EdgeAwareEditText extends AppCompatEditText {
 				velocityTracker.computeCurrentVelocity(1000, maximumFlingVelocity);
 
 
-				if(isSingleLine()) {
+				//if(isSingleLine()) {
+				if(isSingleLine() && !isFocused()) {
 					float velocityX = velocityTracker.getXVelocity();
 
 					if (Math.abs(velocityX) > minimumFlingVelocity)

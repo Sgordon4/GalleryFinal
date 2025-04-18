@@ -6,6 +6,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextPaint;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -124,8 +125,9 @@ public class GifFragment extends Fragment {
 
 
 		//Show the filename in the BottomSheet
-		TextView filename = binding.viewB.findViewById(R.id.filename);
-		//filename.post(() -> filename.setText(viewModel.fileName));
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+		filename.post(() -> filename.setText(viewModel.fileName));
 		filename.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -134,13 +136,30 @@ public class GifFragment extends Fragment {
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				TextPaint paint = filename.getPaint();
+
+				int textWidth;
+				if(s == null || s.length() == 0)
+					textWidth = (int) paint.measureText(filename.getHint().toString());
+				else
+					textWidth = (int) paint.measureText(s.toString());
+
+				textWidth = Math.min(textWidth, filename.getWidth());
+				System.out.println("TW: "+textWidth);
+
+				int parentWidth = ((View) filename.getParent()).getWidth();
+				int extensionWidth = extension.getWidth();
+				int translationX = (parentWidth - textWidth - extensionWidth);
+				extension.setTranslationX(-translationX);
+
+
 				//viewModel.fileName = s.toString();
 				//viewModel.persistFileName();
 			}
 		});
 
 		EditText description = binding.viewB.findViewById(R.id.description);
-		//description.post(() -> description.setText(viewModel.description));
+		description.post(() -> description.setText(viewModel.description));
 		description.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -149,8 +168,8 @@ public class GifFragment extends Fragment {
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				viewModel.description = s.toString();
-				viewModel.persistDescription();
+				//viewModel.description = s.toString();
+				//viewModel.persistDescription();
 			}
 		});
 		//TODO Update description in the BottomSheet

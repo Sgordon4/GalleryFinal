@@ -46,7 +46,7 @@
 
     <Space
         android:layout_width="0dp"
-        android:layout_height="20dp"/>
+        android:layout_height="16dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -57,29 +57,27 @@
             android:id="@+id/filename"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:paddingVertical="2dp"
+            android:paddingVertical="6dp"
             android:layout_weight="1"
             android:textSize="22sp"
             android:singleLine="true"
             android:maxLines="1"
             app:edgeScrollCatch="true"
-            android:text="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAdjhbswjhbdjehbAAAAAAAAAAAAAAAAAhjbdjw"
+            android:hint="File Name"
+            android:text="Unknown File"
             android:background="@android:color/transparent"/>
 
         <TextView
             android:id="@+id/extension"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingVertical="2dp"
+            android:paddingVertical="6dp"
             android:textSize="22sp"
             android:alpha="0.7"
             android:text=".jpg"/>
 
     </LinearLayout>
 
-    <Space
-        android:layout_width="0dp"
-        android:layout_height="4dp"/>
 
 
     <aaa.sgordon.galleryfinal.viewpager.components.EdgeAwareEditText
@@ -100,14 +98,6 @@
 
         android:alpha="0.6"
         android:background="@null"/>
-
-
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:maxLines="3"
-        android:text="AAAAAAAAAAAAAAAAAAfhieuhiduheiwuhsiduhrei3uwhsiudhireuwhsiuhdiruehwisuhdiurehwisuhdiuehiwushdiurheiwuhsdiuhreiuwhiewisduhifruehwisuhddiurhewiushidudhieuwhsiudhieuhwisuhdiuehwisuhdiurheiuwhiduhfrieuhwiduhfiruehiudhiuhreiuhdiuhrieuhdiuhiruehiduhiurheiuhiduhiuhrieuhdiuhiuhi"/>
-
 
 
     <Space
