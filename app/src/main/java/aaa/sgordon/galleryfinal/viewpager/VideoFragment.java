@@ -7,6 +7,9 @@ import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextPaint;
+import android.text.TextWatcher;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -17,6 +20,7 @@ import android.view.ViewGroup;
 import android.view.ViewStub;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -78,14 +82,26 @@ public class VideoFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Bundle bundle = requireArguments();
-		UUID fileUID = UUID.fromString(bundle.getString("fileUID"));
-		String filename = bundle.getString("filename");
-		Path pathFromRoot = Paths.get(bundle.getString("pathFromRoot"));
-
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
+
+		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
+			@Override
+			public void onDataReady(HFile fileProps, HZone zoning) {
+				setBottomSheetInfo();
+			}
+
+			@Override
+			public void onConnectException() {
+
+			}
+
+			@Override
+			public void onFileNotFoundException() {
+
+			}
+		});
 	}
 
 
@@ -94,8 +110,6 @@ public class VideoFragment extends Fragment {
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = VpViewpageBinding.inflate(inflater, container, false);
 
-
-		//Swap out ViewA for our PhotoView
 		ViewStub mediaStub = binding.mediaStub;
 		mediaStub.setLayoutResource(R.layout.vp_video);
 		mediaStub.inflate();
@@ -108,75 +122,17 @@ public class VideoFragment extends Fragment {
 		bottomSliderStub.setLayoutResource(R.layout.vp_bottom);
 		bottomSliderStub.inflate();
 
-		setBottomSheetInfo();
-
 
 		dragPage = binding.motionLayout;
 		dragPage.setOnDismissListener(() -> {
 			requireParentFragment().getParentFragmentManager().popBackStack();
 		});
 
+
+		setBottomSheetInfo();
+
 		return binding.getRoot();
 	}
-
-
-	private void setBottomSheetInfo() {
-		Thread thread = new Thread(() -> {
-			try {
-				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(viewModel.fileUID);
-
-
-				//Show the filename
-				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(viewModel.fileName);
-
-
-
-				//Format the creation date
-				SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
-				Date date = new Date(fileProps.createtime*1000);
-				String formattedDateTime = sdf.format(date);
-
-				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-				creationTime.post(() -> {
-					String timeText = getString(R.string.vp_time, formattedDateTime);
-					creationTime.setText(timeText);
-				});
-
-
-				HZone zoning = hAPI.getZoningInfo(viewModel.fileUID);
-				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-				zoningText.post(() -> {
-					//Format the fileSize and zoning information
-					float fileSizeBytes = fileProps.filesize;
-					float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-					String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-					String zone = "On Device";
-					if(zoning != null) {
-						if (zoning.isLocal && zoning.isRemote)
-							zone = "On Device & Cloud";
-						else if (zoning.isLocal)
-							zone = "On Device";
-						else //if (zoning.isRemote)
-							zone = "On Cloud";
-					}
-
-					String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-					zoningText.setText(backupText);
-				});
-
-
-
-
-			} catch (FileNotFoundException | ConnectException e) {
-				//Just skip setting some properties
-			}
-		});
-		thread.start();
-	}
-
 
 
 	private int touchSlop;
@@ -186,6 +142,49 @@ public class VideoFragment extends Fragment {
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
+
+
+		//Show the filename in the BottomSheet
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+		filename.setText(viewModel.fileName);
+		filename.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				//Move the extension visually to the end of the filename
+				String text = (s == null) ? "" : s.toString();
+				updateExtensionTranslation(text);
+
+				//Persist the filename
+				viewModel.fileName = text;
+				viewModel.persistFileName();
+			}
+		});
+
+		EditText description = binding.viewB.findViewById(R.id.description);
+		description.setText(viewModel.description);
+		description.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.description = (s == null) ? "" : s.toString();
+				viewModel.persistDescription();
+			}
+		});
+
+
+
+		//-----------------------------------------------
+
 
 		zoomPanHandler = new ZoomPanHandler(textureView);
 		zoomPanHandler.setDoubleTapZoomEnabled(false);
@@ -230,9 +229,8 @@ public class VideoFragment extends Fragment {
 
 
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
-		binding.viewA.findViewById(R.id.touch_overlay).setOnTouchListener((v, event) -> {
+		binding.viewA.setOnTouchListener((v, event) -> {
 			unfocusEditTextOnTapOutside(event);
-			detector.onTouchEvent(event);
 
 			if(event.getAction() == MotionEvent.ACTION_DOWN) {
 				downX = event.getX();
@@ -268,9 +266,64 @@ public class VideoFragment extends Fragment {
 			return true;
 		});
 
+
 		initializePlayer();
 	}
 
+	private void updateExtensionTranslation(String text) {
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+
+		if(text.isEmpty())
+			text = filename.getHint().toString();
+
+		TextPaint paint = filename.getPaint();
+		int textWidth = (int) paint.measureText(text);
+
+		textWidth = Math.min(textWidth, filename.getWidth());
+
+		int parentWidth = ((View) filename.getParent()).getWidth();
+		int extensionWidth = extension.getWidth();
+		int translationX = (parentWidth - textWidth - extensionWidth);
+		extension.setTranslationX(-translationX);
+	}
+
+
+
+	private void setBottomSheetInfo() {
+		//Format the creation date
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
+		Date date = new Date(viewModel.fileProps.createtime*1000);
+		String formattedDateTime = sdf.format(date);
+
+		TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
+		creationTime.post(() -> {
+			String timeText = getString(R.string.vp_time, formattedDateTime);
+			creationTime.setText(timeText);
+		});
+
+
+		TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
+		zoningText.post(() -> {
+			//Format the fileSize and zoning information
+			float fileSizeBytes = viewModel.fileProps.filesize;
+			float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+			String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+			String zone = "On Device";
+			if(viewModel.zoning != null) {
+				if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
+					zone = "On Device & Cloud";
+				else if (viewModel.zoning.isLocal)
+					zone = "On Device";
+				else //if (zoning.isRemote)
+					zone = "On Cloud";
+			}
+
+			String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+			zoningText.setText(backupText);
+		});
+	}
 
 
 	@OptIn(markerClass = UnstableApi.class)
@@ -386,6 +439,8 @@ public class VideoFragment extends Fragment {
 	@Override
 	public void onPause() {
 		player.pause();
+		viewModel.persistFileNameImmediately();
+		viewModel.persistDescriptionImmediately();
 		super.onPause();
 	}
 

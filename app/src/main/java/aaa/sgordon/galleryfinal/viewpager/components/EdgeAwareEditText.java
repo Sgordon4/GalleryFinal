@@ -58,7 +58,6 @@ public class EdgeAwareEditText extends AppCompatEditText {
 				edgeScrollCatch = a.getBoolean(R.styleable.EdgeAwareEditText_edgeScrollCatch, false);
 			}
 		}
-		System.out.println("EdgeScrollCatch: "+edgeScrollCatch);
 
 
 		ViewConfiguration config = ViewConfiguration.get(context);

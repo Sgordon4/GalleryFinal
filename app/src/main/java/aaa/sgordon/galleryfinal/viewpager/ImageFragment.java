@@ -71,11 +71,6 @@ public class ImageFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Bundle bundle = requireArguments();
-		UUID fileUID = UUID.fromString(bundle.getString("fileUID"));
-		String filename = bundle.getString("filename");
-		Path pathFromRoot = Paths.get(bundle.getString("pathFromRoot"));
-
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
@@ -113,6 +108,10 @@ public class ImageFragment extends Fragment {
 		dragPage.setOnDismissListener(() -> {
 			requireParentFragment().getParentFragmentManager().popBackStack();
 		});
+
+
+		setBottomSheetInfo();
+		viewModel.refreshData();
 
 		return binding.getRoot();
 	}

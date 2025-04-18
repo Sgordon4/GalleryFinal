@@ -2,9 +2,12 @@ package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextPaint;
 import android.text.TextWatcher;
@@ -69,7 +72,8 @@ public class GifFragment extends Fragment {
 		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
 			@Override
 			public void onDataReady(HFile fileProps, HZone zoning) {
-				setBottomSheetInfo();
+				Handler handler = new Handler(Looper.getMainLooper());
+				handler.post(() -> setBottomSheetInfo());
 			}
 
 			@Override
@@ -108,8 +112,6 @@ public class GifFragment extends Fragment {
 
 
 		setBottomSheetInfo();
-		viewModel.refreshData();
-
 
 		return binding.getRoot();
 	}
@@ -127,7 +129,7 @@ public class GifFragment extends Fragment {
 		//Show the filename in the BottomSheet
 		EditText filename = binding.viewB.findViewById(R.id.filename);
 		TextView extension = binding.viewB.findViewById(R.id.extension);
-		filename.post(() -> filename.setText(viewModel.fileName));
+		filename.setText(viewModel.fileName);
 		filename.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -136,43 +138,61 @@ public class GifFragment extends Fragment {
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				TextPaint paint = filename.getPaint();
+				//Move the extension visually to the end of the filename
+				String text = (s == null) ? "" : s.toString();
+				updateExtensionTranslation(text);
 
-				int textWidth;
-				if(s == null || s.length() == 0)
-					textWidth = (int) paint.measureText(filename.getHint().toString());
-				else
-					textWidth = (int) paint.measureText(s.toString());
-
-				textWidth = Math.min(textWidth, filename.getWidth());
-				System.out.println("TW: "+textWidth);
-
-				int parentWidth = ((View) filename.getParent()).getWidth();
-				int extensionWidth = extension.getWidth();
-				int translationX = (parentWidth - textWidth - extensionWidth);
-				extension.setTranslationX(-translationX);
-
-
-				//viewModel.fileName = s.toString();
-				//viewModel.persistFileName();
+				//Persist the filename
+				viewModel.fileName = text;
+				viewModel.persistFileName();
 			}
+		});
+		extension.post(() -> {
+			updateExtensionTranslation(viewModel.fileName);
 		});
 
 		EditText description = binding.viewB.findViewById(R.id.description);
-		description.post(() -> description.setText(viewModel.description));
+		description.setText(viewModel.description);
 		description.addTextChangedListener(new TextWatcher() {
 			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+				System.out.println("Line before: "+description.getLineCount());
+			}
 			@Override
 			public void afterTextChanged(Editable s) {}
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				//viewModel.description = s.toString();
+				//System.out.println("Persisting "+((s == null) ? "" : s.toString()));
+
+				System.out.println("Line after: "+description.getLineCount());
+
+				int lineCount = description.getLineCount();
+				int lineHeight = description.getLineHeight();
+
+				// Total line height
+				int totalLineHeight = lineCount * lineHeight;
+
+				// Get the top and bottom padding
+				int verticalPadding = description.getPaddingTop() + description.getPaddingBottom();
+
+				// Get extra spacing from font metrics (important for exact size match)
+				Paint.FontMetricsInt fontMetrics = description.getPaint().getFontMetricsInt();
+				int extraSpacing = fontMetrics.descent - fontMetrics.ascent - lineHeight;
+
+				int desiredHeight = totalLineHeight + verticalPadding + extraSpacing;
+				System.out.println("DesiredHeight = "+desiredHeight);
+				System.out.println("Actual height = "+description.getHeight());
+
+				ViewGroup.LayoutParams params = description.getLayoutParams();
+				params.height = desiredHeight;
+				description.setLayoutParams(params);
+
+
+				//viewModel.description = (s == null) ? "" : s.toString();
 				//viewModel.persistDescription();
 			}
 		});
-		//TODO Update description in the BottomSheet
 
 
 
@@ -274,6 +294,24 @@ public class GifFragment extends Fragment {
 				.into(media);
 	}
 
+	private void updateExtensionTranslation(String text) {
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+
+		if(text.isEmpty())
+			text = filename.getHint().toString();
+
+		TextPaint paint = filename.getPaint();
+		int textWidth = (int) paint.measureText(text);
+
+		textWidth = Math.min(textWidth, filename.getWidth());
+
+		int parentWidth = ((View) filename.getParent()).getWidth();
+		int extensionWidth = extension.getWidth();
+		int translationX = (parentWidth - textWidth - extensionWidth);
+		extension.setTranslationX(-translationX);
+	}
+
 
 	@Override
 	public void onPause() {
@@ -291,32 +329,28 @@ public class GifFragment extends Fragment {
 		String formattedDateTime = sdf.format(date);
 
 		TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-		creationTime.post(() -> {
-			String timeText = getString(R.string.vp_time, formattedDateTime);
-			creationTime.setText(timeText);
-		});
+		String timeText = getString(R.string.vp_time, formattedDateTime);
+		creationTime.setText(timeText);
 
 
 		TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-		zoningText.post(() -> {
-			//Format the fileSize and zoning information
-			float fileSizeBytes = viewModel.fileProps.filesize;
-			float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-			String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+		//Format the fileSize and zoning information
+		float fileSizeBytes = viewModel.fileProps.filesize;
+		float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+		String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
 
-			String zone = "On Device";
-			if(viewModel.zoning != null) {
-				if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
-					zone = "On Device & Cloud";
-				else if (viewModel.zoning.isLocal)
-					zone = "On Device";
-				else //if (zoning.isRemote)
-					zone = "On Cloud";
-			}
+		String zone = "On Device";
+		if(viewModel.zoning != null) {
+			if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
+				zone = "On Device & Cloud";
+			else if (viewModel.zoning.isLocal)
+				zone = "On Device";
+			else //if (zoning.isRemote)
+				zone = "On Cloud";
+		}
 
-			String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-			zoningText.setText(backupText);
-		});
+		String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+		zoningText.setText(backupText);
 	}
 
 
