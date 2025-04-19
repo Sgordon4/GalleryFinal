@@ -72,8 +72,7 @@ public class GifFragment extends Fragment {
 		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
 			@Override
 			public void onDataReady(HFile fileProps, HZone zoning) {
-				Handler handler = new Handler(Looper.getMainLooper());
-				handler.post(() -> setBottomSheetInfo());
+				setBottomSheetInfo();
 			}
 
 			@Override
@@ -117,6 +116,8 @@ public class GifFragment extends Fragment {
 	}
 
 
+
+
 	private int touchSlop;
 	private float downX, downY;
 
@@ -125,75 +126,7 @@ public class GifFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-
-		//Show the filename in the BottomSheet
-		EditText filename = binding.viewB.findViewById(R.id.filename);
-		TextView extension = binding.viewB.findViewById(R.id.extension);
-		filename.setText(viewModel.fileName);
-		filename.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-			@Override
-			public void afterTextChanged(Editable s) {}
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				//Move the extension visually to the end of the filename
-				String text = (s == null) ? "" : s.toString();
-				updateExtensionTranslation(text);
-
-				//Persist the filename
-				viewModel.fileName = text;
-				viewModel.persistFileName();
-			}
-		});
-		extension.post(() -> {
-			updateExtensionTranslation(viewModel.fileName);
-		});
-
-		EditText description = binding.viewB.findViewById(R.id.description);
-		description.setText(viewModel.description);
-		description.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-				System.out.println("Line before: "+description.getLineCount());
-			}
-			@Override
-			public void afterTextChanged(Editable s) {}
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				//System.out.println("Persisting "+((s == null) ? "" : s.toString()));
-
-				System.out.println("Line after: "+description.getLineCount());
-
-				int lineCount = description.getLineCount();
-				int lineHeight = description.getLineHeight();
-
-				// Total line height
-				int totalLineHeight = lineCount * lineHeight;
-
-				// Get the top and bottom padding
-				int verticalPadding = description.getPaddingTop() + description.getPaddingBottom();
-
-				// Get extra spacing from font metrics (important for exact size match)
-				Paint.FontMetricsInt fontMetrics = description.getPaint().getFontMetricsInt();
-				int extraSpacing = fontMetrics.descent - fontMetrics.ascent - lineHeight;
-
-				int desiredHeight = totalLineHeight + verticalPadding + extraSpacing;
-				System.out.println("DesiredHeight = "+desiredHeight);
-				System.out.println("Actual height = "+description.getHeight());
-
-				ViewGroup.LayoutParams params = description.getLayoutParams();
-				params.height = desiredHeight;
-				description.setLayoutParams(params);
-
-
-				//viewModel.description = (s == null) ? "" : s.toString();
-				//viewModel.persistDescription();
-			}
-		});
-
+		setupTitleAndDescription();
 
 
 		ImageView media = binding.viewA.findViewById(R.id.media);
@@ -294,24 +227,6 @@ public class GifFragment extends Fragment {
 				.into(media);
 	}
 
-	private void updateExtensionTranslation(String text) {
-		EditText filename = binding.viewB.findViewById(R.id.filename);
-		TextView extension = binding.viewB.findViewById(R.id.extension);
-
-		if(text.isEmpty())
-			text = filename.getHint().toString();
-
-		TextPaint paint = filename.getPaint();
-		int textWidth = (int) paint.measureText(text);
-
-		textWidth = Math.min(textWidth, filename.getWidth());
-
-		int parentWidth = ((View) filename.getParent()).getWidth();
-		int extensionWidth = extension.getWidth();
-		int translationX = (parentWidth - textWidth - extensionWidth);
-		extension.setTranslationX(-translationX);
-	}
-
 
 	@Override
 	public void onPause() {
@@ -321,6 +236,48 @@ public class GifFragment extends Fragment {
 	}
 
 
+
+	private void setupTitleAndDescription() {
+		//Show the filename in the BottomSheet
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+		filename.setText(viewModel.fileName);
+		filename.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				//Move the extension visually to the end of the filename
+				String text = (s == null) ? "" : s.toString();
+				updateExtensionTranslation(text);
+
+				//Persist the filename
+				viewModel.fileName = text;
+				viewModel.persistFileName();
+			}
+		});
+		extension.post(() -> {
+			updateExtensionTranslation(viewModel.fileName);
+		});
+
+		EditText description = binding.viewB.findViewById(R.id.description);
+		description.setText(viewModel.description);
+		description.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.description = (s == null) ? "" : s.toString();
+				viewModel.persistDescription();
+			}
+		});
+	}
 
 	private void setBottomSheetInfo() {
 		//Format the creation date
@@ -351,6 +308,24 @@ public class GifFragment extends Fragment {
 
 		String backupText = getString(R.string.vp_backup, zone, fileSizeString);
 		zoningText.setText(backupText);
+	}
+
+	private void updateExtensionTranslation(String text) {
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+
+		if(text.isEmpty())
+			text = filename.getHint().toString();
+
+		TextPaint paint = filename.getPaint();
+		int textWidth = (int) paint.measureText(text);
+
+		textWidth = Math.min(textWidth, filename.getWidth());
+
+		int parentWidth = ((View) filename.getParent()).getWidth();
+		int extensionWidth = extension.getWidth();
+		int translationX = (parentWidth - textWidth - extensionWidth);
+		extension.setTranslationX(-translationX);
 	}
 
 

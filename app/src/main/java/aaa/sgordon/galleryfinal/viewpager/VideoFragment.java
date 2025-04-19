@@ -7,6 +7,8 @@ import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextPaint;
 import android.text.TextWatcher;
@@ -165,6 +167,9 @@ public class VideoFragment extends Fragment {
 				viewModel.persistFileName();
 			}
 		});
+		extension.post(() -> {
+			updateExtensionTranslation(viewModel.fileName);
+		});
 
 		EditText description = binding.viewB.findViewById(R.id.description);
 		description.setText(viewModel.description);
@@ -231,6 +236,7 @@ public class VideoFragment extends Fragment {
 		touchSlop = ViewConfiguration.get(requireContext()).getScaledTouchSlop();
 		binding.viewA.setOnTouchListener((v, event) -> {
 			unfocusEditTextOnTapOutside(event);
+			detector.onTouchEvent(event);
 
 			if(event.getAction() == MotionEvent.ACTION_DOWN) {
 				downX = event.getX();
@@ -268,61 +274,6 @@ public class VideoFragment extends Fragment {
 
 
 		initializePlayer();
-	}
-
-	private void updateExtensionTranslation(String text) {
-		EditText filename = binding.viewB.findViewById(R.id.filename);
-		TextView extension = binding.viewB.findViewById(R.id.extension);
-
-		if(text.isEmpty())
-			text = filename.getHint().toString();
-
-		TextPaint paint = filename.getPaint();
-		int textWidth = (int) paint.measureText(text);
-
-		textWidth = Math.min(textWidth, filename.getWidth());
-
-		int parentWidth = ((View) filename.getParent()).getWidth();
-		int extensionWidth = extension.getWidth();
-		int translationX = (parentWidth - textWidth - extensionWidth);
-		extension.setTranslationX(-translationX);
-	}
-
-
-
-	private void setBottomSheetInfo() {
-		//Format the creation date
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
-		Date date = new Date(viewModel.fileProps.createtime*1000);
-		String formattedDateTime = sdf.format(date);
-
-		TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-		creationTime.post(() -> {
-			String timeText = getString(R.string.vp_time, formattedDateTime);
-			creationTime.setText(timeText);
-		});
-
-
-		TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-		zoningText.post(() -> {
-			//Format the fileSize and zoning information
-			float fileSizeBytes = viewModel.fileProps.filesize;
-			float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-			String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-			String zone = "On Device";
-			if(viewModel.zoning != null) {
-				if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
-					zone = "On Device & Cloud";
-				else if (viewModel.zoning.isLocal)
-					zone = "On Device";
-				else //if (zoning.isRemote)
-					zone = "On Cloud";
-			}
-
-			String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-			zoningText.setText(backupText);
-		});
 	}
 
 
@@ -377,6 +328,7 @@ public class VideoFragment extends Fragment {
 				zoomPanHandler.setMediaDimensions((int) videoWidth, (int) videoHeight);
 
 				//Tell DragPage the correct media height as well
+				System.out.println("Video media ready: "+actualHeight);
 				dragPage.onMediaReady(actualHeight);
 			}
 		});
@@ -404,24 +356,6 @@ public class VideoFragment extends Fragment {
 	}
 
 
-	private void unfocusEditTextOnTapOutside(MotionEvent event) {
-		if (event.getAction() == MotionEvent.ACTION_DOWN) {
-			View focused = binding.motionLayout.findFocus();
-			if (focused instanceof EditText) {
-				Rect rect = new Rect();
-				focused.getGlobalVisibleRect(rect);
-				if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
-					focused.clearFocus();
-
-					InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-					if (imm != null) {
-						imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
-					}
-				}
-			}
-		}
-	}
-
 
 	private void toggleControls() {
 		if(controls.isVisible())
@@ -433,7 +367,7 @@ public class VideoFragment extends Fragment {
 	@Override
 	public void onResume() {
 		super.onResume();
-		player.play();
+		//player.play();
 	}
 
 	@Override
@@ -450,6 +384,78 @@ public class VideoFragment extends Fragment {
 		if (player != null) {
 			player.release();
 			player = null;
+		}
+	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+	private void updateExtensionTranslation(String text) {
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+
+		if(text.isEmpty())
+			text = filename.getHint().toString();
+
+		TextPaint paint = filename.getPaint();
+		int textWidth = (int) paint.measureText(text);
+
+		textWidth = Math.min(textWidth, filename.getWidth());
+
+		int parentWidth = ((View) filename.getParent()).getWidth();
+		int extensionWidth = extension.getWidth();
+		int translationX = (parentWidth - textWidth - extensionWidth);
+		extension.setTranslationX(-translationX);
+	}
+
+
+	private void setBottomSheetInfo() {
+		//Format the creation date
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
+		Date date = new Date(viewModel.fileProps.createtime*1000);
+		String formattedDateTime = sdf.format(date);
+
+		TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
+		String timeText = getString(R.string.vp_time, formattedDateTime);
+		creationTime.setText(timeText);
+
+
+		TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
+		//Format the fileSize and zoning information
+		float fileSizeBytes = viewModel.fileProps.filesize;
+		float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+		String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+		String zone = "On Device";
+		if(viewModel.zoning != null) {
+			if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
+				zone = "On Device & Cloud";
+			else if (viewModel.zoning.isLocal)
+				zone = "On Device";
+			else //if (zoning.isRemote)
+				zone = "On Cloud";
+		}
+
+		String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+		zoningText.setText(backupText);
+	}
+
+
+	private void unfocusEditTextOnTapOutside(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			View focused = binding.motionLayout.findFocus();
+			if (focused instanceof EditText) {
+				Rect rect = new Rect();
+				focused.getGlobalVisibleRect(rect);
+				if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
+					focused.clearFocus();
+
+					InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+					if (imm != null) {
+						imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
+					}
+				}
+			}
 		}
 	}
 }

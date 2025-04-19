@@ -25,8 +25,8 @@ public class DragPage extends MotionLayout {
 
 
 	private OnDismissListener dismissListener;
-	private DragHelper dragHelper;
 	private ScaleHelper scaleHelper;
+	private DragHelper dragHelper;
 
 	private ViewGroup viewA;
 	private ViewGroup viewB;
@@ -35,6 +35,7 @@ public class DragPage extends MotionLayout {
 
 
 	public void onMediaReady(float intrinsicHeight) {
+		dragHeightInitialized = true;
 		dragHelper.onMediaReady(intrinsicHeight);
 	}
 
@@ -50,6 +51,9 @@ public class DragPage extends MotionLayout {
 	}
 
 
+	//---------------------------------------------------------------------------------------------
+
+	private boolean dragHeightInitialized = false;
 	@Override
 	protected void onFinishInflate() {
 		super.onFinishInflate();
@@ -63,8 +67,17 @@ public class DragPage extends MotionLayout {
 			if(dismissListener != null) dismissListener.onDismiss();
 		});
 		dragHelper.onViewCreated();
+
+		//Make sure DragHelper has a baseline height to work with
+		viewA.post(() -> {
+			if(!dragHeightInitialized)
+				dragHelper.onMediaReady(viewA.getHeight());
+		});
 	}
 
+
+
+	//---------------------------------------------------------------------------------------------
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent event) {

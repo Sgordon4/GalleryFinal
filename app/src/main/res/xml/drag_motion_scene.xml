@@ -5,28 +5,43 @@
     <Transition
         app:constraintSetStart="@+id/start"
         app:constraintSetEnd="@+id/end"
+        app:layoutDuringTransition="honorRequest"
         app:duration="1000" >
 
-        <!-- Hide viewB when at 0% progress -->
+        <!-- Explanation:
+       I would love it if I could set view_b (or a child wrapper) to have visibility = gone,
+        since I want anything in the bottom sheet inflated in bottom_slider_stub to not be clickable when hidden.
+       HOWEVER, MotionLayout does not apply layoutDuringTransition="honorRequest" to gone or invisible views
+        (including alpha=0), even when ignoreVisibility is set.
+       Therefore, I'm just yeeting view_b out of the way.
+       -->
         <KeyFrameSet>
             <KeyAttribute
                 app:motionTarget="@+id/view_b"
-                app:framePosition="0">
-                <CustomAttribute
-                    app:attributeName="alpha"
-                    app:customFloatValue="0" />
+                app:framePosition="0"
+                android:alpha="0.01"
+                android:translationX="2000dp"
+                app:visibilityMode="ignore">
             </KeyAttribute>
-
             <KeyAttribute
                 app:motionTarget="@+id/view_b"
-                app:framePosition="1">
-                <CustomAttribute
-                    app:attributeName="alpha"
-                    app:customFloatValue="1" />
+                app:framePosition="1"
+                android:alpha="0.01"
+                android:translationX="0dp">
+            </KeyAttribute>
+            <KeyAttribute
+                app:motionTarget="@+id/view_b"
+                app:framePosition="2"
+                android:alpha="1"
+                android:translationX="0dp">
             </KeyAttribute>
         </KeyFrameSet>
 
     </Transition>
+
+
+    <!-- Note: If these are changed, change their counterparts in
+    res/xml/drag_constraints_start.xml and res/xml/drag_constraints_end.xml -->
 
     <ConstraintSet android:id="@+id/start">
         <Constraint
@@ -43,7 +58,7 @@
             android:layout_marginTop="-8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="parent" />
+            app:layout_constraintTop_toBottomOf="parent"/>
     </ConstraintSet>
 
     <ConstraintSet android:id="@+id/end">

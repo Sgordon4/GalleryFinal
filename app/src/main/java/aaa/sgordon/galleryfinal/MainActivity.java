@@ -20,7 +20,6 @@ import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
@@ -49,7 +48,8 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(binding.getRoot());
 
 
-		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+		//ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.fragment_container), (v, insets) -> {
 			Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 			//v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
 			v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);	//Shows behind bottom navBar
@@ -116,8 +116,7 @@ public class MainActivity extends AppCompatActivity {
 			mainHandler.post(() -> {
 				DirFragment fragment = DirFragment.initialize("Gallery App", Paths.get(rootDirectoryUID.toString()));
 
-				getSupportFragmentManager()
-						.beginTransaction()
+				getSupportFragmentManager().beginTransaction()
 						.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 						.addToBackStack(null)
 						.commit();

@@ -7,6 +7,9 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextPaint;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -111,109 +114,9 @@ public class ImageFragment extends Fragment {
 
 
 		setBottomSheetInfo();
-		viewModel.refreshData();
 
 		return binding.getRoot();
 	}
-
-
-	private void setBottomSheetInfo() {
-		Thread thread = new Thread(() -> {
-			try {
-				HybridAPI hAPI = HybridAPI.getInstance();
-				HFile fileProps = hAPI.getFileProps(viewModel.fileUID);
-
-
-				//Show the filename
-				TextView filename = binding.viewB.findViewById(R.id.filename);
-				filename.setText(viewModel.fileName);
-
-
-
-				//Format the creation date
-				SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
-				Date date = new Date(fileProps.createtime*1000);
-				String formattedDateTime = sdf.format(date);
-
-				TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
-				creationTime.post(() -> {
-					String timeText = getString(R.string.vp_time, formattedDateTime);
-					creationTime.setText(timeText);
-				});
-
-
-
-				HZone zoning = hAPI.getZoningInfo(viewModel.fileUID);
-				TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
-				zoningText.post(() -> {
-					//Format the fileSize and zoning information
-					float fileSizeBytes = fileProps.filesize;
-					float fileSizeMB = fileSizeBytes / 1024f / 1024f;
-					String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
-
-					String zone = "On Device";
-					if(zoning != null) {
-						if (zoning.isLocal && zoning.isRemote)
-							zone = "On Device & Cloud";
-						else if (zoning.isLocal)
-							zone = "On Device";
-						else //if (zoning.isRemote)
-							zone = "On Cloud";
-					}
-
-					String backupText = getString(R.string.vp_backup, zone, fileSizeString);
-					zoningText.setText(backupText);
-				});
-
-
-
-
-
-				LinearLayout share = binding.viewB.findViewById(R.id.share);
-				LinearLayout move = binding.viewB.findViewById(R.id.move);
-				LinearLayout copy = binding.viewB.findViewById(R.id.copy);
-				LinearLayout export = binding.viewB.findViewById(R.id.export);
-				LinearLayout trash = binding.viewB.findViewById(R.id.trash);
-				LinearLayout backup = binding.viewB.findViewById(R.id.backup);
-
-				share.post(() -> share.setOnClickListener(v -> System.out.println("Share")));
-				move.post(() -> move.setOnClickListener(v -> System.out.println("Move")));
-				copy.post(() -> copy.setOnClickListener(v -> System.out.println("Copy")));
-				export.post(() -> export.setOnClickListener(v -> System.out.println("Export")));
-				trash.post(() -> trash.setOnClickListener(v -> System.out.println("Trash")));
-				backup.post(() -> backup.setOnClickListener(v -> System.out.println("Backup")));
-
-
-
-
-				/*
-				share.post(() -> share.setOnClickListener(v -> {
-					v.getParent().requestDisallowInterceptTouchEvent(true);
-					System.out.println("AAA");
-				}));
-				move.post(() -> move.setOnClickListener(v -> {
-					v.getParent().requestDisallowInterceptTouchEvent(true);
-					System.out.println("AAA");
-				}));
-				copy.post(() -> copy.setOnClickListener(v -> {
-					v.getParent().requestDisallowInterceptTouchEvent(true);
-					System.out.println("AAA");
-				}));
-				export.post(() -> export.setOnClickListener(v -> {
-					v.getParent().requestDisallowInterceptTouchEvent(true);
-					System.out.println("AAA");
-				}));
- 				*/
-
-
-			} catch (FileNotFoundException | ConnectException e) {
-				//Just skip setting some properties
-			}
-		});
-		thread.start();
-	}
-
-
 
 
 	public static final int SIZE_THRESHOLD = 1024 * 1024 * 3;	//3MB
@@ -223,7 +126,7 @@ public class ImageFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		viewModel.refreshData();
+		setupTitleAndDescription();
 
 		if(viewModel.fileProps.filesize < SIZE_THRESHOLD)
 			usePhotoView();
@@ -348,24 +251,6 @@ public class ImageFragment extends Fragment {
 				.into(media);
 	}
 
-	private void unfocusEditTextOnTapOutside(MotionEvent event) {
-		if (event.getAction() == MotionEvent.ACTION_DOWN) {
-			View focused = binding.motionLayout.findFocus();
-			if (focused instanceof EditText) {
-				Rect rect = new Rect();
-				focused.getGlobalVisibleRect(rect);
-				if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
-					focused.clearFocus();
-
-					InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-					if (imm != null) {
-						imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
-					}
-				}
-			}
-		}
-	}
-
 
 
 	private void useSubsamplingScaleImageView() {
@@ -435,5 +320,117 @@ public class ImageFragment extends Fragment {
 			}
 		});
 		load.start();
+	}
+
+
+
+	private void setupTitleAndDescription() {
+		//Show the filename in the BottomSheet
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+		filename.setText(viewModel.fileName);
+		filename.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				//Move the extension visually to the end of the filename
+				String text = (s == null) ? "" : s.toString();
+				updateExtensionTranslation(text);
+
+				//Persist the filename
+				viewModel.fileName = text;
+				viewModel.persistFileName();
+			}
+		});
+		extension.post(() -> {
+			updateExtensionTranslation(viewModel.fileName);
+		});
+
+		EditText description = binding.viewB.findViewById(R.id.description);
+		description.setText(viewModel.description);
+		description.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.description = (s == null) ? "" : s.toString();
+				viewModel.persistDescription();
+			}
+		});
+	}
+
+	private void setBottomSheetInfo() {
+		//Format the creation date
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
+		Date date = new Date(viewModel.fileProps.createtime*1000);
+		String formattedDateTime = sdf.format(date);
+
+		TextView creationTime = binding.viewB.findViewById(R.id.creation_time);
+		String timeText = getString(R.string.vp_time, formattedDateTime);
+		creationTime.setText(timeText);
+
+
+		TextView zoningText = binding.viewB.findViewById(R.id.zoning_with_file_size);
+		//Format the fileSize and zoning information
+		float fileSizeBytes = viewModel.fileProps.filesize;
+		float fileSizeMB = fileSizeBytes / 1024f / 1024f;
+		String fileSizeString = String.format(Locale.getDefault(), "%.2f", fileSizeMB);
+
+		String zone = "On Device";
+		if(viewModel.zoning != null) {
+			if (viewModel.zoning.isLocal && viewModel.zoning.isRemote)
+				zone = "On Device & Cloud";
+			else if (viewModel.zoning.isLocal)
+				zone = "On Device";
+			else //if (zoning.isRemote)
+				zone = "On Cloud";
+		}
+
+		String backupText = getString(R.string.vp_backup, zone, fileSizeString);
+		zoningText.setText(backupText);
+	}
+
+	private void updateExtensionTranslation(String text) {
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+
+		if(text.isEmpty())
+			text = filename.getHint().toString();
+
+		TextPaint paint = filename.getPaint();
+		int textWidth = (int) paint.measureText(text);
+
+		textWidth = Math.min(textWidth, filename.getWidth());
+
+		int parentWidth = ((View) filename.getParent()).getWidth();
+		int extensionWidth = extension.getWidth();
+		int translationX = (parentWidth - textWidth - extensionWidth);
+		extension.setTranslationX(-translationX);
+	}
+
+
+	private void unfocusEditTextOnTapOutside(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			View focused = binding.motionLayout.findFocus();
+			if (focused instanceof EditText) {
+				Rect rect = new Rect();
+				focused.getGlobalVisibleRect(rect);
+				if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
+					focused.clearFocus();
+
+					InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+					if (imm != null) {
+						imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
+					}
+				}
+			}
+		}
 	}
 }

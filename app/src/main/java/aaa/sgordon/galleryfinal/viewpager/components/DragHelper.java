@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.viewpager.components;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.XmlResourceParser;
 import android.view.Choreographer;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -11,8 +12,15 @@ import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.OverScroller;
 
+import androidx.annotation.XmlRes;
 import androidx.constraintlayout.motion.widget.MotionLayout;
+import androidx.constraintlayout.motion.widget.MotionScene;
 import androidx.constraintlayout.widget.ConstraintSet;
+
+import org.xmlpull.v1.XmlPullParser;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import aaa.sgordon.galleryfinal.R;
 
@@ -38,17 +46,15 @@ public class DragHelper {
 	private float touchSlop;
 
 
-	MotionLayout motionLayout;
-	ViewGroup viewA;
-	ViewGroup viewB;
-	ViewGroup hider;
+	private final MotionLayout motionLayout;
+	private final ViewGroup viewA;
+	private final ViewGroup viewB;
 
 
 	public DragHelper(MotionLayout motionLayout, ViewGroup viewA, ViewGroup viewB) {
 		this.motionLayout = motionLayout;
 		this.viewA = viewA;
 		this.viewB = viewB;
-		this.hider = viewB.findViewById(R.id.hider);
 
 		Context context = motionLayout.getContext();
 
@@ -101,7 +107,6 @@ public class DragHelper {
 		thresholdChange = screenHeight/2 + mediaHeight/4;
 
 
-
 		//We want to place the top of viewB at the bottom of the visible media
 		//To do this, shift the translation in the motionConstraints
 		float mediaBottomToScreenBottom = mediaHeight/2 - screenHeight/2;
@@ -109,11 +114,18 @@ public class DragHelper {
 		ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) viewB.getLayoutParams();
 		transitionDistance = viewB.getHeight() + marginParams.topMargin + marginParams.bottomMargin + mediaBottomToScreenBottom;
 
-		ConstraintSet startConstraintSet = motionLayout.getConstraintSet(R.id.start);
-		ConstraintSet endConstraintSet = motionLayout.getConstraintSet(R.id.end);
+		ConstraintSet startConstraintSet = new ConstraintSet();
+		ConstraintSet endConstraintSet = new ConstraintSet();
+
+		//Get the default constraint sets from xml
+		startConstraintSet.load(motionLayout.getContext(), R.xml.drag_constraints_start);
+		endConstraintSet.load(motionLayout.getContext(), R.xml.drag_constraints_end);
+		//startConstraintSet.clone(motionLayout.getConstraintSet(R.id.start));
+		//endConstraintSet.clone(motionLayout.getConstraintSet(R.id.end));
 
 		float startTranslationY_B = startConstraintSet.getConstraint(R.id.view_b).transform.translationY;
 		float endTranslationY_A = endConstraintSet.getConstraint(R.id.view_a).transform.translationY;
+
 
 		startConstraintSet.setTranslationY(R.id.view_b, startTranslationY_B + mediaBottomToScreenBottom);
 		endConstraintSet.setTranslationY(R.id.view_a, endTranslationY_A - mediaBottomToScreenBottom);
@@ -121,31 +133,46 @@ public class DragHelper {
 
 		motionLayout.updateState(R.id.start, startConstraintSet);
 		motionLayout.updateState(R.id.end, endConstraintSet);
-
+		//startConstraintSet.applyTo(motionLayout);
+		//endConstraintSet.applyTo(motionLayout);
 
 
 		//Calculate the transition percentage that puts the bottom of Media at thresholdOpen
 		mediaBottom = screenHeight/2 + mediaHeight/2;
 		progressAtOpen = (mediaBottom - thresholdOpen) / transitionDistance;
+	}
 
 
+	public Map<Integer, ConstraintSet> loadConstraintSetsFromMotionScene(Context context, @XmlRes int motionSceneResId) {
+		Map<Integer, ConstraintSet> constraintSetMap = new HashMap<>();
 
-		viewB.getViewTreeObserver().addOnPreDrawListener(() -> {
-			float currentAlpha = viewB.getAlpha();
+		try {
+			XmlResourceParser parser = context.getResources().getXml(motionSceneResId);
 
-			// You can check or process the alpha value here
-			if(currentAlpha == 0)
-				hider.setVisibility(View.GONE);
-			else if(hider.getVisibility() == View.GONE)
-				hider.setVisibility(View.VISIBLE);
+			int eventType = parser.getEventType();
+			while (eventType != XmlPullParser.END_DOCUMENT) {
+				if (eventType == XmlPullParser.START_TAG && "ConstraintSet".equals(parser.getName())) {
+					String idStr = parser.getAttributeValue(null, "id");
+					if (idStr != null && idStr.startsWith("@+id/")) {
+						int resId = context.getResources().getIdentifier(idStr.substring(5), "id", context.getPackageName());
+						ConstraintSet set = new ConstraintSet();
+						set.load(context, parser);
+						constraintSetMap.put(resId, set);
+					}
+				}
+				eventType = parser.next();
+			}
+			parser.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-			// Return true to continue with the drawing pass, false to cancel
-			return true;
-		});
+		return constraintSetMap;
 	}
 
 
 
+	//---------------------------------------------------------------------------------------------
 
 	public boolean onInterceptTouchEvent(MotionEvent event) {
 		switch (event.getActionMasked()) {

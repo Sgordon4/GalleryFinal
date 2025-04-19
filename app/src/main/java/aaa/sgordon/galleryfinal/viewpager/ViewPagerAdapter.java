@@ -35,11 +35,11 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
 			@Override
 			public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
+				return list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot);
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name);
+				return true;
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator

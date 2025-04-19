@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import org.apache.commons.io.FilenameUtils;
@@ -59,6 +60,8 @@ public class ViewPageViewModel extends ViewModel {
 
 		this.fileName = FilenameUtils.getBaseName(listItem.name);
 		this.fileExtension = FilenameUtils.getExtension(listItem.name);
+		JsonElement descElement = listItem.fileProps.userattr.get("description");
+		this.description = (descElement == null) ? "" : descElement.getAsString();
 
 
 		scheduler = Executors.newScheduledThreadPool(2);
