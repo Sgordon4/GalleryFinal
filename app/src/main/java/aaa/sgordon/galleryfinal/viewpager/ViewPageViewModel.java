@@ -60,6 +60,8 @@ public class ViewPageViewModel extends ViewModel {
 
 		this.fileName = FilenameUtils.getBaseName(listItem.name);
 		this.fileExtension = FilenameUtils.getExtension(listItem.name);
+		if(!this.fileExtension.isEmpty()) this.fileExtension = "."+this.fileExtension;
+
 		JsonElement descElement = listItem.fileProps.userattr.get("description");
 		this.description = (descElement == null) ? "" : descElement.getAsString();
 
@@ -159,7 +161,7 @@ public class ViewPageViewModel extends ViewModel {
 
 	private void renameFile() throws IOException {
 		Log.v(TAG, "Writing title for fileUID='"+fileUID+"'");
-		String fullFileName = fileName + "." + fileExtension;
+		String fullFileName = fileName + fileExtension;
 		DirUtilities.renameFile(fileUID, parentUID, fullFileName);
 	}
 

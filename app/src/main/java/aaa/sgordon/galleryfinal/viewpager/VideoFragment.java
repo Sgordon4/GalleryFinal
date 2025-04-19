@@ -49,6 +49,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
@@ -167,6 +168,7 @@ public class VideoFragment extends Fragment {
 				viewModel.persistFileName();
 			}
 		});
+		extension.setText(viewModel.fileExtension);
 		extension.post(() -> {
 			updateExtensionTranslation(viewModel.fileName);
 		});
@@ -242,6 +244,9 @@ public class VideoFragment extends Fragment {
 				downX = event.getX();
 				downY = event.getY();
 			}
+
+			if(dragPage.isActive())
+				hideControls();
 
 			if(!dragPage.isActive()) {
 				boolean handled = zoomPanHandler.onTouch(v, event);
@@ -337,7 +342,7 @@ public class VideoFragment extends Fragment {
 
 		Thread load = new Thread(() -> {
 			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.fileUID).first;
+				Uri uri = LinkCache.getInstance().getContentInfo(viewModel.fileUID).first;
 
 				textureView.post(() -> {
 					//MediaItem mediaItem = MediaItem.fromUri(uri);
@@ -359,15 +364,22 @@ public class VideoFragment extends Fragment {
 
 	private void toggleControls() {
 		if(controls.isVisible())
-			controls.hide();
+			hideControls();
 		else
-			controls.show();
+			showControls();
 	}
+	private void hideControls() {
+		controls.hide();
+	}
+	private void showControls() {
+		controls.show();
+	}
+
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		//player.play();
+		player.play();
 	}
 
 	@Override

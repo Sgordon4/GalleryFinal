@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextPaint;
 import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -47,6 +48,7 @@ import java.util.UUID;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
@@ -310,7 +312,7 @@ public class ImageFragment extends Fragment {
 
 		Thread load = new Thread(() -> {
 			try {
-				Uri uri = HybridAPI.getInstance().getFileContent(viewModel.fileUID).first;
+				Uri uri = LinkCache.getInstance().getContentInfo(viewModel.fileUID).first;
 
 				media.post(() -> {
 					media.setImage(ImageSource.uri(uri));
@@ -346,6 +348,7 @@ public class ImageFragment extends Fragment {
 				viewModel.persistFileName();
 			}
 		});
+		extension.setText(viewModel.fileExtension);
 		extension.post(() -> {
 			updateExtensionTranslation(viewModel.fileName);
 		});

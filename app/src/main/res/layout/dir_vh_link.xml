@@ -49,8 +49,8 @@
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="2dp"
-            tools:ignore="NestedWeights"
             android:layout_weight="1"
+
             android:layout_gravity="center_vertical"
             android:layout_marginHorizontal="8dp"
             app:dividerColor="?attr/colorOnBackground"/>

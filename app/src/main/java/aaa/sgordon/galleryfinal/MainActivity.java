@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
 			//Get the root directory UID from the shared preferences if it already exists, or create the test setup if not
 			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
 			String rootUIDString = prefs.getString("UUID", null);
+			rootUIDString = null;
 			if(rootUIDString == null)
 				rootUIDString = createTestSetup();
 
@@ -133,6 +134,8 @@ public class MainActivity extends AppCompatActivity {
 			// or an actual database will be created.
 			UUID rootDirectoryUID = DirSampleData.setupDatabase(this);
 			//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(this);
+
+			System.out.println("New database, rootDirUID: "+rootDirectoryUID);
 
 			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
 			prefs.edit().putString("UUID", rootDirectoryUID.toString()).apply();

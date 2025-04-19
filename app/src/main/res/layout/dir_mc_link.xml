@@ -2,56 +2,58 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/wrapper"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="1dp"
+    android:layout_height="?attr/actionBarSize"
+    android:clipToPadding="false"
     android:clickable="true">
 
-    <androidx.cardview.widget.CardView
+    <LinearLayout
         android:id="@+id/child"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:foreground="@drawable/selector_overlay" >
+        android:orientation="horizontal"
+        android:foreground="@drawable/selector_overlay">
 
-        <LinearLayout
-            android:id="@+id/color"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/icon_link_variant"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
 
-            <ImageView
-                android:id="@+id/media"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginStart="16dp"
-                android:src="@drawable/icon_link"
-                android:contentDescription="A Link." />
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="225dp"
 
-            <ImageView
-                android:id="@+id/icon"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"/>
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
 
-            <TextView
-                android:id="@+id/name"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
+            android:text="Sample Title"
+            android:gravity="center_vertical"
+            android:textSize="18sp"
+            android:ellipsize="end"
+            android:maxLines="1" />
 
-                android:text="Sample Title"
-                android:gravity="center_vertical"
-                android:textSize="18sp"
-                android:ellipsize="end"
-                android:maxLines="1" />
+        <com.google.android.material.divider.MaterialDivider
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_weight="1"
 
-        </LinearLayout>
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="16dp"
+            app:dividerColor="?attr/colorOnBackground"/>
 
-    </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

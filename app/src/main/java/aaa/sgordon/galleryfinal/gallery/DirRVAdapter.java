@@ -138,45 +138,48 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 	private boolean isFullSpan(int viewType) {
 		return viewType == 1 || viewType == 2 || viewType == 6 ||
-				viewType == 12;
+				viewType == 7;
 	}
 	@Override
 	public int getItemViewType(int position) {
 		ListItem item = list.get(position);
 
-		if(item.type.equals(ListItem.ListItemType.LINKDIRECTORY))
-			return 1;
-		else if(item.type.equals(ListItem.ListItemType.LINKEND))
-			return 2;
-		else if(item.type.equals(ListItem.ListItemType.LINKBROKEN))
-			return 3;
-		else if(item.type.equals(ListItem.ListItemType.LINKCYCLE))
-			return 4;
-		else if(item.type.equals(ListItem.ListItemType.LINKUNREACHABLE))
-			return 5;
-		else if(item.type.equals(ListItem.ListItemType.LINKDIVIDER))
-			return 6;
 
-		if(item.fileProps.isdir)
-			return 0;			//Directory
+		switch (item.type) {
+			case DIRECTORY:
+				return 0;
 
+			case LINKDIRECTORY:
+				return 1;
+			case LINKEND:
+				return 2;
+			case LINKBROKEN:
+				return 3;
+			case LINKCYCLE:
+				return 4;
+			case LINKUNREACHABLE:
+				return 5;
+			case LINKDIVIDER:
+				return 6;
+
+			case DIVIDER:
+				return 7;
+		}
 
 		//Get the filename extension
 		String extension = FilenameUtils.getExtension(item.name);
 		switch (extension) {
 			case "txt":
-				return 7;		//Text
+				return 8;		//Text
 			case "rtf":
-				return 8;		//Rich Text
+				return 9;		//Rich Text
 			case "jpg":
 			case "jpeg":
-				return 9;		//Image
+				return 10;		//Image
 			case "gif":
-				return 10;		//Gif
+				return 11;		//Gif
 			case "mp4":
-				return 11;		//Video
-			case "div":
-				return 12;		//Divider
+				return 12;		//Video
 		}
 
 		return -1;				//Unknown
@@ -211,21 +214,21 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				break;
 
 
-			case 7: holder = new TextViewHolder(inflater.inflate(R.layout.dir_vh_text, parent, false));
-				break;
-			case 8: holder = new RichTextViewHolder(inflater.inflate(R.layout.dir_vh_rich_text, parent, false));
+			case 7: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 				break;
 
 
-			case 9: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
+			case 8: holder = new TextViewHolder(inflater.inflate(R.layout.dir_vh_text, parent, false));
 				break;
-			case 10: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
-				break;
-			case 11: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
+			case 9: holder = new RichTextViewHolder(inflater.inflate(R.layout.dir_vh_rich_text, parent, false));
 				break;
 
 
-			case 12: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
+			case 10: holder = new ImageViewHolder(inflater.inflate(R.layout.dir_vh_image, parent, false));
+				break;
+			case 11: holder = new GifViewHolder(inflater.inflate(R.layout.dir_vh_gif, parent, false));
+				break;
+			case 12: holder = new VideoViewHolder(inflater.inflate(R.layout.dir_vh_video, parent, false));
 				break;
 
 

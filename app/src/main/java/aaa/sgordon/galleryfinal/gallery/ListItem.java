@@ -28,6 +28,7 @@ public class ListItem {
 	public enum ListItemType {
 		NORMAL,
 		DIRECTORY,
+		DIVIDER,
 		LINKDIRECTORY,
 		LINKDIVIDER,
 		LINKSINGLE,

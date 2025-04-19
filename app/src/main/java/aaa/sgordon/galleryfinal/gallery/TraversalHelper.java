@@ -63,9 +63,19 @@ public class TraversalHelper {
 					if(fileProps.isdir)
 						files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
 								ListItem.ListItemType.DIRECTORY));
-					else
-						files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
-								ListItem.ListItemType.NORMAL));
+					else {
+						//If the file extension is ".div", this is a divider
+						if(FilenameUtils.getExtension(entry.second).equals("div")) {
+							files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+									ListItem.ListItemType.DIVIDER));
+						}
+						//Otherwise, this is a normal file
+						else {
+							files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+									ListItem.ListItemType.NORMAL));
+						}
+					}
+
 					continue;
 				}
 

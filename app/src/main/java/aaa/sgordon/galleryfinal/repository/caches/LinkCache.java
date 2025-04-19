@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.repository.caches;
 
 import android.net.Uri;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -110,6 +111,28 @@ public class LinkCache {
 		LinkTarget target = readLink(fileUID);
 		linkTargets.put(fileUID, target);
 		return target;
+	}
+
+
+	@NonNull
+	public Pair<Uri, String> getContentInfo(UUID uuid) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+		//If the item is a link, the content uri is accessed differently
+		LinkCache.LinkTarget target = getFinalTarget(uuid);
+
+
+		//If the target is null, the item is not a link. Get the content uri from the fileUID's content
+		if (target == null) {
+			return hAPI.getFileContent(uuid);
+		}
+		//If the target is internal, get the content uri from that fileUID's content
+		else if (target instanceof LinkCache.InternalTarget) {
+			return hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID());
+		}
+		//If the target is external, get the content uri from the target
+		else {//if(target instanceof LinkCache.ExternalTarget) {
+			Uri content = ((LinkCache.ExternalTarget) target).getUri();
+			return new Pair<>(content, content.toString());
+		}
 	}
 
 

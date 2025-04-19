@@ -191,8 +191,8 @@ public class MoveCopyFullscreen extends DialogFragment {
 			final UUID fFileUID = fileUID;
 			Thread updateToolbarThread = new Thread(() -> {
 				String fileName = getFileNameFromDir(fParentDirUID, fFileUID);
-				Handler mainHandler = new Handler(getContext().getMainLooper());
-				mainHandler.post(() -> toolbar.setTitle(fileName));
+				Handler mainHandler = new Handler(requireContext().getMainLooper());
+				mainHandler.post(() -> toolbar.setTitle((fileName == null) ? "Unknown" : fileName));
 			});
 			updateToolbarThread.start();
 		}
@@ -213,7 +213,7 @@ public class MoveCopyFullscreen extends DialogFragment {
 			List<ListItem> list = traverseDir(fileUID);
 			fullList = list;
 
-			Handler mainHandler = new Handler(getContext().getMainLooper());
+			Handler mainHandler = new Handler(requireContext().getMainLooper());
 			mainHandler.post(() -> adapter.setList( filterList(list) ));
 		});
 		updateViaTraverse.start();
@@ -229,15 +229,16 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 
 
+	@Nullable
 	private String getFileNameFromDir(UUID parentDirUID, UUID fileUID) {
 		try {
 			return DirCache.getInstance().getDirContents(parentDirUID).stream()
 					.filter(item -> item.first.equals(fileUID))
 					.map(item -> item.second)
 					.findFirst()
-					.orElse("Unknown");
+					.orElse(null);
 		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-			return "Unknown";
+			return null;
 		}
 	}
 
@@ -257,12 +258,12 @@ public class MoveCopyFullscreen extends DialogFragment {
 					.filter(item -> !FilenameUtils.getExtension(item.name).startsWith("trashed_"))
 					.collect(Collectors.toList());
 
-			//Filter out anything that isn't a directory, a link to a directory/divider, or a linkEnd
+			//Filter out anything that isn't a directory, a divider, or a link to a directory/divider
 			newFileList = newFileList.stream()
 					.filter(item -> item.type.equals(ListItem.ListItemType.DIRECTORY)
+							|| item.type.equals(ListItem.ListItemType.DIVIDER)
 							|| item.type.equals(ListItem.ListItemType.LINKDIRECTORY)
 							|| item.type.equals(ListItem.ListItemType.LINKDIVIDER)
-							//|| item.type.equals(ListItemType.LINKEND)
 					).collect(Collectors.toList());
 
 			return newFileList;
@@ -340,23 +341,18 @@ public class MoveCopyFullscreen extends DialogFragment {
 		public int getItemViewType(int position) {
 			ListItem item = list.get(position);
 
-			boolean isEnd = item.type.equals(ListItem.ListItemType.LINKEND);
-			boolean isDirLink = item.type.equals(ListItem.ListItemType.LINKDIRECTORY);
-			boolean isDivLink = item.type.equals(ListItem.ListItemType.LINKDIVIDER);
-
-			boolean isDir = item.fileProps.isdir;
-			boolean isLink = item.fileProps.islink;
-
-
-			if(isDirLink)
-				return 0;
-			else if(isDivLink)
-				return 1;
-			else if(isEnd)
-				return 2;
-			else if(isDir)
-				return 3;
-			return -1;
+			switch (item.type) {
+				case DIRECTORY:
+					return 0;
+				case DIVIDER:
+					return 1;
+				case LINKDIRECTORY:
+					return 2;
+				case LINKDIVIDER:
+					return 3;
+				default:
+					return -1;
+			}
 		}
 
 
@@ -367,13 +363,13 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 			BaseViewHolder holder;
 			switch(viewType) {
-				case 0: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_mc_link, parent, false));
+				case 0: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_mc_directory, parent, false));
 					break;
 				case 1: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 					break;
-				case 2: holder = new LinkEndViewHolder(inflater.inflate(R.layout.dir_vh_link_end, parent, false));
+				case 2: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_mc_link, parent, false));
 					break;
-				case 3: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_mc_directory, parent, false));
+				case 3: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 					break;
 				case -1:
 				default: throw new RuntimeException("Unknown view type in Move/Copy adapter!");

@@ -35,8 +35,7 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 	public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
 		Executors.newSingleThreadExecutor().execute(() -> {
 			try {
-				Pair<Uri, String> content = getContentInfo(uuid);
-				Uri uri = content.first;
+				Uri uri = LinkCache.getInstance().getContentInfo(uuid).first;
 
 				//If the file can be opened using ContentResolver, do that. Otherwise, open using URL's openStream
 				try {
@@ -76,31 +75,5 @@ public class UuidToUriFetcher implements DataFetcher<InputStream> {
 	@Override
 	public DataSource getDataSource() {
 		return DataSource.REMOTE;
-	}
-
-
-
-	@NonNull
-	private Pair<Uri, String> getContentInfo(UUID uuid) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		HybridAPI hAPI = HybridAPI.getInstance();
-
-		//If the item is a link, the content uri is accessed differently
-		LinkCache linkCache = LinkCache.getInstance();
-		LinkCache.LinkTarget target = linkCache.getFinalTarget(uuid);
-
-
-		//If the target is null, the item is not a link. Get the content uri from the fileUID's content
-		if (target == null) {
-			return hAPI.getFileContent(uuid);
-		}
-		//If the target is internal, get the content uri from that fileUID's content
-		else if (target instanceof LinkCache.InternalTarget) {
-			return hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID());
-		}
-		//If the target is external, get the content uri from the target
-		else {//if(target instanceof LinkCache.ExternalTarget) {
-			Uri content = ((LinkCache.ExternalTarget) target).getUri();
-			return new Pair<>(content, content.toString());
-		}
 	}
 }

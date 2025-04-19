@@ -259,6 +259,7 @@ public class GifFragment extends Fragment {
 				viewModel.persistFileName();
 			}
 		});
+		extension.setText(viewModel.fileExtension);
 		extension.post(() -> {
 			updateExtensionTranslation(viewModel.fileName);
 		});
