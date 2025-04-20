@@ -39,7 +39,6 @@ import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DividerViewHolder;
-import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
@@ -363,11 +362,11 @@ public class MoveCopyFullscreen extends DialogFragment {
 
 			BaseViewHolder holder;
 			switch(viewType) {
-				case 0: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_mc_directory, parent, false));
+				case 0: holder = new DirectoryViewHolder(inflater.inflate(R.layout.dir_mc_vh_directory, parent, false));
 					break;
 				case 1: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 					break;
-				case 2: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_mc_link, parent, false));
+				case 2: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_mc_vh_link, parent, false));
 					break;
 				case 3: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_vh_divider, parent, false));
 					break;

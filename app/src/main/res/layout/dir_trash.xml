@@ -4,7 +4,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="?attr/colorSurface"
+    android:clickable="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -29,17 +31,56 @@
     </com.google.android.material.appbar.AppBarLayout>
 
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerview"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1">
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+
+        <LinearLayout
+            android:id="@+id/no_items_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_horizontal"
+                android:text="This Trash is Empty"
+                android:textSize="24sp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="10dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_horizontal"
+                android:layout_marginHorizontal="40dp"
+                android:text="For privacy, trashed items stick with the directory they started in. If you're expecting something, check there."
+                android:textSize="18sp"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
 
 
     <LinearLayout
         android:id="@+id/bottom_bar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:layout_marginBottom="20dp"
         android:orientation="horizontal">
 
         <Button
@@ -51,7 +92,7 @@
             android:layout_gravity="center_vertical"
             android:layout_margin="8dp"
             android:textColor="?attr/colorError"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
+            android:background="?attr/selectableItemBackground"/>
 
         <Button
             android:id="@+id/restore"
@@ -62,7 +103,7 @@
             android:layout_gravity="center_vertical"
             android:layout_margin="8dp"
             android:textColor="?android:attr/textColorSecondary"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
+            android:background="?attr/selectableItemBackground"/>
 
     </LinearLayout>
 

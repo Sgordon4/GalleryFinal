@@ -1,8 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Pair;
@@ -30,7 +28,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
@@ -39,13 +36,12 @@ import aaa.sgordon.galleryfinal.gallery.components.modals.MoveCopyFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.modals.ZoningModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
-import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFullscreen;
+import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFragment;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
@@ -82,7 +78,12 @@ public class MenuItemHelper {
 			return true;
 		}
 		else if (menuItem.getItemId() == R.id.trashed) {
-			TrashFullscreen.launch(dirFragment, dirFragment.dirViewModel.getDirUID());
+			//TrashFullscreen.launch(dirFragment, dirFragment.dirViewModel.getDirUID());
+			TrashFragment fragment = new TrashFragment();
+			dirFragment.getChildFragmentManager().beginTransaction()
+					.replace(R.id.dir_child_container, fragment, TrashFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
 			return true;
 		}
 		else if (menuItem.getItemId() == R.id.settings) {

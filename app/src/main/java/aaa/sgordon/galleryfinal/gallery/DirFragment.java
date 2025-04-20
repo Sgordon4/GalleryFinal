@@ -302,9 +302,7 @@ public class DirFragment extends Fragment {
 			});
 			getTags.start();
 		});
-		dirViewModel.fileTags.observe(getViewLifecycleOwner(), tags -> {
-			filterController.onTagsUpdated(tags);
-		});
+		dirViewModel.fileTags.observe(getViewLifecycleOwner(), filterController::onTagsUpdated);
 
 
 		//-----------------------------------------------------------------------------------------

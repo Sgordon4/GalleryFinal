@@ -1,8 +1,5 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.util.Pair;
-
-import androidx.annotation.Nullable;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.JsonArray;
@@ -11,7 +8,6 @@ import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
