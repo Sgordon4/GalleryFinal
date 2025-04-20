@@ -91,7 +91,7 @@ public class TrashFragment extends Fragment {
 			if(!failed.isEmpty()) {
 				Toast.makeText(getContext(), failed.size()+" files were unable to be deleted!", Toast.LENGTH_SHORT).show();
 			}
-			updateList();
+			//updateList();
 		});
 		trashThread.start();
 	}

@@ -31,12 +31,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.MainViewModel;
@@ -51,6 +54,8 @@ import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
+import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
+import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 
@@ -261,11 +266,41 @@ public class DirFragment extends Fragment {
 
 
 		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry(), dirViewModel.getAttrCache());
+		filterController.addExtraQueryFilter(listItem -> {
+			//Exclude trashed items
+			return !FilenameUtils.getExtension(listItem.name).startsWith("trashed_");
+		});
+		filterController.addExtraQueryFilter(listItem -> {
+			//Exclude hidden Directory items if the active query doesn't match their name exactly. Only Directories can be hidden
+			boolean isHidden = listItem.type.equals(ListItem.ListItemType.DIRECTORY) &&
+					(listItem.fileProps.userattr.has("hidden") && listItem.fileProps.userattr.get("hidden").getAsBoolean());
+			if(!isHidden) return true;
+
+			String activeQuery = filterController.registry.activeQuery.getValue();
+			return listItem.name.equalsIgnoreCase(activeQuery);
+		});
 
 		FilterSetup.setupFilters(this, filterController);
 
 		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
 			filterController.onListUpdated(list);
+
+
+			//Grab the UUIDs of all the files in the new list for use with tagging
+			//Don't include link ends, we only consider their parents
+			List<UUID> fileUIDs = list.stream()
+					.filter(item -> !item.type.equals(ListItem.ListItemType.LINKEND))
+					.map(item -> item.fileUID)
+					.collect(Collectors.toList());
+
+			//Grab all tags for each fileUID
+			//TODO Expand this to include a list of files per tag
+			Thread getTags = new Thread(() -> {
+				Map<String, Set<UUID>> newTags = AttrCache.getInstance().compileTags(fileUIDs);
+
+				dirViewModel.fileTags.postValue(newTags);
+			});
+			getTags.start();
 		});
 		dirViewModel.fileTags.observe(getViewLifecycleOwner(), tags -> {
 			filterController.onTagsUpdated(tags);

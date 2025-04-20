@@ -79,6 +79,8 @@ public class FilterSetup {
 		registry.activeTags.observe(dirFragment.getViewLifecycleOwner(), tags -> {
 			ImageButton tagClear = binding.galleryAppbar.filterBar.tagClear;
 			tagClear.setSelected(!tags.isEmpty());
+
+			fControl.filter(dirViewModel.fileList.getValue());
 		});
 
 

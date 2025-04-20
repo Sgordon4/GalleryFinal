@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
@@ -24,21 +25,25 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 //Note: The hidden preference will not be respected by links, who need to be hidden as well
 public class SettingsFragment extends Fragment {
 	private static SettingsViewModel viewModel;
 
-	public static SettingsFragment newInstance(UUID directoryUID, JsonObject startingProps) {
+	public static SettingsFragment newInstance(UUID directoryUID, String name, JsonObject startingProps) {
 		SettingsFragment fragment = new SettingsFragment();
 		Bundle args = new Bundle();
 		args.putString("DIRECTORYUID", directoryUID.toString());
+		args.putString("NAME", name);
 		args.putString("STARTINGPROPS", startingProps.toString());
 		fragment.setArguments(args);
 		return fragment;
@@ -51,12 +56,14 @@ public class SettingsFragment extends Fragment {
 
 		Bundle args = requireArguments();
 		UUID directoryUID = UUID.fromString(args.getString("DIRECTORYUID"));
+		String name = args.getString("NAME");
 		JsonObject startingProps = new Gson().fromJson(args.getString("STARTINGPROPS"), JsonObject.class);
 
 		viewModel = new ViewModelProvider(this,
-				new SettingsViewModel.Factory(directoryUID, startingProps))
+				new SettingsViewModel.Factory(directoryUID, name, startingProps))
 				.get(SettingsViewModel.class);
 	}
+
 
 	@Nullable
 	@Override
@@ -69,6 +76,7 @@ public class SettingsFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 
 		MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
+		toolbar.setTitle(viewModel.name);
 		toolbar.setNavigationOnClickListener(v -> {
 			requireActivity().getOnBackPressedDispatcher().onBackPressed();
 		});
@@ -92,9 +100,8 @@ public class SettingsFragment extends Fragment {
 			super.onViewCreated(view, savedInstanceState);
 
 
-
 			final EditTextPreference password = Objects.requireNonNull(findPreference("password"));
-			if(viewModel.props.has("password"))
+			if(viewModel.password != null)
 				password.setSummary("PIN set");
 
 			//Set the password input type to number password, and limit it to 16 digits
@@ -107,7 +114,7 @@ public class SettingsFragment extends Fragment {
 
 			//When the preference is clicked, show nothing
 			password.setOnPreferenceClickListener(preference -> {
-				//if(viewModel.props.has("password"))
+				//if(viewModel.password = null)
 				//	password.setText(viewModel.props.get("password").getAsString());
 				password.setText("");
 				return true;
@@ -118,11 +125,11 @@ public class SettingsFragment extends Fragment {
 			password.setOnPreferenceChangeListener((preference, newValue) -> {
 				if(newValue.toString().isEmpty()) {
 					password.setSummary("No PIN set");
-					viewModel.props.remove("password");
+					viewModel.password = null;
 				}
 				else {
 					password.setSummary("PIN set");
-					viewModel.props.addProperty("password", newValue.toString());
+					viewModel.password = newValue.toString();
 				}
 
 				viewModel.persistProps(requireContext());
@@ -136,19 +143,33 @@ public class SettingsFragment extends Fragment {
 
 			//If the hidden preference is changed, save it
 			final SwitchPreferenceCompat hidden = Objects.requireNonNull(findPreference("hidden"));
-			if(viewModel.props.has("hidden"))
-				hidden.setChecked(true);
+			hidden.setChecked(viewModel.isHidden);
 
 			hidden.setOnPreferenceChangeListener((preference, newValue) -> {
-				boolean isHidden = (boolean) newValue;
-				if(isHidden)
-					viewModel.props.addProperty("hidden", true);
-				else
-					viewModel.props.remove("hidden");
+				if((boolean) newValue) {
+					//Launch a confirmation dialog first
+					AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+					builder.setTitle("Hide Directory?");
+					builder.setMessage("To reveal a hidden Directory, you must filter for its full name:\n"+viewModel.name);
 
-				viewModel.persistProps(requireContext());
+					builder.setPositiveButton("Yes", (dialogInterface, which) -> {
+						viewModel.isHidden = true;
+						viewModel.persistProps(requireContext());
 
-				return true;
+						hidden.setChecked(true);
+					});
+					builder.setNegativeButton("No", null);
+
+					AlertDialog dialog = builder.create();
+					dialog.show();
+
+					return false;
+				}
+				else {
+					viewModel.isHidden = false;
+					viewModel.persistProps(requireContext());
+					return true;
+				}
 			});
 		}
 	}
@@ -160,35 +181,37 @@ public class SettingsFragment extends Fragment {
 
 
 	public static class SettingsViewModel extends ViewModel {
-		public final UUID dirUID;
-		public final JsonObject props;
+		public final UUID thisDirUID;
+		public final String name;
+		public String password = null;
+		public boolean isHidden = false;
 
-		public SettingsViewModel(@NonNull UUID dirUID, @NonNull JsonObject startingProps) {
-			this.dirUID = dirUID;
-			props = new JsonObject();
+		public SettingsViewModel(@NonNull UUID directoryUID, @NonNull String name, @NonNull JsonObject startingProps) {
+			this.thisDirUID = directoryUID;
+			this.name = name;
 
 			//Grab only the props we care about
 			if(startingProps.has("password"))
-				props.addProperty("password", startingProps.get("password").getAsString());
+				password = startingProps.get("password").getAsString();
 			if(startingProps.has("hidden"))
-				props.addProperty("hidden", startingProps.get("hidden").getAsBoolean());
+				isHidden = startingProps.get("hidden").getAsBoolean();
 		}
 
 		public void persistProps(Context context) {
 			Thread persist = new Thread(() -> {
 				HybridAPI hAPI = HybridAPI.getInstance();
 				try {
-					hAPI.lockLocal(dirUID);
-					HFile fileProps = hAPI.getFileProps(dirUID);
+					hAPI.lockLocal(thisDirUID);
+					HFile fileProps = hAPI.getFileProps(thisDirUID);
 					JsonObject currentAttr = fileProps.userattr;
 
-					//Overwrite any properties in the current attributes with our new settings
+					//Overwrite password only
 					currentAttr.remove("password");
 					currentAttr.remove("hidden");
-					for(String key : props.keySet())
-						currentAttr.addProperty(key, props.get(key).getAsString());
+					if(password != null) currentAttr.addProperty("password", password);
+					if(isHidden) currentAttr.addProperty("hidden", true);
 
-					hAPI.setAttributes(dirUID, currentAttr, fileProps.attrhash);
+					hAPI.setAttributes(thisDirUID, currentAttr, fileProps.attrhash);
 				}
 				catch (FileNotFoundException e) {
 					Looper.prepare();
@@ -204,7 +227,7 @@ public class SettingsFragment extends Fragment {
 					throw new RuntimeException();
 				}
 				finally {
-					hAPI.unlockLocal(dirUID);
+					hAPI.unlockLocal(thisDirUID);
 				}
 			});
 			persist.start();
@@ -212,10 +235,13 @@ public class SettingsFragment extends Fragment {
 
 
 		public static class Factory implements ViewModelProvider.Factory {
-			private final UUID dirUID;
+			private final UUID directoryUID;
+			private final String name;
 			private final JsonObject startingProps;
-			public Factory(UUID dirUID, JsonObject startingProps) {
-				this.dirUID = dirUID;
+
+			public Factory(UUID directoryUID, String name, JsonObject startingProps) {
+				this.directoryUID = directoryUID;
+				this.name = name;
 				this.startingProps = startingProps;
 			}
 
@@ -223,7 +249,7 @@ public class SettingsFragment extends Fragment {
 			@Override
 			public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
 				if (modelClass.isAssignableFrom(SettingsViewModel.class)) {
-					return (T) new SettingsViewModel(dirUID, startingProps);
+					return (T) new SettingsViewModel(directoryUID, name, startingProps);
 				}
 				throw new IllegalArgumentException("Unknown ViewModel class");
 			}

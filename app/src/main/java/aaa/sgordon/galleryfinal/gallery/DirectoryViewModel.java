@@ -220,22 +220,7 @@ public class DirectoryViewModel extends ViewModel {
 			}
 			/**/
 
-
-			newFileList = newFileList.stream()
-					//Filter out anything that is trashed
-					.filter(item -> !FilenameUtils.getExtension(item.name).startsWith("trashed_"))
-					.collect(Collectors.toList());
-
-			//Grab the UUIDs of all the files in the new list for use with tagging
-			//Don't include link ends, we only consider their parents
-			List<UUID> fileUIDs = getUUIDsFromItems( excludeLinkEnds(newFileList) );
-
-			//Grab all tags for each fileUID
-			//TODO Expand this to include a list of files per tag
-			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
-
 			fileList.postValue(newFileList);
-			fileTags.postValue(newTags);
 		}
 		catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 			//TODO Actually handle the error. Dir should be on local, but jic

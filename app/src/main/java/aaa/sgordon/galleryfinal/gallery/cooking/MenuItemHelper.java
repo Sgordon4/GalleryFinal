@@ -85,39 +85,10 @@ public class MenuItemHelper {
 			TrashFullscreen.launch(dirFragment, dirFragment.dirViewModel.getDirUID());
 			return true;
 		}
-		//TODO Clean up
 		else if (menuItem.getItemId() == R.id.settings) {
 			System.out.println("Clicked settings");
-
-			Thread getProps = new Thread(() -> {
-				try {
-					//Get the props of the directory
-					UUID dirUID = dirFragment.dirViewModel.getDirUID();
-					JsonObject props = AttrCache.getInstance().getAttr(dirUID);
-
-					System.out.println("Sending props: "+props.toString());
-
-					//Launch a Settings fragment
-					Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
-					handler.post(() -> {
-						SettingsFragment settingsFragment = SettingsFragment.newInstance(dirUID, props);
-						dirFragment.getChildFragmentManager().beginTransaction()
-								.replace(R.id.dir_child_container, settingsFragment)
-								.addToBackStack("Settings")
-								.commit();
-					});
-				} catch (FileNotFoundException e) {
-					Looper.prepare();
-					Toast.makeText(dirFragment.requireContext(),
-							"Could not open settings, file not found!", Toast.LENGTH_SHORT).show();
-				}
-				catch (ConnectException e) {
-					Looper.prepare();
-					Toast.makeText(dirFragment.requireContext(),
-							"Could not open settings, connection failed!", Toast.LENGTH_SHORT).show();
-				}
-			});
-			getProps.start();
+			onSettings();
+			return true;
 		}
 		return false;
 	}
@@ -202,6 +173,39 @@ public class MenuItemHelper {
 			filterView.setVisibility(View.VISIBLE);
 		else
 			dirFragment.requireActivity().getOnBackPressedDispatcher().onBackPressed();
+	}
+
+
+
+	private void onSettings() {
+		Thread getProps = new Thread(() -> {
+			try {
+				//Get the props of the directory
+				UUID dirUID = dirFragment.dirViewModel.getDirUID();
+				JsonObject props = AttrCache.getInstance().getAttr(dirUID);
+
+				//Launch a Settings fragment
+				Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
+				handler.post(() -> {
+					SettingsFragment settingsFragment = SettingsFragment
+							.newInstance(dirUID, dirFragment.dirViewModel.getDirName(), props);
+					dirFragment.getChildFragmentManager().beginTransaction()
+							.replace(R.id.dir_child_container, settingsFragment)
+							.addToBackStack("Settings")
+							.commit();
+				});
+			} catch (FileNotFoundException e) {
+				Looper.prepare();
+				Toast.makeText(dirFragment.requireContext(),
+						"Could not open settings, file not found!", Toast.LENGTH_SHORT).show();
+			}
+			catch (ConnectException e) {
+				Looper.prepare();
+				Toast.makeText(dirFragment.requireContext(),
+						"Could not open settings, connection failed!", Toast.LENGTH_SHORT).show();
+			}
+		});
+		getProps.start();
 	}
 
 

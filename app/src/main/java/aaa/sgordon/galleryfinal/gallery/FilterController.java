@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery;
 
 import android.util.Pair;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.JsonArray;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
@@ -26,16 +28,34 @@ import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 public class FilterController {
 	private final AttrCache attrCache;
 	public final FilterRegistry registry;
+	private final List<Predicate<ListItem>> extraQueryFilters;
+	private final List<Predicate<ListItem>> extraTagFilters;
+
 	public FilterController(FilterRegistry registry, AttrCache attrCache) {
 		this.registry = registry;
 		this.attrCache = attrCache;
+		this.extraQueryFilters = new ArrayList<>();
+		this.extraTagFilters = new ArrayList<>();
+	}
+
+	public void addExtraQueryFilter(Predicate<ListItem> predicate) {
+		extraQueryFilters.add(predicate);
+	}
+	public void removeExtraQueryFilter(Predicate<ListItem> predicate) {
+		extraQueryFilters.remove(predicate);
+	}
+	public void addExtraTagFilter(Predicate<ListItem> predicate) {
+		extraTagFilters.add(predicate);
+	}
+	public void removeExtraTagFilter(Predicate<ListItem> predicate) {
+		extraTagFilters.remove(predicate);
 	}
 
 
 	public void onListUpdated(List<ListItem> fileList) {
 		Thread filter = new Thread(() -> {
 			//Filter the list of files based on the current query
-			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList);
+			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList, extraQueryFilters);
 			filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
 			registry.filteredList.postValue(filtered);
 		});
@@ -66,7 +86,7 @@ public class FilterController {
 		registry.activeQuery.postValue(newActiveQuery);
 
 		Thread filter = new Thread(() -> {
-			List<ListItem> filtered = filterListByQuery(newActiveQuery, fullList);
+			List<ListItem> filtered = filterListByQuery(newActiveQuery, fullList, extraQueryFilters);
 			filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
 			registry.filteredList.postValue(filtered);
 		});
@@ -77,7 +97,7 @@ public class FilterController {
 		registry.activeTags.postValue(newActiveTags);
 
 		Thread filter = new Thread(() -> {
-			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList);
+			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList, extraQueryFilters);
 			filtered = filterListByTags(newActiveTags, filtered, attrCache);
 			registry.filteredList.postValue(filtered);
 		});
@@ -87,8 +107,14 @@ public class FilterController {
 
 
 
-	//TODO Exclude tags for hidden items?
-	//TODO Exclude hidden items unless specifically filtered for
+	public void filter(List<ListItem> fullList) {
+		Thread filter = new Thread(() -> {
+			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList, extraQueryFilters);
+			filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+			registry.filteredList.postValue(filtered);
+		});
+		filter.start();
+	}
 
 
 	private Map<String, Set<UUID>> filterTagsByQuery(String query, Map<String, Set<UUID>> tags) {
@@ -102,20 +128,12 @@ public class FilterController {
 
 
 	//Take the list and filter out anything that doesn't match our filters (name and tags)
-	public static List<ListItem> filterListByQuery(String filterQuery, List<ListItem> list) {
-		list = list.stream().filter(item -> {
-			//TODO Change the way we hide shit to just be via filename. Avoids connection and FileNotFound issues.
-			//If the file is hidden...
-			if(item.fileProps.userattr.has("hidden") && item.fileProps.userattr.get("hidden").getAsBoolean()) {
-				System.out.println(item.name+" is hidden");
-				//Make sure the filename matches the filter query exactly
-				//TODO Exclude file extensions
-				return item.name.equalsIgnoreCase(filterQuery);
-			}
-			//Otherwise, continue
-			return true;
-		}).collect(Collectors.toList());
+	public static List<ListItem> filterListByQuery(String filterQuery, List<ListItem> list, List<Predicate<ListItem>> extraQueryFilters) {
 
+		//Consider any extra user defined filters
+		Predicate<ListItem> extraFilter = extraQueryFilters.stream().reduce(s -> true, Predicate::and);
+		list = list.stream().filter(extraFilter)
+				.collect(Collectors.toList());
 
 		if(filterQuery.isEmpty())
 			return list;
