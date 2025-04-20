@@ -126,19 +126,14 @@ public class TrashFullscreen extends DialogFragment {
 			//Get the selected items
 			List<ListItem> toRestore = getSelected();
 
-			//Remove the 'trashed' suffix from each item
-			List<ListItem> renamed = new ArrayList<>();
-			for(ListItem item : toRestore) {
-				renamed.add(new ListItem.Builder(item)
-						.setName(FilenameUtils.removeExtension(item.name))
-						.build());
-			}
+			//The .trashed suffix is already removed below in traverseDir in order to display it correctly,
+			// so each ListItem conveniently already has the correct name
 
 			selectionController.stopSelecting();
 
 			//And 'restore' them
 			Thread trashThread = new Thread(() -> {
-				DirUtilities.renameFiles(renamed);
+				DirUtilities.renameFiles(toRestore);
 				updateList();
 			});
 			trashThread.start();
