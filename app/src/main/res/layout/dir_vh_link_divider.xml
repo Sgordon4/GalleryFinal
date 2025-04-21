@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="?attr/actionBarSize"
+    android:layout_marginVertical="8dp"
     android:clipToPadding="false"
     android:clickable="true">
 
@@ -22,8 +23,7 @@
             android:background="?attr/colorSurface"
             android:foreground="@drawable/selector_overlay"
             android:contentDescription="A Directory Link"
-            android:orientation="horizontal"
-            android:clickable="true">
+            android:orientation="horizontal">
 
             <FrameLayout
                 android:layout_width="wrap_content"
@@ -39,7 +39,8 @@
                     android:scaleX="1.5"
                     android:padding="6dp"
                     app:tint="?android:attr/textColorPrimary"
-                    android:src="@drawable/icon_link_variant"/>
+                    android:src="@drawable/icon_link_variant"
+                    />
 
             </FrameLayout>
 

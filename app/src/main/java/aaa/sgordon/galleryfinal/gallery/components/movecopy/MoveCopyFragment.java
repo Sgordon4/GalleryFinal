@@ -5,10 +5,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -16,7 +14,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -27,7 +24,11 @@ import org.apache.commons.io.FilenameUtils;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.DirMovecopyBinding;
@@ -64,7 +65,7 @@ public class MoveCopyFragment extends Fragment {
 		this.callback = callback;
 	}
 	public interface MoveCopyCallback {
-		void onConfirm(UUID destinationUID);
+		void onConfirm(UUID destinationUID, UUID nextItem);
 	}
 
 
@@ -72,7 +73,7 @@ public class MoveCopyFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		boolean isMove = getArguments().getBoolean("isMove");
+		boolean isMove = requireArguments().getBoolean("isMove");
 
 		viewModel = new ViewModelProvider(this,
 				new MCViewModel.Factory(tempItemDoNotUse, isMove))
@@ -119,7 +120,13 @@ public class MoveCopyFragment extends Fragment {
 		//Update the filtered list when the directory contents update
 		viewModel.fileList.observe(getViewLifecycleOwner(), filterController::onListUpdated);
 		//Update the adapter when the filtered list updates
-		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> adapter.setList(list));
+		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
+			//Remove duplicates
+			Set<UUID> seen = new HashSet<>();
+			list = list.stream().filter(item -> seen.add(item.fileUID)).collect(Collectors.toList());
+
+			adapter.setList(list);
+		});
 
 
 		binding.search.addTextChangedListener(new TextWatcher() {
@@ -142,13 +149,10 @@ public class MoveCopyFragment extends Fragment {
 		RecyclerView recyclerView = binding.recyclerview;
 		recyclerView.setLayoutManager(layoutManager);
 
+		//Set what happens when clicking on an item
 		adapter = new MCAdapter(item -> {
-			if(item.type == ListItem.ListItemType.DIRECTORY) {
-				Path newPathFromRoot = viewModel.currPathFromRoot.resolve(item.fileUID.toString());
-				changeDirectory(item.fileUID, viewModel.currDirUID, newPathFromRoot);
-			}
-			else if(item.type == ListItem.ListItemType.LINKDIRECTORY) {
-				Path newPathFromRoot = viewModel.currPathFromRoot.resolve(item.fileUID.toString());
+			if(item.type == ListItem.ListItemType.DIRECTORY || item.type == ListItem.ListItemType.LINKDIRECTORY) {
+				Path newPathFromRoot = viewModel.currPathFromRoot.resolve(item.pathFromRoot.subpath(1, item.pathFromRoot.getNameCount()));
 				changeDirectory(item.fileUID, item.parentUID, newPathFromRoot);
 			}
 			else {
@@ -168,10 +172,42 @@ public class MoveCopyFragment extends Fragment {
 		binding.confirm.setText(text);
 		binding.confirm.setOnClickListener(v -> {
 			if(callback != null) {
-				if(selectionController.getNumSelected() > 0)
-					callback.onConfirm(selectionController.getSelectedList().iterator().next());
-				else
-					callback.onConfirm(viewModel.currDirUID);
+				Thread doThings = new Thread(() -> {
+					//Passing a fake item to move/copy will place the items at the start when the function can't find it
+					UUID nextItem = UUID.randomUUID();
+
+					if(selectionController.getNumSelected() > 0) {
+						UUID selected = selectionController.getSelectedList().iterator().next();
+
+						//If the item is a link to a divider, get the internal target...
+						LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
+						if (target instanceof LinkCache.InternalTarget) {
+							LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
+
+							try {
+								nextItem = getNextItem(internalTarget.getParentUID(), internalTarget.getFileUID());
+							}
+							catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+								//If anything goes wrong, just don't update the next item
+							}
+
+							callback.onConfirm(internalTarget.getParentUID(), nextItem);
+						}
+						//If not a link to a divider, the item is an actual divider
+						else {
+							try {
+								nextItem = getNextItem(viewModel.currDirUID, selected);
+							}
+							catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+								//If anything goes wrong, just don't update the next item
+							}
+							callback.onConfirm(viewModel.currDirUID, nextItem);
+						}
+					}
+					else
+						callback.onConfirm(viewModel.currDirUID, nextItem);
+				});
+				doThings.start();
 			}
 			getParentFragmentManager().popBackStack();
 		});
@@ -180,11 +216,23 @@ public class MoveCopyFragment extends Fragment {
 		changeDirectory(viewModel.currDirUID, viewModel.currParentUID, viewModel.currPathFromRoot);
 	}
 
+	private UUID getNextItem(UUID parentDirUID, UUID targetUID)
+			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+
+		//For each item in the parent directory...
+		List<Pair<UUID, String>> dirList = DirCache.getInstance().getDirContents(parentDirUID);
+		for(int i = 0; i < dirList.size(); i++) {
+			//If we find the target, return the next item (or null)
+			if (dirList.get(i).first.equals(targetUID))
+				return (i+1 < dirList.size()) ? dirList.get(i+1).first : null;
+		}
+		throw new FileNotFoundException("Target not found! \nParent='"+parentDirUID+"', \nTarget='"+targetUID+"'");
+	}
+
 
 
 	@NonNull
 	private FilterController buildFilterController() {
-		//TODO Maybe exclude UUIDs that were already added
 		FilterController filterController = new FilterController(viewModel.getFilterRegistry(), viewModel.getAttrCache());
 		filterController.addExtraQueryFilter(listItem -> {
 			//Exclude all but the following item types
@@ -255,6 +303,7 @@ public class MoveCopyFragment extends Fragment {
 						View itemView = recyclerView.getChildAt(i);
 						if(itemView != null) {
 							int adapterPos = recyclerView.getChildAdapterPosition(itemView);
+							if(adapterPos == -1) continue;
 
 							if(fileUID.equals( getUUIDAtPos(adapterPos)) )
 								itemView.setSelected(isSelected);
@@ -325,7 +374,6 @@ public class MoveCopyFragment extends Fragment {
 			UUID previousCrumb = (i > 0) ? UUID.fromString(viewModel.currPathFromRoot.getName(i-1).toString()) : null;
 
 
-
 			try {
 				//If the previous item is a link, get the target dir
 				LinkCache linkCache = LinkCache.getInstance();
@@ -351,8 +399,6 @@ public class MoveCopyFragment extends Fragment {
 				TextView breadCrumb = (TextView) inflater.inflate(R.layout.dir_mc_breadcrumb, binding.breadcrumbs, false);
 				binding.breadcrumbs.addView(breadCrumb);
 				breadCrumb.setText(name);
-
-				System.out.println("Making crumb "+name);
 
 				//If this is not the last item, allow the breadcrumb to be selected
 				if(index < viewModel.currPathFromRoot.getNameCount()-1)

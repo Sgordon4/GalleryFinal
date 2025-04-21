@@ -73,17 +73,16 @@ public class ImportHelper {
 		UUID accountUID = hAPI.getCurrentAccount();
 
 		//Import in reverse to preserve ordering
+		//Doing this one by one isn't too bad, since after the first write the dirList is guaranteed to be on local
 		for(int i = urisToImport.size()-1; i >= 0; i--) {
 			Uri uri = urisToImport.get(i);
 
-			context.getContentResolver().takePersistableUriPermission(uri,
-					Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+			//context.getContentResolver().takePersistableUriPermission(uri,
+			//		Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
 			//DocumentFile documentFile = fileInfo.get(uri);
 			DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
 			if(documentFile == null) continue;
-
-			System.out.println(documentFile.getName()+" "+documentFile.lastModified());
 
 			UUID newUID;
 			try { newUID = hAPI.createFile(accountUID, false, false); }

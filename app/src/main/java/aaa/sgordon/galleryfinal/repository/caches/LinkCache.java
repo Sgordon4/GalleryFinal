@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.repository.caches;
 
 import android.net.Uri;
+import android.os.NetworkOnMainThreadException;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
@@ -147,6 +148,9 @@ public class LinkCache {
 		try {
 			UUID finalLink = getFinalLink(linkUID);
 			return getLinkTarget(finalLink);
+		}
+		catch (NetworkOnMainThreadException e) {
+			throw e;
 		}
 		catch (Exception e) {
 			//If this fails for any reason, just pretend the link is broken

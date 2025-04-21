@@ -215,8 +215,29 @@ public class MenuItemHelper {
 
 	private void onMoveCopy(boolean isMove) {
 		MoveCopyFragment fragment = MoveCopyFragment.newInstance(dirFragment.dirViewModel.listItem, isMove);
-		fragment.setMoveCopyCallback(destinationUID -> {
-			new Thread(() -> onMoveCopyConfirmed(destinationUID, isMove)).start();
+		fragment.setMoveCopyCallback((destinationUID, nextItem) -> {
+			new Thread(() -> {
+				//Get the selected items
+				List<ListItem> toMove = getSelected();
+				System.out.println("Moving to "+destinationUID+" after "+nextItem);
+
+				try {
+					if(isMove)
+						DirUtilities.moveFiles(toMove, destinationUID, nextItem);
+					else
+						DirUtilities.copyFiles(toMove, destinationUID, nextItem);
+				}
+				catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
+					Looper.prepare();
+					Toast.makeText(dirFragment.requireContext(), "Operation failed!", Toast.LENGTH_SHORT).show();
+				}
+				catch (IOException e) {
+					Looper.prepare();
+					Toast.makeText(dirFragment.requireContext(), "Operation failed, could not write!", Toast.LENGTH_SHORT).show();
+				}
+
+				//onMoveCopyConfirmed(destinationUID, isMove)
+			}).start();
 		});
 		dirFragment.getChildFragmentManager().beginTransaction()
 				.replace(R.id.dir_child_container, fragment, MoveCopyFragment.class.getSimpleName())
@@ -247,6 +268,7 @@ public class MenuItemHelper {
 
 		//Get the selected items
 		List<ListItem> toMove = getSelected();
+		System.out.println("Moving to "+destinationUID+" after "+nextItem);
 
 		try {
 			if(isMove)

@@ -186,7 +186,7 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
-	boolean printed = true;
+	boolean printed = false;
 	private void refreshList() {
 		try {
 			//Grab the current list of all files in this directory from the system

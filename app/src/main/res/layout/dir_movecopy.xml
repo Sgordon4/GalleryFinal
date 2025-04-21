@@ -88,9 +88,9 @@
             android:id="@+id/confirm"
             android:text="Confirm"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:textColor="?android:attr/textColorSecondary"
-            android:background="?android:attr/selectableItemBackground"/>
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:gravity="center"/>
 
     </FrameLayout>
 

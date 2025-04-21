@@ -124,7 +124,7 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 3) {
+		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 4) {
 			@Override
 			public void calculateItemDecorationsForChild(@NonNull View child, @NonNull Rect outRect) {
 				super.calculateItemDecorationsForChild(child, outRect);
