@@ -30,9 +30,7 @@ import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 public class DirectoryViewModel extends ViewModel {
 	private final static String TAG = "Gal.Dir.VM";
-	private final String dirName;
-	private final Path pathFromRoot;
-	private final UUID currDirUID;
+	public final ListItem listItem;
 
 	private final DirCache dirCache;
 	private final DirCache.UpdateListener dirListener;
@@ -52,16 +50,6 @@ public class DirectoryViewModel extends ViewModel {
 	public ListItem viewPagerCurrItem = null;
 
 
-	public String getDirName() {
-		return dirName;
-	}
-	public Path getPathFromRoot() {
-		return pathFromRoot;
-	}
-	public UUID getDirUID() {
-		return currDirUID;
-	}
-
 	public DirCache getDirCache() {
 		return dirCache;
 	}
@@ -80,10 +68,8 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
-	public DirectoryViewModel(String dirName, Path pathFromRoot) {
-		this.dirName = dirName;
-		this.pathFromRoot = pathFromRoot;
-		this.currDirUID = UUID.fromString(pathFromRoot.getFileName().toString());
+	public DirectoryViewModel(ListItem listItem) {
+		this.listItem = listItem;
 
 		this.dirCache = DirCache.getInstance();
 		this.linkCache = LinkCache.getInstance();
@@ -101,20 +87,20 @@ public class DirectoryViewModel extends ViewModel {
 
 
 
-		System.out.println("Creating viewmodel! FileUID='"+currDirUID+"'");
+		System.out.println("Creating viewmodel! FileUID='"+listItem.fileUID+"'");
 
 
 		dirListener = uuid -> {
 			//If this update isn't for us, ignore it
-			if(!uuid.equals(currDirUID))
+			if(!uuid.equals(listItem.fileUID))
 				return;
 
 			//This setup only queues a list update if there is not already one queued
 			//It will queue one if there is an in-progress update
 			if(queuedUpdateThread == null) {
-				//During a move operation (usually from reorder), the list will update after every directory change
-				//This causes animation flickers, so we want to delay the visual list update just a touch
 				Thread thread = new Thread(() -> {
+					//During a move operation (usually from reorder), the list will update after every directory change
+					//This causes animation flickers, so we want to delay the visual list update just a touch
 					try { Thread.sleep(50); }
 					catch (InterruptedException e) { throw new RuntimeException(e); }
 					this.queuedUpdateThread = null;
@@ -125,7 +111,7 @@ public class DirectoryViewModel extends ViewModel {
 				queuedUpdateThread = thread;
 			}
 		};
-		dirCache.addListener(dirListener, currDirUID);
+		dirCache.addListener(dirListener, listItem.fileUID);
 
 		/*
 		linkListener = uuid -> {
@@ -139,41 +125,43 @@ public class DirectoryViewModel extends ViewModel {
 		 */
 
 		attrListener = uuid -> {
-			List<ListItem> items = excludeLinkEnds(fileList.getValue());
-			List<UUID> fileUIDs = getUUIDsFromItems(items);
+			//Exclude link ends (only consider their parent link), then map each item to UUID
+			List<UUID> fileUIDs = fileList.getValue().stream()
+					.filter(item -> !item.type.equals(ListItem.ListItemType.LINKEND))
+					.map(item -> item.fileUID)
+					.collect(Collectors.toList());
 
-			//If one of our files changed, update its attributes
-			if(fileUIDs.contains(uuid)) {
-
-				//Update the tags
-				Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
-				fileTags.postValue(newTags);
+			//If none of our files changed, leave
+			if(!fileUIDs.contains(uuid)) return;
 
 
-				try {
-					//Grab the new attributes from the repository
-					JsonObject newAttr = attrCache.getAttr(uuid);
+			//Update the tags
+			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
+			fileTags.postValue(newTags);
 
-					//For each file in the fileList...
-					List<ListItem> updatedList = fileList.getValue();
-					for(int i = 0; i < updatedList.size(); i++) {
-						ListItem item = updatedList.get(i);
+			try {
+				//Grab the new attributes from the repository
+				JsonObject newAttr = attrCache.getAttr(uuid);
 
-						//If the file has an attribute update...
-						if(item.fileUID.equals(uuid)) {
-							//Replace the list item with a new one, containing the updated attributes
-							ListItem updated = new ListItem.Builder(item).build();
-							updated.fileProps.userattr = newAttr;
-							updatedList.set(i, updated);
-						}
+				//For each file in the fileList...
+				List<ListItem> updatedList = fileList.getValue();
+				for(int i = 0; i < updatedList.size(); i++) {
+					ListItem item = updatedList.get(i);
+
+					//If the file has an attribute update...
+					if(item.fileUID.equals(uuid)) {
+						//Replace the list item with a new one, containing the updated attributes
+						ListItem updated = new ListItem.Builder(item).build();
+						updated.fileProps.userattr = newAttr;
+						updatedList.set(i, updated);
 					}
+				}
 
-					//Update the livedata
-					fileList.postValue(updatedList);
-				}
-				catch (FileNotFoundException | ConnectException e) {
-					//Skip updating the file if we can't find it
-				}
+				//Update the livedata
+				fileList.postValue(updatedList);
+			}
+			catch (FileNotFoundException | ConnectException e) {
+				//Skip updating the file if we can't find it
 			}
 		};
 		attrCache.addListener(attrListener);
@@ -185,7 +173,7 @@ public class DirectoryViewModel extends ViewModel {
 
 
 		//Add some items to start to fill in the screen for testing with scrolling
-		Thread importStart = new Thread(() -> DirSampleData.fakeImportFiles(currDirUID, 50));
+		Thread importStart = new Thread(() -> DirSampleData.fakeImportFiles(listItem.fileUID, 50));
 		//importStart.start();
 	}
 	@Override
@@ -202,7 +190,7 @@ public class DirectoryViewModel extends ViewModel {
 	private void refreshList() {
 		try {
 			//Grab the current list of all files in this directory from the system
-			List<ListItem> newFileList = TraversalHelper.traverseDir(currDirUID);
+			List<ListItem> newFileList = TraversalHelper.traverseDir(listItem.fileUID);
 
 			/**/
 			if(!printed) {
@@ -229,35 +217,22 @@ public class DirectoryViewModel extends ViewModel {
 	}
 
 
-	private List<ListItem> excludeLinkEnds(List<ListItem> fileList) {
-		return fileList.stream()
-				.filter(item -> !LinkCache.isLinkEnd(item))
-				.collect(Collectors.toList());
-	}
-	private List<UUID> getUUIDsFromItems(List<ListItem> fileList) {
-		return fileList.stream().map(item -> item.fileUID).collect(Collectors.toList());
-	}
-
-
-
 
 //=================================================================================================
 //=================================================================================================
 
 	public static class Factory implements ViewModelProvider.Factory {
-		private final String dirName;
-		private final Path pathFromRoot;
+		private final ListItem listItem;
 
-		public Factory(String dirName, Path pathFromRoot) {
-			this.dirName = dirName;
-			this.pathFromRoot = pathFromRoot;
+		public Factory(ListItem listItem) {
+			this.listItem = listItem;
 		}
 
 		@NonNull
 		@Override
 		public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
 			if (modelClass.isAssignableFrom(DirectoryViewModel.class)) {
-				return (T) new DirectoryViewModel(dirName, pathFromRoot);
+				return (T) new DirectoryViewModel(listItem);
 			}
 			throw new IllegalArgumentException("Unknown ViewModel class");
 		}

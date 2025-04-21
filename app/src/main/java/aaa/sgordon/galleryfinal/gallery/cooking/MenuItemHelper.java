@@ -18,8 +18,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -30,10 +28,11 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
-import aaa.sgordon.galleryfinal.gallery.components.modals.MoveCopyFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.modals.ZoningModal;
+import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFragment;
@@ -116,12 +115,15 @@ public class MenuItemHelper {
 		}
 		else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
 			boolean isMove = menuItem.getItemId() == R.id.move;
+			onMoveCopy(isMove);
 
+			/*
 			//TODO Make actual path from root
 			Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
 			MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
 				new Thread(() -> onMoveCopy(destinationUID, isMove)).start();
 			});
+			 */
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.zoning) {
@@ -182,14 +184,14 @@ public class MenuItemHelper {
 		Thread getProps = new Thread(() -> {
 			try {
 				//Get the props of the directory
-				UUID dirUID = dirFragment.dirViewModel.getDirUID();
+				UUID dirUID = dirFragment.dirViewModel.listItem.fileUID;
 				JsonObject props = AttrCache.getInstance().getAttr(dirUID);
 
 				//Launch a Settings fragment
 				Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
 				handler.post(() -> {
 					SettingsFragment settingsFragment = SettingsFragment
-							.newInstance(dirUID, dirFragment.dirViewModel.getDirName(), props);
+							.newInstance(dirUID, dirFragment.dirViewModel.listItem.name, props);
 					dirFragment.getChildFragmentManager().beginTransaction()
 							.replace(R.id.dir_child_container, settingsFragment)
 							.addToBackStack("Settings")
@@ -211,7 +213,19 @@ public class MenuItemHelper {
 
 
 
-	private void onMoveCopy(UUID destinationUID, boolean isMove) {
+	private void onMoveCopy(boolean isMove) {
+		MoveCopyFragment fragment = MoveCopyFragment.newInstance(dirFragment.dirViewModel.listItem, isMove);
+		fragment.setMoveCopyCallback(destinationUID -> {
+			new Thread(() -> onMoveCopyConfirmed(destinationUID, isMove)).start();
+		});
+		dirFragment.getChildFragmentManager().beginTransaction()
+				.replace(R.id.dir_child_container, fragment, MoveCopyFragment.class.getSimpleName())
+				.addToBackStack(null)
+				.commit();
+	}
+
+
+	private void onMoveCopyConfirmed(UUID destinationUID, boolean isMove) {
 		//Passing a fake item to move/copy will place the items at the start when the function can't find it
 		UUID nextItem = UUID.randomUUID();
 
@@ -239,10 +253,12 @@ public class MenuItemHelper {
 				DirUtilities.moveFiles(toMove, destinationUID, nextItem);
 			else
 				DirUtilities.copyFiles(toMove, destinationUID, nextItem);
-		} catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
+		}
+		catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
 			Looper.prepare();
 			Toast.makeText(dirFragment.requireContext(), "Operation failed!", Toast.LENGTH_SHORT).show();
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			Looper.prepare();
 			Toast.makeText(dirFragment.requireContext(), "Operation failed, could not write!", Toast.LENGTH_SHORT).show();
 		}

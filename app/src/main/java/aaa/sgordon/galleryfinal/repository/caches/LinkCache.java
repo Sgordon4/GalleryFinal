@@ -41,6 +41,7 @@ public class LinkCache {
 	private final Set<UUID> isNormal;
 
 
+	@NonNull
 	public static LinkCache getInstance() {
 		return SingletonHelper.INSTANCE;
 	}
@@ -117,7 +118,9 @@ public class LinkCache {
 	@NonNull
 	public Pair<Uri, String> getContentInfo(UUID uuid) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//If the item is a link, the content uri is accessed differently
-		LinkCache.LinkTarget target = getFinalTarget(uuid);
+		LinkCache.LinkTarget target = null;
+		if(isLink(uuid))
+			target = getFinalTarget(uuid);
 
 
 		//If the target is null, the item is not a link. Get the content uri from the fileUID's content

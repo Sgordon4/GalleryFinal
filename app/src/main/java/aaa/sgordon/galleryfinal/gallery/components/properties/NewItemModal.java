@@ -148,7 +148,7 @@ public class NewItemModal extends DialogFragment {
 
 		ImageButton browse = view.findViewById(R.id.browse);
 		browse.setOnClickListener(view1 ->
-			LinkTargetModal.launch(dirFragment, dirFragment.dirViewModel.getDirUID(), target -> {
+			LinkTargetModal.launch(dirFragment, dirFragment.dirViewModel.listItem.fileUID, target -> {
 				internalTarget = target;
 				targetInternal.setText(target.name);
 			})
@@ -309,7 +309,7 @@ public class NewItemModal extends DialogFragment {
 
 
 			//Add the new file to the top of the current directory
-			UUID dirUID = dirFragment.dirViewModel.getDirUID();
+			UUID dirUID = dirFragment.dirViewModel.listItem.fileUID;
 			try {
 				hAPI.lockLocal(dirUID);
 				HFile dirProps = hAPI.getFileProps(dirUID);

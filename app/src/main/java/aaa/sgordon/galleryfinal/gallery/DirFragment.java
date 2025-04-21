@@ -69,14 +69,10 @@ public class DirFragment extends Fragment {
 	private SelectionController selectionController;
 
 
-	public static DirFragment initialize(String dirName, Path pathFromRoot) {
+	private ListItem tempItemDoNotUse;
+	public static DirFragment initialize(ListItem listItem) {
 		DirFragment fragment = new DirFragment();
-
-		Bundle bundle = new Bundle();
-		bundle.putString("directoryName", dirName);
-		bundle.putString("pathFromRoot", pathFromRoot.toString());
-		fragment.setArguments(bundle);
-
+		fragment.tempItemDoNotUse = listItem;
 		return fragment;
 	}
 
@@ -89,12 +85,8 @@ public class DirFragment extends Fragment {
 		MainViewModel mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 		System.out.println("Inside directory, Activity has been created "+mainViewModel.testInt+" times.");
 
-		Bundle args = requireArguments();
-		String directoryName = args.getString("directoryName");
-		Path pathFromRoot = Paths.get(args.getString("pathFromRoot"));
-
 		dirViewModel = new ViewModelProvider(this,
-				new DirectoryViewModel.Factory(directoryName, pathFromRoot))
+				new DirectoryViewModel.Factory(tempItemDoNotUse))
 				.get(DirectoryViewModel.class);
 
 
@@ -108,7 +100,7 @@ public class DirFragment extends Fragment {
 				Map<Uri, DocumentFile> fileInfo = ImportHelper.getFileInfoForUris(getContext(), uris);
 
 				Thread importThread = new Thread(() -> {
-					ImportHelper.importFiles(getContext(), dirViewModel.getDirUID(), uris, fileInfo);
+					ImportHelper.importFiles(getContext(), dirViewModel.listItem.fileUID, uris, fileInfo);
 				});
 				importThread.start();
 			}
@@ -132,7 +124,7 @@ public class DirFragment extends Fragment {
 
 		// Recyclerview things:
 		RecyclerView recyclerView = binding.recyclerview;
-		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 4) {
+		GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 3) {
 			@Override
 			public void calculateItemDecorationsForChild(@NonNull View child, @NonNull Rect outRect) {
 				super.calculateItemDecorationsForChild(child, outRect);

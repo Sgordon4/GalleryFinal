@@ -103,7 +103,7 @@
                 android:id="@+id/browse"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/icon_folder"
+                android:src="@drawable/ic_folder"
                 android:scaleX=".9"
                 android:scaleY=".9"
                 android:contentDescription="Browse" />

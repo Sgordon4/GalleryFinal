@@ -13,20 +13,22 @@
         android:padding="1dp"
         android:background="@drawable/border_gallery">
 
-        <androidx.cardview.widget.CardView
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:foreground="@drawable/selector_overlay" >
+            android:foreground="@drawable/selector_overlay"
+            android:background="?attr/colorSurface">
 
             <ImageView
                 android:id="@+id/media"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:background="?attr/colorSurfaceContainer"/>
 
-        </androidx.cardview.widget.CardView>
+        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

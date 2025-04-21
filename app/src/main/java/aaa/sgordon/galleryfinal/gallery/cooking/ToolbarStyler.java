@@ -49,7 +49,7 @@ public class ToolbarStyler {
 
 
 		//Must set title after configuration
-		String directoryName = dirFragment.dirViewModel.getDirName();
+		String directoryName = dirFragment.dirViewModel.listItem.name;
 		toolbar.setTitle(directoryName);
 
 

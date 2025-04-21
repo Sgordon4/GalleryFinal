@@ -1,9 +1,12 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.util.TypedValue;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,12 +19,14 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class DividerViewHolder extends BaseViewHolder {
 	public View child;
+	public ImageView color;
 	public TextView name;
 
 	public DividerViewHolder(@NonNull View itemView) {
 		super(itemView);
 
 		child = itemView.findViewById(R.id.child);
+		color = itemView.findViewById(R.id.color);
 		name = itemView.findViewById(R.id.name);
 	}
 
@@ -31,6 +36,24 @@ public class DividerViewHolder extends BaseViewHolder {
 
 		String fileName = FilenameUtils.removeExtension(listItem.name);
 		name.setText(fileName);
+
+
+		//Change the color of the item
+		if(listItem.fileProps.userattr.has("color")) {
+			color.setColorFilter(listItem.fileProps.userattr.get("color").getAsInt(), PorterDuff.Mode.SRC_IN);
+		} else {
+			TypedValue typedValue = new TypedValue();
+
+			//Get the default icon color from the current theme
+			//We need to apply this or the card will retain previous colors from other items as the RecyclerView recycles it
+			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorControlNormal , typedValue, true)) {
+				int defaultBackgroundColor = typedValue.data;
+				color.setBackgroundColor(defaultBackgroundColor);
+			} else {
+				color.setBackgroundColor(Color.GRAY);
+			}
+		}
+
 
 		//Change the border color of the child
 		if(parent != null && parent.fileProps.userattr.has("color")) {

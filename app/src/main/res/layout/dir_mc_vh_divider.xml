@@ -7,7 +7,7 @@
     android:layout_height="?attr/actionBarSize"
     android:background="?attr/colorSurface"
     android:foreground="@drawable/selector_overlay"
-    android:contentDescription="A Directory Link"
+    android:contentDescription="A Divider"
     android:orientation="horizontal"
     android:clickable="true">
 
@@ -19,44 +19,44 @@
         android:clipToPadding="false">
 
         <ImageView
+            android:id="@+id/color"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:scaleY="1.5"
-            android:scaleX="1.5"
+            android:scaleY="1.75"
+            android:scaleX="1.75"
+            android:padding="6dp"
+            android:src="@drawable/ic_bookmark"
+            android:importantForAccessibility="no"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleY="1.75"
+            android:scaleX="1.75"
             android:padding="6dp"
             app:tint="?android:attr/textColorPrimary"
-            android:src="@drawable/icon_link_variant"/>
+            android:src="@drawable/ic_bookmark_outline"
+            android:importantForAccessibility="no"/>
 
     </FrameLayout>
 
 
-
     <TextView
         android:id="@+id/name"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:maxWidth="225dp"
 
         android:layout_gravity="center_vertical"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:paddingTop="2dp"
         android:paddingBottom="2dp"
+        android:layout_weight="1"
 
         android:text="Sample Title"
         android:gravity="center_vertical"
         android:textSize="18sp"
         android:ellipsize="end"
         android:maxLines="1" />
-
-    <com.google.android.material.divider.MaterialDivider
-        android:id="@+id/color"
-        android:layout_width="0dp"
-        android:layout_height="2dp"
-        android:layout_weight="1"
-
-        android:layout_gravity="center_vertical"
-        android:layout_marginEnd="16dp"
-        app:dividerColor="?attr/colorOnBackground"/>
 
 </LinearLayout>

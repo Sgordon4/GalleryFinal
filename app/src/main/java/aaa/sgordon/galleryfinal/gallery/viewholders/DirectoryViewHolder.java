@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.util.TypedValue;
@@ -18,8 +19,7 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 
 public class DirectoryViewHolder extends BaseViewHolder{
 	public View child;
-	public View color;
-	public ImageView image;
+	public ImageView color;
 	public TextView name;
 
 	public DirectoryViewHolder(View itemView) {
@@ -27,7 +27,6 @@ public class DirectoryViewHolder extends BaseViewHolder{
 
 		child = itemView.findViewById(R.id.child);
 		color = itemView.findViewById(R.id.color);
-		image = itemView.findViewById(R.id.media);
 		name = itemView.findViewById(R.id.name);
 	}
 
@@ -39,15 +38,15 @@ public class DirectoryViewHolder extends BaseViewHolder{
 		name.setText(fileName);
 
 
-		//Change the background color of the card
+		//Change the color of the item
 		if(listItem.fileProps.userattr.has("color")) {
-			color.setBackgroundColor(listItem.fileProps.userattr.get("color").getAsInt());
+			color.setColorFilter(listItem.fileProps.userattr.get("color").getAsInt(), PorterDuff.Mode.SRC_IN);
 		} else {
 			TypedValue typedValue = new TypedValue();
 
-			//Get the default card background color from the theme
-			//We need to do this or the card will retain previous background colors from other items thanks to the RecyclerView
-			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorBackgroundFloating , typedValue, true)) {
+			//Get the default icon color from the current theme
+			//We need to apply this or the card will retain previous colors from other items as the RecyclerView recycles it
+			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorControlNormal , typedValue, true)) {
 				int defaultBackgroundColor = typedValue.data;
 				color.setBackgroundColor(defaultBackgroundColor);
 			} else {

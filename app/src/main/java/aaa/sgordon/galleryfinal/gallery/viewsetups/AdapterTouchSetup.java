@@ -17,7 +17,6 @@ import com.google.android.material.transition.MaterialFadeThrough;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -212,31 +211,24 @@ public class AdapterTouchSetup {
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
-		if(listItem.fileProps.userattr.has("password")) {
-			String password = listItem.fileProps.userattr.get("password").getAsString();
+		String password = "";
+		if(listItem.fileProps.userattr.has("password"))
+			password = listItem.fileProps.userattr.get("password").getAsString();
 
-			if(!password.isEmpty()) {
-				PasswordModal.launch(dirFragment, listItem.name, password, () -> {
-					Path pathFromRoot = dirFragment.dirViewModel.getPathFromRoot().resolve(listItem.fileUID.toString());
-					DirFragment fragment = DirFragment.initialize(listItem.name, pathFromRoot);
+		//If there is a password, launch the password modal first
+		if(!password.isEmpty())
+			PasswordModal.launch(dirFragment, listItem.name, password, () -> launchDirFragment(dirFragment, listItem));
+		else
+			launchDirFragment(dirFragment, listItem);
+	}
 
-					dirFragment.getParentFragmentManager().beginTransaction()
-							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
-							.addToBackStack(null)
-							.commit();
-				});
-			}
-		}
-		//If there is no password, launch the directory fragment
-		else {
-			Path pathFromRoot = dirFragment.dirViewModel.getPathFromRoot().resolve(listItem.fileUID.toString());
-			DirFragment fragment = DirFragment.initialize(listItem.name, pathFromRoot);
+	private static void launchDirFragment(DirFragment dirFragment, ListItem listItem) {
+		DirFragment fragment = DirFragment.initialize(listItem);
 
-			dirFragment.getParentFragmentManager().beginTransaction()
-					.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
-					.addToBackStack(null)
-					.commit();
-		}
+		dirFragment.getParentFragmentManager().beginTransaction()
+				.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
+				.addToBackStack(null)
+				.commit();
 	}
 
 

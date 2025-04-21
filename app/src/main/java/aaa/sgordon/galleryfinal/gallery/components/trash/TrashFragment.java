@@ -64,7 +64,7 @@ public class TrashFragment extends Fragment {
 		dirFragment = (DirFragment) requireParentFragment();
 
 		viewModel = new ViewModelProvider(this,
-				new TrashViewModel.Factory(dirFragment.dirViewModel.getDirUID()))
+				new TrashViewModel.Factory(dirFragment.dirViewModel.listItem.fileUID))
 				.get(TrashViewModel.class);
 	}
 

@@ -194,9 +194,12 @@ public class DirSampleData {
 
 		//Add tags to some root files
 		writeAttrToFile(r_f1.fileUID, makeTagAttr("Actual File", "Group A"));
-		writeAttrToFile(r_d1.fileUID, makeTagAttr("Directory", "Group A"));
 		writeAttrToFile(r_l1.fileUID, makeTagAttr("Link", "Group A"));
 		writeAttrToFile(r_l3.fileUID, makeTagAttr("Link", "Group B"));
+
+		JsonObject dirAttr = makeTagAttr("Directory", "Group A");
+		dirAttr.addProperty("color", 0xFF9A0000);
+		writeAttrToFile(r_d1.fileUID, dirAttr);
 
 		//Add color to some files
 		JsonObject colorAttr = new JsonObject();

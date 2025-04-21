@@ -19,14 +19,19 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.file.Paths;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.databinding.ActivityMainBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
@@ -91,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 			//Get the root directory UID from the shared preferences if it already exists, or create the test setup if not
 			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
 			String rootUIDString = prefs.getString("UUID", null);
-			rootUIDString = null;
+			//rootUIDString = null;
 			if(rootUIDString == null)
 				rootUIDString = createTestSetup();
 
@@ -112,17 +117,27 @@ public class MainActivity extends AppCompatActivity {
 			viewModel.testInt += 1;
 
 
-			//Use the rootDirectoryUID to start the first fragment
-			Handler mainHandler = new Handler(getMainLooper());
-			mainHandler.post(() -> {
-				DirFragment fragment = DirFragment.initialize("Gallery App", Paths.get(rootDirectoryUID.toString()));
+			try {
+				HFile rootProps = HybridAPI.getInstance().getFileProps(rootDirectoryUID);
+				HZone rootZone = HybridAPI.getInstance().getZoningInfo(rootDirectoryUID);
 
-				getSupportFragmentManager().beginTransaction()
-						.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
-						.addToBackStack(null)
-						.commit();
-			});
+				//Use the rootDirectoryUID to start the first fragment
+				Handler mainHandler = new Handler(getMainLooper());
+				mainHandler.post(() -> {
 
+					ListItem startItem = new ListItem(rootDirectoryUID, null, "Gallery App",
+							Paths.get(rootDirectoryUID.toString()), rootProps, rootZone, ListItem.ListItemType.DIRECTORY);
+					DirFragment fragment = DirFragment.initialize(startItem);
+
+					getSupportFragmentManager().beginTransaction()
+							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
+							.addToBackStack(null)
+							.commit();
+				});
+			}
+			catch (FileNotFoundException | ConnectException e) {
+				throw new RuntimeException(e);
+			}
 		});
 		launchThread.start();
 	}
