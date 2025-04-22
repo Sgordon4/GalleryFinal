@@ -20,12 +20,12 @@
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:foreground="@drawable/selector_overlay" >
+            android:foreground="@drawable/selector_overlay">
 
             <ImageView
                 android:id="@+id/media"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"/>
 
         </androidx.cardview.widget.CardView>
 

@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:clipToPadding="false"
     android:clickable="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -19,14 +20,12 @@
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:foreground="@drawable/selector_overlay"
-            android:background="?attr/colorSurface">
+            android:foreground="@drawable/selector_overlay">
 
             <ImageView
                 android:id="@+id/media"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?attr/colorSurfaceContainer"/>
+                android:layout_height="match_parent"/>
 
         </FrameLayout>
 
