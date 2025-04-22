@@ -121,7 +121,7 @@ public class ImageFragment extends Fragment {
 	}
 
 
-	public static final int SIZE_THRESHOLD = 1024 * 1024 * 3;	//3MB
+	public static final int SIZE_THRESHOLD = 1024 * 1024 * 6;	//3MB
 
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
@@ -237,7 +237,7 @@ public class ImageFragment extends Fragment {
 
 						zoomPanHandler.setMediaDimensions((int) intrinsicWidth, (int) intrinsicHeight);
 						zoomPanHandler.setMidScale(zoom);
-						zoomPanHandler.setMaxScale(zoom * 3);
+						zoomPanHandler.setMaxScale(zoom * 4);
 
 
 						int actualWidth = (int) (viewWidth * scaleX);
