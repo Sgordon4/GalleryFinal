@@ -165,4 +165,26 @@ public class HFile {
 
 		return remote;
 	}
+
+
+	public static HFile copy(@NonNull HFile original) {
+		HFile copy = new HFile(original.fileuid, original.accountuid);
+		copy.isdir = original.isdir;
+		copy.islink = original.islink;
+		copy.filesize = original.filesize;
+		copy.checksum = original.checksum;
+		//copy.userattr = original.userattr;
+		copy.attrhash = original.attrhash;
+		copy.changetime = original.changetime;
+		copy.modifytime = original.modifytime;
+		copy.accesstime = original.accesstime;
+		copy.createtime = original.createtime;
+
+		JsonObject copyAttr = new JsonObject();
+		for(String key : original.userattr.keySet())
+			copyAttr.add(key, original.userattr.get(key));
+		copy.userattr = copyAttr;
+
+		return copy;
+	}
 }

@@ -14,13 +14,19 @@ import androidx.annotation.Nullable;
 
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
+
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class DividerViewHolder extends BaseViewHolder {
 	public View child;
 	public ImageView color;
 	public TextView name;
+	public ImageView collapse;
 
 	public DividerViewHolder(@NonNull View itemView) {
 		super(itemView);
@@ -28,6 +34,7 @@ public class DividerViewHolder extends BaseViewHolder {
 		child = itemView.findViewById(R.id.child);
 		color = itemView.findViewById(R.id.color);
 		name = itemView.findViewById(R.id.name);
+		collapse = itemView.findViewById(R.id.collapse);
 	}
 
 	@Override
@@ -48,9 +55,9 @@ public class DividerViewHolder extends BaseViewHolder {
 			//We need to apply this or the card will retain previous colors from other items as the RecyclerView recycles it
 			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorControlNormal , typedValue, true)) {
 				int defaultBackgroundColor = typedValue.data;
-				color.setBackgroundColor(defaultBackgroundColor);
+				color.setColorFilter(defaultBackgroundColor, PorterDuff.Mode.SRC_IN);
 			} else {
-				color.setBackgroundColor(Color.GRAY);
+				color.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
 			}
 		}
 
@@ -71,5 +78,33 @@ public class DividerViewHolder extends BaseViewHolder {
 				shapeDrawable.setStroke(4, Color.TRANSPARENT);
 			}
 		}
+
+
+		boolean isCollapsed = listItem.fileProps.userattr.has("collapsed") && listItem.fileProps.userattr.get("collapsed").getAsBoolean();
+		if(isCollapsed)
+			collapse.setImageResource(R.drawable.ic_chevron_up);
+		else
+			collapse.setImageResource(R.drawable.ic_chevron_down);
+
+		collapse.setOnClickListener(v -> {
+			Thread collapseThread = new Thread(() -> {
+				System.out.println("Setting collapsed to "+!isCollapsed);
+				HybridAPI hAPI = HybridAPI.getInstance();
+				try {
+					hAPI.lockLocal(listItem.fileUID);
+					HFile fileProps = hAPI.getFileProps(listItem.fileUID);
+					if(isCollapsed)
+						fileProps.userattr.remove("collapsed");
+					else
+						fileProps.userattr.addProperty("collapsed", true);
+					hAPI.setAttributes(listItem.fileUID, fileProps.userattr, fileProps.attrhash);
+				} catch (FileNotFoundException | ConnectException e) {
+					//Do nothing
+				} finally {
+					hAPI.unlockLocal(listItem.fileUID);
+				}
+			});
+			collapseThread.start();
+		});
 	}
 }

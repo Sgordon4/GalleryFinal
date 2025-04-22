@@ -18,7 +18,7 @@
     -->
 
 
-    <color name="selected_color">#ff00ffff</color>
+    <color name="selected_color">#FF00FFFF</color>
 
     <color name="black_overlay">#66000000</color>
     <color name="white_overlay">#66FFFFFF</color>

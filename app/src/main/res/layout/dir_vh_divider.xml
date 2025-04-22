@@ -80,7 +80,7 @@
                 android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:layout_marginEnd="8dp"
-                android:src="@drawable/icon_chevron_down"
+                android:src="@drawable/ic_chevron_down"
                 android:layout_gravity="center_vertical"
                 android:contentDescription="Collapse" />
 

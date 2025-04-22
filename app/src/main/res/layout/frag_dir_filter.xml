@@ -62,7 +62,7 @@
             android:paddingEnd="8dp"
             android:layout_marginEnd="8dp"
             android:layout_gravity="end"
-            android:src="@drawable/icon_chevron_down"
+            android:src="@drawable/ic_chevron_down"
             android:background="?android:selectableItemBackgroundBorderless"
             android:contentDescription="Expand search" />
 

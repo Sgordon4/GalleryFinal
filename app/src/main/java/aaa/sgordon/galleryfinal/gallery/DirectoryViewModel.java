@@ -142,6 +142,7 @@ public class DirectoryViewModel extends ViewModel {
 			try {
 				//Grab the new attributes from the repository
 				JsonObject newAttr = attrCache.getAttr(uuid);
+				String newAttrHash = attrCache.getAttrHash(uuid);
 
 				//For each file in the fileList...
 				List<ListItem> updatedList = fileList.getValue();
@@ -153,6 +154,8 @@ public class DirectoryViewModel extends ViewModel {
 						//Replace the list item with a new one, containing the updated attributes
 						ListItem updated = new ListItem.Builder(item).build();
 						updated.fileProps.userattr = newAttr;
+						updated.fileProps.attrhash = newAttrHash;
+
 						updatedList.set(i, updated);
 					}
 				}

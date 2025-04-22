@@ -82,6 +82,12 @@ public class AttrCache {
 
 		return attr;
 	}
+	public String getAttrHash(UUID fileUID) throws FileNotFoundException, ConnectException {
+		if(!attrCache.containsKey(fileUID))
+			getAttr(fileUID);
+
+		return attrCache.get(fileUID).first;
+	}
 
 
 	//Compile a list of all the tags used by any file in the provided list

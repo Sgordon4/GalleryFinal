@@ -14,27 +14,37 @@
         android:padding="1dp"
         android:background="@drawable/border_gallery">
 
-        <androidx.cardview.widget.CardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:foreground="@drawable/selector_overlay" >
+            android:background="?attr/colorSurface"
+            android:foreground="@drawable/selector_overlay"
+            android:contentDescription="An Unknown File Type"
+            android:orientation="vertical">
 
-            <View
-                android:id="@+id/color"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="0dp"
+                android:layout_weight="1">
 
-            <ImageView
-                android:id="@+id/media"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleX=".7"
-                android:scaleY=".7"
-                android:src="@drawable/icon_file_question"
-                android:contentDescription="An unknown item." />
+                <ImageView
+                    android:id="@+id/color"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_unknown_document"
+                    android:importantForAccessibility="no"/>
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_unknown_document_outline"
+                    app:tint="?android:attr/textColorPrimary"
+                    android:importantForAccessibility="no"/>
+
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/name"
@@ -47,13 +57,13 @@
                 android:paddingEnd="8dp"
 
                 android:background="?attr/colorSurfaceContainer"
-                android:text="Unknown"
+                android:text="Unknown File"
                 android:gravity="center_vertical"
                 android:textSize="16sp"
-                android:ellipsize="middle"
+                android:ellipsize="end"
                 android:maxLines="1" />
 
-        </androidx.cardview.widget.CardView>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

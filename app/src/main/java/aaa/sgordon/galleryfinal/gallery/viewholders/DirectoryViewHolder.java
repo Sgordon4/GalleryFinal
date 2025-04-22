@@ -48,9 +48,9 @@ public class DirectoryViewHolder extends BaseViewHolder{
 			//We need to apply this or the card will retain previous colors from other items as the RecyclerView recycles it
 			if (itemView.getContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorControlNormal , typedValue, true)) {
 				int defaultBackgroundColor = typedValue.data;
-				color.setBackgroundColor(defaultBackgroundColor);
+				color.setColorFilter(defaultBackgroundColor, PorterDuff.Mode.SRC_IN);
 			} else {
-				color.setBackgroundColor(Color.GRAY);
+				color.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
 			}
 		}
 

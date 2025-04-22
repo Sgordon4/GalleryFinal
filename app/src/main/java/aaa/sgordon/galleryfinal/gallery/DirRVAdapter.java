@@ -86,7 +86,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name) &&
 						list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot) &&
 						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type) &&
-						list.get(oldItemPosition).fileProps.userattr.equals(newList.get(newItemPosition).fileProps.userattr);
+						list.get(oldItemPosition).fileProps.attrhash.equals(newList.get(newItemPosition).fileProps.attrhash);
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator

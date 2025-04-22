@@ -35,6 +35,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -312,9 +313,12 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
+			list = hideCollapsedItems(list);
+
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
+
 
 
 
@@ -422,6 +426,39 @@ public class DirFragment extends Fragment {
 
 
 
+	private List<ListItem> hideCollapsedItems(List<ListItem> list) {
+		List<ListItem> newList = new ArrayList<>();
+		ListItem collapsedItem = null;
+		for(ListItem item : list) {
+			if(collapsedItem != null) {
+				//If the collapsed item is a link, wait until we reach the linkEnd to un-collapse
+				if(collapsedItem.fileProps.islink &&
+								item.type == ListItem.ListItemType.LINKEND &&
+								collapsedItem.fileUID.equals(item.fileUID))
+					collapsedItem = null;
+				//If the collapsed item is a Divider, wait until we reach another divider or link to un-collapse
+				else if(collapsedItem.type.equals(ListItem.ListItemType.DIVIDER) && (
+								item.type.equals(ListItem.ListItemType.LINKDIRECTORY) ||
+								item.type.equals(ListItem.ListItemType.LINKDIVIDER) ||
+								item.type.equals(ListItem.ListItemType.LINKEND) ||
+								item.type.equals(ListItem.ListItemType.DIVIDER)))
+					collapsedItem = null;
+			}
+
+			if(collapsedItem != null)
+				continue;
+
+			newList.add(item);
+
+			//If this item is a Divider, LinkDivider, or LinkDirectory and is collapsed, remember it
+			if((item.fileProps.userattr.has("collapsed") && item.fileProps.userattr.get("collapsed").getAsBoolean()) && (
+					item.type.equals(ListItem.ListItemType.DIVIDER) ||
+					item.type.equals(ListItem.ListItemType.LINKDIVIDER) ||
+					item.type.equals(ListItem.ListItemType.LINKDIRECTORY)))
+				collapsedItem = item;
+		}
+		return newList;
+	}
 
 
 

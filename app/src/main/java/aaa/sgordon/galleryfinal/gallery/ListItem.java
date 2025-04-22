@@ -82,8 +82,8 @@ public class ListItem {
 			this.parentUID = item.parentUID;
 			this.name = item.name;
 			this.filePath = item.pathFromRoot;
-			this.fileProps = item.fileProps;
-			this.zoning = item.zoning;
+			this.fileProps = HFile.copy(item.fileProps);
+			this.zoning = (item.zoning == null) ? null : HZone.copy(item.zoning);
 			this.type = item.type;
 		}
 

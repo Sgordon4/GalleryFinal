@@ -33,6 +33,11 @@ public class HZone {
 		return new Gson().toJsonTree(this).getAsJsonObject();
 	}
 
+
+	public static HZone copy(HZone original) {
+		return new HZone(original.fileuid, original.isLocal, original.isRemote);
+	}
+
 	@NonNull
 	@Override
 	public String toString() {
