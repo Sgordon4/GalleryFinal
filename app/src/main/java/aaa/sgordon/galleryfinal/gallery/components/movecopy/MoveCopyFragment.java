@@ -9,6 +9,7 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,7 +43,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 public class MoveCopyFragment extends Fragment {
 	private static final String TAG = "Gal.MC";
 	private DirMovecopyBinding binding;
-	private MCViewModel viewModel;
+	public MCViewModel viewModel;
 
 	private MCAdapter adapter;
 	private SelectionController selectionController;
@@ -158,7 +159,7 @@ public class MoveCopyFragment extends Fragment {
 			else {
 				selectionController.toggleSelectItem(item.fileUID);
 			}
-		});
+		}, this);
 		recyclerView.setAdapter(adapter);
 
 
@@ -403,6 +404,18 @@ public class MoveCopyFragment extends Fragment {
 				//If this is not the last item, allow the breadcrumb to be selected
 				if(index < viewModel.currPathFromRoot.getNameCount()-1)
 					breadCrumb.setOnClickListener(v -> changeDirectory(currentCrumb, finalPreviousCrumb, currPath));
+			});
+
+			//After all other posts have completed
+			binding.breadcrumbs.post(() -> {
+				//Scroll to the end of the breadcrumbs whenever the layout changes
+				binding.breadcrumbsScroll.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+					@Override
+					public void onLayoutChange(View v, int l, int t, int r, int b, int ol, int ot, int or, int ob) {
+						binding.breadcrumbsScroll.removeOnLayoutChangeListener(this);
+						binding.breadcrumbsScroll.fullScroll(View.FOCUS_RIGHT);
+					}
+				});
 			});
 		}
 	}

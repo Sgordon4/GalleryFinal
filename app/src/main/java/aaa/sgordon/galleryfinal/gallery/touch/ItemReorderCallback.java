@@ -178,7 +178,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 
 		//We do not want to move links directly inside themselves or things will visually disappear. Exclude any.
 		if(destination.startsWith(draggedItem.pathFromRoot)) {
-			Log.d(TAG, "Drag failed, not allowed to move links inside themselves");
+			Log.d(TAG, "Drag failed, not allowed to move items inside themselves");
 			//Toast.makeText(recyclerView.getContext(), "Not allowed to move links inside themselves!", Toast.LENGTH_SHORT).show();
 			callback.onReorderFailed();
 			return;

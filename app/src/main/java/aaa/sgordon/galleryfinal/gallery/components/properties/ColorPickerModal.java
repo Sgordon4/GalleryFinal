@@ -13,11 +13,11 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 
 import com.jaredrummler.android.colorpicker.ColorPickerView;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.DirFragment;
 
 public class ColorPickerModal extends DialogFragment {
 	private final ColorPickerCallback callback;
@@ -27,7 +27,7 @@ public class ColorPickerModal extends DialogFragment {
 	private TextWatcher textWatcher;
 
 
-	public static void launch(@NonNull DirFragment fragment, int startColor, @NonNull ColorPickerCallback callback) {
+	public static void launch(@NonNull Fragment fragment, int startColor, @NonNull ColorPickerCallback callback) {
 		ColorPickerModal dialog = new ColorPickerModal(startColor, callback);
 		dialog.show(fragment.getChildFragmentManager(), "color_picker");
 	}

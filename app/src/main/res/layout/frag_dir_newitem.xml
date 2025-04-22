@@ -9,33 +9,60 @@
     android:paddingStart="8dp"
     android:paddingEnd="8dp">
 
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="8dp"/>
+
     <EditText
         android:id="@+id/name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="4dp"
+        android:paddingHorizontal="4dp"
 
         android:inputType="text"
         android:maxLines="1"
         android:importantForAutofill="no"
         android:hint="Filename..." />
 
+    <Space
+        android:layout_width="0dp"
+        android:layout_height="8dp"/>
 
     <Spinner
         android:id="@+id/dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="4dp"
-        android:paddingVertical="8dp"
-        android:layout_marginBottom="16dp"/>
+        android:paddingVertical="8dp"/>
 
 
-    <com.google.android.material.divider.MaterialDivider
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginHorizontal="24dp"
-        app:dividerColor="?attr/colorOnSurface"/>
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginVertical="12dp"
+        android:layout_marginHorizontal="4dp">
 
+        <com.github.naz013.colorslider.ColorSlider
+            android:id="@+id/color_slider"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            app:cs_colors="@array/modal_color_picker"
+            android:background="@color/dark_gray"/>
+
+        <View
+            android:id="@+id/color_picker_button"
+            android:layout_width="66dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="16dp"
+            android:focusable="true"
+            android:clickable="true"
+            android:contentDescription="Custom color"
+            android:background="@null" />
+
+    </LinearLayout>
 
 
 
@@ -43,8 +70,9 @@
         android:id="@+id/link_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginVertical="12dp"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <RadioGroup
             android:id="@+id/link_type"
@@ -58,7 +86,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Internal Link"
-                android:layout_marginHorizontal="16dp"/>
+                android:layout_marginHorizontal="16dp" />
 
             <RadioButton
                 android:id="@+id/external_link"
@@ -75,8 +103,7 @@
             android:id="@+id/link_internal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:visibility="gone">
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -143,42 +170,6 @@
 
 
 
-        <com.google.android.material.divider.MaterialDivider
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginHorizontal="24dp"
-            app:dividerColor="?attr/colorOnSurface"/>
-
-
-    </LinearLayout>
-
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="12dp"
-        android:layout_marginHorizontal="4dp">
-
-        <com.github.naz013.colorslider.ColorSlider
-            android:id="@+id/color_slider"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            app:cs_colors="@array/modal_color_picker"
-            android:background="@color/dark_gray"/>
-
-        <View
-            android:id="@+id/color_picker_button"
-            android:layout_width="66dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="16dp"
-            android:focusable="true"
-            android:clickable="true"
-            android:contentDescription="Custom color"
-            android:background="@null" />
 
     </LinearLayout>
 

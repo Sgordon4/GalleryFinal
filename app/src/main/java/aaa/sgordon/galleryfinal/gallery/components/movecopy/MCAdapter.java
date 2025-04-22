@@ -3,13 +3,15 @@ package aaa.sgordon.galleryfinal.gallery.components.movecopy;
 import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.Button;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
@@ -17,14 +19,22 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DividerViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
-	public List<ListItem> list;
+	private final MoveCopyFragment fragment;
 	private final MCAdapterCallbacks callbacks;
 
-	public MCAdapter(@NonNull MCAdapterCallbacks callbacks) {
+	public List<ListItem> list;
+	private final ListItem newItemPlaceholder;
+
+	public MCAdapter(@NonNull MCAdapterCallbacks callbacks, @NonNull MoveCopyFragment fragment) {
+		this.fragment = fragment;
 		this.callbacks = callbacks;
 		list = new ArrayList<>();
+
+		newItemPlaceholder = new ListItem(UUID.randomUUID(), null, "Create a New Directory", Paths.get(""),
+				new HFile(UUID.randomUUID(), UUID.randomUUID()), null, ListItem.ListItemType.UNREACHABLE);
 	}
 
 
@@ -36,6 +46,9 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	@SuppressLint("NotifyDataSetChanged")
 	public void setList(List<ListItem> newList) {
 		list = newList;
+
+		//Add a Create New Directory item
+		list.add(0, newItemPlaceholder);
 
 		//When changing dirs, we want the full dataset to reset, even if there are common items
 		//Dir content updates also change the list, but we should be displaying so few items that idc
@@ -58,8 +71,8 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			}
 		}
 
-		holder.bind(list.get(position), parent);
 		holder.itemView.setOnClickListener(view -> callbacks.onItemClicked(item));
+		holder.bind(list.get(position), parent);
 	}
 
 
@@ -76,6 +89,8 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				return 2;
 			case LINKDIVIDER:
 				return 3;
+			case UNREACHABLE:		//This will only be our placeholder item
+				return 4;
 			default:
 				return -1;
 		}
@@ -96,6 +111,8 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			case 2: holder = new LinkViewHolder(inflater.inflate(R.layout.dir_mc_vh_link, parent, false));
 				break;
 			case 3: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_mc_vh_divider, parent, false));
+				break;
+			case 4: holder = new NewDirViewHolder(inflater.inflate(R.layout.dir_mc_vh_newitem, parent, false), fragment, fragment.viewModel.currDirUID);
 				break;
 			case -1:
 			default: throw new RuntimeException("Unknown view type in Move/Copy adapter!");

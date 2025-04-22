@@ -59,4 +59,17 @@
         android:ellipsize="end"
         android:maxLines="1" />
 
+
+    <!-- For compatibility with the DividerViewHolder class -->
+    <ImageView
+        android:id="@+id/collapse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:layout_marginEnd="8dp"
+        android:src="@drawable/ic_chevron_down"
+        android:layout_gravity="center_vertical"
+        android:contentDescription="Collapse"
+        android:visibility="gone"/>
+
 </LinearLayout>
