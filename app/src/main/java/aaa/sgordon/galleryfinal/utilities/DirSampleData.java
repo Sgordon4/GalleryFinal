@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -43,26 +44,6 @@ public class DirSampleData {
 
 
 
-	public static class DirItem {
-		@NonNull
-		public final UUID fileUID;
-		@NonNull
-		public final String name;
-
-		public DirItem(@NonNull UUID fileUID, @NonNull String name) {
-			this.fileUID = fileUID;
-			this.name = name;
-		}
-
-		@NonNull
-		@Override
-		public String toString() {
-			return fileUID + " " + name;
-		}
-	}
-
-
-
 	public static UUID setupDatabaseSmall(Context context) throws FileNotFoundException, IOException {
 		Log.i(TAG, "Setting up SMALL in-memory database...");
 		LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
@@ -80,21 +61,21 @@ public class DirSampleData {
 		UUID root = hapi.createFile(currentAccount, true, false);
 
 		//Setup files in the root directory
-		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 1");
-		DirItem r_div12 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
-		DirItem r_div13 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
-		DirItem r_div14 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
-		DirItem r_div15 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
+		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 1");
+		DirItem r_div12 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 1.div");
+		DirItem r_div13 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 1.div");
+		DirItem r_div14 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 1.div");
+		DirItem r_div15 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 1.div");
 
-		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Airplane.jpg");
-		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Vulture.gif");
-		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Horrifying Rabbit.mp4");
-		DirItem r_f5 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 5");
-		DirItem r_f6 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 6");
-		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
-		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 7");
-		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), "1: Child Dir");
-		DirItem r_f8 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 8");
+		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Airplane.jpg");
+		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Vulture.gif");
+		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Horrifying Rabbit.mp4");
+		DirItem r_f5 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 5");
+		DirItem r_f6 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 6");
+		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 1.div");
+		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 7");
+		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), false, false, "1: Child Dir");
+		DirItem r_f8 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 8");
 		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(
 				r_div12, r_div13, r_div14, r_div15, r_f1,
 				r_f2,
@@ -145,36 +126,36 @@ public class DirSampleData {
 
 
 		//Setup files in the root directory
-		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Airplane.jpg");
-		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Vulture.gif");
-		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Horrifying Rabbit.mp4");
-		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 4");
-		DirItem r_f5 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 5");
-		DirItem r_f6 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 6");
-		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 7");
-		DirItem r_f8 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 8");
-		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 1.div");
-		DirItem r_f9 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Normal Text.txt");
-		DirItem r_f10 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Richest Guy.rtf");
-		DirItem r_f11 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 11");
-		DirItem r_f12 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 12");
-		DirItem r_f13 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 13");
-		DirItem r_f14 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 14");
-		DirItem r_div2 = new DirItem(hapi.createFile(currentAccount, false, false), "1: Divider 2.div");
-		DirItem r_f15 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 15");
-		DirItem r_f16 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 16");
-		DirItem r_f17 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 17");
-		DirItem r_f18 = new DirItem(hapi.createFile(currentAccount, false, false), "1: File 18");
+		DirItem r_f1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Airplane.jpg");
+		DirItem r_f2 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Vulture.gif");
+		DirItem r_f3 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Horrifying Rabbit.mp4");
+		DirItem r_f4 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 4");
+		DirItem r_f5 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 5");
+		DirItem r_f6 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 6");
+		DirItem r_f7 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 7");
+		DirItem r_f8 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 8");
+		DirItem r_div1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 1.div");
+		DirItem r_f9 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Normal Text.txt");
+		DirItem r_f10 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Richest Guy.rtf");
+		DirItem r_f11 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 11");
+		DirItem r_f12 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 12");
+		DirItem r_f13 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 13");
+		DirItem r_f14 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 14");
+		DirItem r_div2 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: Divider 2.div");
+		DirItem r_f15 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 15");
+		DirItem r_f16 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 16");
+		DirItem r_f17 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 17");
+		DirItem r_f18 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "1: File 18");
 
 
 
-		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), "1: Child Dir");
+		DirItem r_d1 = new DirItem(hapi.createFile(currentAccount, true, false), true, false, "1: Child Dir");
 
-		DirItem r_l1 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to Child dir");
-		DirItem r_l2 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to SideDir");
-		DirItem r_l3 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to Link to SideDir");
-		DirItem r_l4 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to Divider 1");
-		DirItem r_l5 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to Divider 2");
+		DirItem r_l1 = new DirItem(hapi.createFile(currentAccount, false, true), false, true, "1: Link to Child dir");
+		DirItem r_l2 = new DirItem(hapi.createFile(currentAccount, false, true), false, true, "1: Link to SideDir");
+		DirItem r_l3 = new DirItem(hapi.createFile(currentAccount, false, true), false, true, "1: Link to Link to SideDir");
+		DirItem r_l4 = new DirItem(hapi.createFile(currentAccount, false, true), false, true, "1: Link to Divider 1");
+		DirItem r_l5 = new DirItem(hapi.createFile(currentAccount, false, true), false, true, "1: Link to Divider 2");
 
 		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(r_l1, r_d1,
 				r_f1,
@@ -229,10 +210,10 @@ public class DirSampleData {
 
 		//Setup files in a child directory
 		UUID childUID = r_d1.fileUID;
-		DirItem child_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "2: File 1");
-		DirItem child_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "2: File 2");
+		DirItem child_f1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "2: File 1");
+		DirItem child_f2 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "2: File 2");
 
-		DirItem child_dupe_f2 = new DirItem(child_f2.fileUID, child_f2.name+" Duplicate");	//Test duplicate detection
+		DirItem child_dupe_f2 = new DirItem(child_f2.fileUID, false, false, child_f2.name+" Duplicate");	//Test duplicate detection
 
 		List<DirItem> childItems = new ArrayList<>(Arrays.asList(child_f1, child_f2, child_dupe_f2));
 		writeDirList(childUID, childItems);
@@ -248,8 +229,8 @@ public class DirSampleData {
 
 		//Setup files in a detached directory
 		UUID detachedUID = hapi.createFile(currentAccount, true, false);
-		DirItem detached_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "De: File 1");
-		DirItem detached_d1 = new DirItem(hapi.createFile(currentAccount, true, false), "De: Child Dir");
+		DirItem detached_f1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "De: File 1");
+		DirItem detached_d1 = new DirItem(hapi.createFile(currentAccount, true, false), true, false, "De: Child Dir");
 
 		List<DirItem> detachedItems = new ArrayList<>(Arrays.asList(detached_f1, detached_d1));
 		writeDirList(detachedUID, detachedItems);
@@ -263,14 +244,14 @@ public class DirSampleData {
 
 		//Setup files in the detached child directory
 		UUID detachedChildUID = detached_d1.fileUID;
-		DirItem deChild_f1 = new DirItem(hapi.createFile(currentAccount, false, false), "DC: File 1");
-		DirItem deChild_f2 = new DirItem(hapi.createFile(currentAccount, false, false), "DC: File 2");
-		DirItem deChild_f3 = new DirItem(hapi.createFile(currentAccount, false, false), "DC: File 3");
-		DirItem deChild_f4 = new DirItem(hapi.createFile(currentAccount, false, false), "DC: File 4");
-		DirItem deChild_f5 = new DirItem(hapi.createFile(currentAccount, false, false), "DC: File 5");
-		DirItem deChild_l1_cycle = new DirItem(hapi.createFile(currentAccount, false, true), "DC: Link Cycle");
+		DirItem deChild_f1 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 1");
+		DirItem deChild_f2 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 2");
+		DirItem deChild_f3 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 3");
+		DirItem deChild_f4 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 4");
+		DirItem deChild_f5 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 5");
+		DirItem deChild_l1_cycle = new DirItem(hapi.createFile(currentAccount, false, true), false, false, "DC: Link Cycle");
 
-		DirItem deChild_f6_fake = new DirItem(UUID.randomUUID(), "DC: File Fake");		//Create a file with a fake UUID
+		DirItem deChild_f6_fake = new DirItem(UUID.randomUUID(), false, false, "DC: File Fake");		//Create a file with a fake UUID
 
 		List<DirItem> deChildItems = new ArrayList<>(Arrays.asList(deChild_f1, deChild_f2, deChild_f3, deChild_f4, deChild_f5,
 				//deChild_f6_fake,
@@ -392,17 +373,17 @@ public class DirSampleData {
 			//Grab the current contents
 			System.out.println("Locking for fake import");
 			hAPI.lockLocal(dirUID);
-			List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
+			List<aaa.sgordon.galleryfinal.gallery.DirItem> dirList = DirUtilities.readDir(dirUID);
 			String checksum = hAPI.getFileProps(dirUID).checksum;
 
 
 			//Add a number of random fake files
 			for(int i = 0; i < numFiles; i++) {
-				dirList.add(0, new Pair<>(UUID.randomUUID(), "New Media "+ (dirList.size()+i) +".jpg"));
+				dirList.add(0, new DirItem(UUID.randomUUID(), false, false, "New Media "+ (dirList.size()+i) +".jpg"));
 			}
 
 			//Write the list back to the directory
-			List<String> newLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+			List<String> newLines = dirList.stream().map(DirItem::toString)
 					.collect(Collectors.toList());
 			byte[] newContent = String.join("\n", newLines).getBytes();
 			hAPI.writeFile(dirUID, newContent, checksum);

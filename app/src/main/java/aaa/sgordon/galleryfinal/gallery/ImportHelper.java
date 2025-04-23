@@ -99,9 +99,9 @@ public class ImportHelper {
 				hAPI.lockLocal(directoryUID);
 				HFile dirProps = hAPI.getFileProps(directoryUID);
 
-				List<Pair<UUID, String>> dirContents = DirUtilities.readDir(directoryUID);
-				dirContents.add(0, new Pair<>(newUID, documentFile.getName()));
-				List<String> newLines = dirContents.stream().map(pair -> pair.first+" "+pair.second).collect(Collectors.toList());
+				List<DirItem> dirContents = DirUtilities.readDir(directoryUID);
+				dirContents.add(0, new DirItem(newUID, false, false, documentFile.getName()));
+				List<String> newLines = dirContents.stream().map(DirItem::toString).collect(Collectors.toList());
 				byte[] newContent = String.join("\n", newLines).getBytes();
 
 				hAPI.writeFile(directoryUID, newContent, dirProps.checksum);

@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.MainActivity;
+import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
@@ -46,13 +47,16 @@ public class DirUtilities {
 	private final static String TAG = "Gal.DirUtil";
 
 
-	public static List<Pair<UUID, String>> readDir(@NonNull UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+
+
+
+	public static List<DirItem> readDir(@NonNull UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//Get the contents of the directory
 		Uri uri = HybridAPI.getInstance().getFileContent(dirUID).first;
 
 
 		//Read the directory into a list of UUID::FileName pairs
-		List<Pair<UUID, String>> dirList = new ArrayList<>();
+		List<DirItem> dirList = new ArrayList<>();
 
 		InputStream in = null;
 		try {
@@ -67,10 +71,10 @@ public class DirUtilities {
 				String line;
 				while ((line = reader.readLine()) != null) {
 					//TODO Handle invalid filenames
-					//Split each line into UUID::FileName and add it to our list
-					String[] parts = line.trim().split(" ", 2);
+					//Split each line into UUID::isdir::islink::FileName and add it to our list
+					String[] parts = line.trim().split(" ", 4);
 					//System.out.println(Arrays.toString(parts));
-					Pair<UUID, String> entry = new Pair<>(UUID.fromString(parts[0]), parts[1]);
+					DirItem entry = new DirItem(UUID.fromString(parts[0]), Boolean.parseBoolean(parts[1]), Boolean.parseBoolean(parts[2]), parts[3]);
 					dirList.add(entry);
 				}
 			}
@@ -113,17 +117,17 @@ public class DirUtilities {
 			HFile fileProps = hAPI.getFileProps(dirUID);
 
 			//Find the fileUID in the current list and replace its name
-			List<Pair<UUID, String>> dirList = readDir(dirUID);
+			List<DirItem> dirList = readDir(dirUID);
 			for(int i = 0; i < dirList.size(); i++) {
-				Pair<UUID, String> entry = dirList.get(i);
-				if(entry.first.equals(fileUID)) {
-					dirList.set(i, new Pair<>(entry.first, newName));
+				DirItem entry = dirList.get(i);
+				if(entry.fileUID.equals(fileUID)) {
+					dirList.set(i, new DirItem.Builder(entry).setName(newName).build());
 					break;
 				}
 			}
 
 			//Compile the list into a String
-			List<String> rootLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+			List<String> rootLines = dirList.stream().map(DirItem::toString)
 					.collect(Collectors.toList());
 			byte[] newContent = String.join("\n", rootLines).getBytes();
 
@@ -161,18 +165,18 @@ public class DirUtilities {
 				HFile fileProps = hAPI.getFileProps(dirUID);
 
 				//For each file in the directory...
-				List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
+				List<DirItem> dirList = DirUtilities.readDir(dirUID);
 				for(int i = 0; i < dirList.size(); i++) {
-					Pair<UUID, String> file = dirList.get(i);
+					DirItem file = dirList.get(i);
+					UUID fileUID = file.fileUID;
 
 					//If the file is in the list of files to rename, rename it
-					if(fileUIDs.containsKey(file.first)) {
-						dirList.set(i, new Pair<>(file.first, fileUIDs.get(file.first)));
-					}
+					if(fileUIDs.containsKey(fileUID))
+						dirList.set(i, new DirItem.Builder(file).setName(fileUIDs.get(fileUID)).build());
 				}
 
 				//Compile the list into a String
-				List<String> rootLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+				List<String> rootLines = dirList.stream().map(DirItem::toString)
 						.collect(Collectors.toList());
 				byte[] newContent = String.join("\n", rootLines).getBytes();
 
@@ -208,7 +212,7 @@ public class DirUtilities {
 		Iterator<ListItem> iterator = toDelete.iterator();
 		while (iterator.hasNext()) {
 			ListItem item = iterator.next();
-			if(!item.fileProps.isdir || item.fileProps.islink) continue;
+			if(!item.isDir || item.isLink) continue;
 
 			//If the file is a directory, recursively delete all files within
 			try {
@@ -244,13 +248,13 @@ public class DirUtilities {
 				hAPI.lockLocal(parentUID);
 
 				HFile destinationProps = hAPI.getFileProps(parentUID);
-				List<Pair<UUID, String>> dirList = readDir(parentUID);
+				List<DirItem> dirList = readDir(parentUID);
 
 				//Remove all file entries in this dir for files that were marked for deletion
-				dirList.removeIf(item -> UUIDsToDelete.contains(item.first));
+				dirList.removeIf(item -> UUIDsToDelete.contains(item.fileUID));
 
 				//Write the list back to the directory
-				List<String> newLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+				List<String> newLines = dirList.stream().map(DirItem::toString)
 						.collect(Collectors.toList());
 				byte[] newContent = String.join("\n", newLines).getBytes();
 				hAPI.writeFile(parentUID, newContent, destinationProps.checksum);
@@ -291,22 +295,23 @@ public class DirUtilities {
 		HybridAPI hAPI = HybridAPI.getInstance();
 		try {
 			//Get the contents of the directory
-			List<Pair<UUID, String>> dirList = readDir(dirUID);
+			List<DirItem> dirList = readDir(dirUID);
 
 			//For each item in the directory...
-			for(Pair<UUID, String> entry : dirList) {
+			for(DirItem entry : dirList) {
 				try {
 					//If the file is a directory, delete its contents
-					boolean isDir = hAPI.getFileProps(entry.first).isdir;
-					if(isDir) deleteDirContents(entry.first);
+					//Use HAPI to check instead of entry.isDir just in case
+					boolean isDir = hAPI.getFileProps(entry.fileUID).isdir;
+					if(isDir) deleteDirContents(entry.fileUID);
 
 					//Delete the file
-					hAPI.lockLocal(entry.first);
-					hAPI.deleteFile(entry.first);
+					hAPI.lockLocal(entry.fileUID);
+					hAPI.deleteFile(entry.fileUID);
 				} catch (FileNotFoundException e) {
 					//If the file doesn't exist, our job is technically done
 				} finally {
-					hAPI.unlockLocal(entry.first);
+					hAPI.unlockLocal(entry.fileUID);
 				}
 			}
 
@@ -357,7 +362,7 @@ public class DirUtilities {
 			hAPI.lockLocal(destinationDirUID);
 
 			HFile destinationProps = hAPI.getFileProps(destinationDirUID);
-			List<Pair<UUID, String>> dirList = readDir(destinationDirUID);
+			List<DirItem> dirList = readDir(destinationDirUID);
 
 
 			//Find the position to insert the items into
@@ -368,7 +373,7 @@ public class DirUtilities {
 			else {
 				//We need to find the nextItem in the list (if it still exists). We will insert the moved file(s) before it
 				for(int i = 0; i < dirList.size(); i++) {
-					if(dirList.get(i).first.equals(nextItem)) {
+					if(dirList.get(i).fileUID.equals(nextItem)) {
 						insertPos = i;
 						break;
 					}
@@ -377,12 +382,12 @@ public class DirUtilities {
 
 
 			//Convert the list items to UUID::String pairs
-			List<Pair<UUID, String>> moveOrdering = toMove.stream()
-					.map(item -> new Pair<>(item.fileUID, item.name))
+			List<DirItem> moveOrdering = toMove.stream()
+					.map(item -> new DirItem(item.fileUID, item.isDir, item.isLink, item.name))
 					.collect(Collectors.toList());
 
 			//Insert the moved files at the correct position, making sure to reposition files already in the directory
-			List<Pair<UUID, String>> newList = new ArrayList<>(dirList);
+			List<DirItem> newList = new ArrayList<>(dirList);
 			newList.add(insertPos, null);
 			newList.removeAll(moveOrdering);
 			int markedIndex = newList.indexOf(null);
@@ -398,7 +403,7 @@ public class DirUtilities {
 
 
 			//Write the list back to the directory
-			List<String> newLines = newList.stream().map(pair -> pair.first+" "+pair.second)
+			List<String> newLines = newList.stream().map(DirItem::toString)
 					.collect(Collectors.toList());
 			byte[] newContent = String.join("\n", newLines).getBytes();
 			hAPI.writeFile(destinationDirUID, newContent, destinationProps.checksum);
@@ -419,14 +424,14 @@ public class DirUtilities {
 				hAPI.lockLocal(parentUID);
 
 				HFile parentProps = hAPI.getFileProps(parentUID);
-				List<Pair<UUID, String>> dirList = readDir(parentUID);
+				List<DirItem> dirList = readDir(parentUID);
 
 				//Remove all files in toMove that are from this dir
 				Set<UUID> filesToRemoveSet = new HashSet<>(filesToRemove);
-				dirList.removeIf(item -> filesToRemoveSet.contains(item.first));
+				dirList.removeIf(item -> filesToRemoveSet.contains(item.fileUID));
 
 				//Write the list back to the directory
-				List<String> newLines = dirList.stream().map(pair -> pair.first+" "+pair.second).collect(Collectors.toList());
+				List<String> newLines = dirList.stream().map(DirItem::toString).collect(Collectors.toList());
 				byte[] newContent = String.join("\n", newLines).getBytes();
 				hAPI.writeFile(parentUID, newContent, parentProps.checksum);
 			} finally {
@@ -473,11 +478,11 @@ public class DirUtilities {
 		HybridAPI hAPI = HybridAPI.getInstance();
 
 		//Since we're copying, we need to create a new file for each of the toCopy files
-		List<Pair<UUID, String>> newFiles = new ArrayList<>();
+		List<DirItem> newFiles = new ArrayList<>();
 		for(ListItem item : toCopy) {
 			try {
 				UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
-				newFiles.add(new Pair<>(newFileUID, "Copy of "+item.name));
+				newFiles.add(new DirItem(newFileUID, item.isDir, item.isLink, "Copy of "+item.name));
 				System.out.println("CopyID: "+newFileUID+" from: "+item.fileUID);
 			}
 			catch (FileNotFoundException e) {
@@ -493,7 +498,7 @@ public class DirUtilities {
 			hAPI.lockLocal(destinationDirUID);
 
 			HFile destinationProps = hAPI.getFileProps(destinationDirUID);
-			List<Pair<UUID, String>> dirList = readDir(destinationDirUID);
+			List<DirItem> dirList = readDir(destinationDirUID);
 
 
 			//Find the position to insert the items into
@@ -504,7 +509,7 @@ public class DirUtilities {
 			else {
 				//We need to find the nextItem in the list (if it still exists). We will insert the moved file(s) before it
 				for(int i = 0; i < dirList.size(); i++) {
-					if(dirList.get(i).first.equals(nextItem)) {
+					if(dirList.get(i).fileUID.equals(nextItem)) {
 						insertPos = i;
 						break;
 					}
@@ -512,14 +517,9 @@ public class DirUtilities {
 			}
 
 
-			//Convert the list items to UUID::String pairs
-			List<Pair<UUID, String>> moveOrdering = newFiles.stream()
-					.map(item -> new Pair<>(item.first, item.second))
-					.collect(Collectors.toList());
-
-			//Insert the moved files at the correct position
-			List<Pair<UUID, String>> newList = new ArrayList<>(dirList);
-			newList.addAll(insertPos, moveOrdering);
+			//Insert the copied files at the correct position
+			List<DirItem> newList = new ArrayList<>(dirList);
+			newList.addAll(insertPos, newFiles);
 
 			//If the lists are the same, this means nothing was actually moved, and we should skip the write
 			//We should also skip the deletes after this because nothing was moved
@@ -530,7 +530,7 @@ public class DirUtilities {
 
 
 			//Write the list back to the directory
-			List<String> newLines = newList.stream().map(pair -> pair.first+" "+pair.second)
+			List<String> newLines = newList.stream().map(DirItem::toString)
 					.collect(Collectors.toList());
 			byte[] newContent = String.join("\n", newLines).getBytes();
 			hAPI.writeFile(destinationDirUID, newContent, destinationProps.checksum);
@@ -562,7 +562,7 @@ public class DirUtilities {
 			ListItem item = toExport.get(i);
 
 			//Skip directories and links
-			if(item.fileProps.isdir || item.fileProps.islink) {
+			if(item.isDir || item.isLink) {
 				toExport.remove(i);
 				continue;
 			}

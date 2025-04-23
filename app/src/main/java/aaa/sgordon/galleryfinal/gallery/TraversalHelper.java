@@ -35,24 +35,24 @@ public class TraversalHelper {
 
 	//Recursively read directory contents, drilling down through any links
 	public static List<ListItem> traverseDir(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-		List<Pair<UUID, String>> contents = dirCache.getDirContents(dirUID);
+		List<DirItem> contents = dirCache.getDirContents(dirUID);
 		return traverseContents(contents, Collections.singleton(dirUID), Paths.get(dirUID.toString()));
 	}
 
 
 
-	private static List<ListItem> traverseContents(List<Pair<UUID, String>> contents, Set<UUID> visited, Path currPath) {
+	private static List<ListItem> traverseContents(List<DirItem> contents, Set<UUID> visited, Path currPath) {
 		UUID parentUID = UUID.fromString(currPath.getFileName().toString());
 
 		//For each file in the directory...
 		List<ListItem> files = new ArrayList<>();
-		for (Pair<UUID, String> entry : contents) {
-			UUID fileUID = entry.first;
+		for (DirItem entry : contents) {
+			UUID fileUID = entry.fileUID;
 
 			//Add it to the current directory's list of files
-			Path thisFilePath = currPath.resolve(entry.first.toString());
+			Path thisFilePath = currPath.resolve(entry.fileUID.toString());
 
-			boolean isTrashed = FilenameUtils.getExtension(entry.second).startsWith("trashed_");
+			boolean isTrashed = FilenameUtils.getExtension(entry.name).startsWith("trashed_");
 
 			try {
 				HFile fileProps = hAPI.getFileProps(fileUID);
@@ -61,17 +61,17 @@ public class TraversalHelper {
 				//If this isn't a link, we don't need to do anything special
 				if (!fileProps.islink) {
 					if(fileProps.isdir)
-						files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+						files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 								ListItem.ListItemType.DIRECTORY));
 					else {
 						//If the file extension is ".div", this is a divider
-						if(FilenameUtils.getExtension(entry.second).equals("div")) {
-							files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+						if(FilenameUtils.getExtension(entry.name).equals("div")) {
+							files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 									ListItem.ListItemType.DIVIDER));
 						}
 						//Otherwise, this is a normal file
 						else {
-							files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+							files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 									ListItem.ListItemType.NORMAL));
 						}
 					}
@@ -90,14 +90,14 @@ public class TraversalHelper {
 
 				//If this is a link but it's trashed, we don't want to follow it
 				if(isTrashed) {
-					files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+					files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 							ListItem.ListItemType.LINKBROKEN));
 					continue;
 				}
 
 				Set<UUID> localVisited = new HashSet<>(visited);
 				if(!localVisited.add(fileUID)) {    //Prevent cycles
-					files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+					files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 							ListItem.ListItemType.LINKCYCLE));
 					continue;
 				}
@@ -105,7 +105,7 @@ public class TraversalHelper {
 
 				try {
 					//Traverse the link
-					ListItem topLink = new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+					ListItem topLink = new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 							ListItem.ListItemType.LINKSINGLE);
 
 					files.addAll(traverseLink(fileUID, topLink, localVisited, thisFilePath));
@@ -113,7 +113,7 @@ public class TraversalHelper {
 				catch (ContentsNotFoundException e) {
 					//If we're here, traverseLink threw this exception
 					//If we can't find the link's contents, this is an issue, link is broken
-					files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fileProps, zoning,
+					files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 							ListItem.ListItemType.LINKBROKEN));
 					continue;
 				}
@@ -123,7 +123,7 @@ public class TraversalHelper {
 				HFile fakeFileProps = new HFile(fileUID, hAPI.getCurrentAccount());
 
 				//If the file isn't found (file may be local on another device) or we just can't reach it, treat it as unreachable
-				files.add(new ListItem(fileUID, parentUID, entry.second, thisFilePath, fakeFileProps, null,
+				files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
 						ListItem.ListItemType.UNREACHABLE));
 				continue;
 			}
@@ -170,15 +170,15 @@ public class TraversalHelper {
 		//If the target is trashed, we don't want to follow it
 		//Note: We're looking at this target specifically, not any target further down the link chain
 		UUID targetParent = target.getParentUID();
-		List<Pair<UUID, String>> dirContents = dirCache.getDirContents(targetParent);
+		List<DirItem> dirContents = dirCache.getDirContents(targetParent);
 		boolean exists = false;
-		for(Pair<UUID, String> pair : dirContents) {
+		for(DirItem pair : dirContents) {
 			//If we find the targeted file...
-			if(pair.first.equals(target.getFileUID())) {
+			if(pair.fileUID.equals(target.getFileUID())) {
 				exists = true;
 
 				//...and it's a trashed file, mark as broken
-				if(FilenameUtils.getExtension(pair.second).startsWith("trashed_"))
+				if(FilenameUtils.getExtension(pair.name).startsWith("trashed_"))
 					return List.of(new ListItem.Builder(topLink)
 							.setType(ListItem.ListItemType.LINKBROKEN).build());
 			}
@@ -205,7 +205,7 @@ public class TraversalHelper {
 						.setType(ListItem.ListItemType.LINKDIRECTORY).build());
 
 				//Traverse the directory
-				List<Pair<UUID, String>> contents = dirCache.getDirContents(target.getFileUID());
+				List<DirItem> contents = dirCache.getDirContents(target.getFileUID());
 				files.addAll(traverseContents(contents, new HashSet<>(visited), currPath));
 
 				//Ad a bookend for the link
@@ -220,9 +220,9 @@ public class TraversalHelper {
 				List<ListItem> files = new ArrayList<>();
 
 				//Find the first item in the target's parent directory that matches the target UUID
-				List<Pair<UUID, String>> targetParentContents = dirCache.getDirContents(targetParent);
-				Optional<Pair<UUID, String>> targetItem = targetParentContents.stream()
-						.filter(pair -> pair.first.equals( target.getFileUID() )).findFirst();
+				List<DirItem> targetParentContents = dirCache.getDirContents(targetParent);
+				Optional<DirItem> targetItem = targetParentContents.stream()
+						.filter(pair -> pair.fileUID.equals( target.getFileUID() )).findFirst();
 
 				//If the target is no longer in the parent directory, the link is broken and we're done here
 				if(!targetItem.isPresent()) {
@@ -230,7 +230,7 @@ public class TraversalHelper {
 				}
 
 				//If the target does not refer to a divider item, this link points to a single item
-				String targetName = targetItem.get().second;
+				String targetName = targetItem.get().name;
 				if(!FilenameUtils.getExtension(targetName).equals("div")) {
 					return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKSINGLE).build());
 				}
@@ -242,7 +242,7 @@ public class TraversalHelper {
 				files.add(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKDIVIDER).build());
 
 				//Since the target is a divider item, we need to traverse only the "divider's items"
-				List<Pair<UUID, String>> dividerItems = sublistDividerItems(targetParentContents, target.getFileUID());
+				List<DirItem> dividerItems = sublistDividerItems(targetParentContents, target.getFileUID());
 				files.addAll(traverseContents(dividerItems, new HashSet<>(visited), currPath));
 
 				//Ad a bookend for the link
@@ -270,13 +270,13 @@ public class TraversalHelper {
 
 
 	//When displaying links to dividers, we want to show all items after the divider up until the next divider (or dir end)
-	private static List<Pair<UUID, String>> sublistDividerItems(List<Pair<UUID, String>> parentContents, UUID dividerUID)
+	private static List<DirItem> sublistDividerItems(List<DirItem> parentContents, UUID dividerUID)
 			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 
 		//Find the index of the divider within the parent directory contents
 		int dividerIndex = -1;
 		for (int i = 0; i < parentContents.size(); i++) {
-			if (parentContents.get(i).first.equals(dividerUID)) {
+			if (parentContents.get(i).fileUID.equals(dividerUID)) {
 				dividerIndex = i;
 				break;
 			}
@@ -291,7 +291,7 @@ public class TraversalHelper {
 		//Note: Divider's only stop at other '.div' files. This includes skipping links unless they're named 'Something.div'
 		int nextDividerIndex = dividerIndex + 1;
 		while (nextDividerIndex < parentContents.size()) {
-			if(FilenameUtils.getExtension( parentContents.get(nextDividerIndex).second ).equals("div"))
+			if(FilenameUtils.getExtension( parentContents.get(nextDividerIndex).name ).equals("div"))
 				break;
 
 			nextDividerIndex++;

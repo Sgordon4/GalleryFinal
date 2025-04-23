@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
@@ -356,11 +357,11 @@ public class MenuItemHelper {
 			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 
 		//For each item in the parent directory...
-		List<Pair<UUID, String>> dirList = DirCache.getInstance().getDirContents(parentDirUID);
+		List<DirItem> dirList = DirCache.getInstance().getDirContents(parentDirUID);
 		for(int i = 0; i < dirList.size(); i++) {
 			//If we find the target, return the next item (or null)
-			if (dirList.get(i).first.equals(targetUID))
-				return (i+1 < dirList.size()) ? dirList.get(i+1).first : null;
+			if (dirList.get(i).fileUID.equals(targetUID))
+				return (i+1 < dirList.size()) ? dirList.get(i+1).fileUID : null;
 		}
 		throw new FileNotFoundException("Target not found! \nParent='"+parentDirUID+"', \nTarget='"+targetUID+"'");
 	}

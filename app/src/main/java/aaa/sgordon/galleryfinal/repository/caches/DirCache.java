@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -30,7 +31,7 @@ public class DirCache {
 	private final HybridListeners.FileChangeListener fileChangeListener;
 	private final UpdateListeners updateListeners;
 
-	private final Map<UUID, List<Pair<UUID, String>>> dirContents;
+	private final Map<UUID, List<DirItem>> dirContents;
 	//Per directory, holds subordinate links and link targets the dir depends on. This is for use with the listener to refresh the dir on subordinate item updates
 	public final Map<UUID, Set<UUID>> subLinks;
 
@@ -101,12 +102,12 @@ public class DirCache {
 	}
 
 
-	public List<Pair<UUID, String>> getDirContents(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
+	public List<DirItem> getDirContents(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//If we have the directory contents cached, just return that
 		if(dirContents.containsKey(dirUID))
 			return dirContents.get(dirUID);
 
-		List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
+		List<DirItem> dirList = DirUtilities.readDir(dirUID);
 		dirContents.put(dirUID, dirList);
 		return dirList;
 	}

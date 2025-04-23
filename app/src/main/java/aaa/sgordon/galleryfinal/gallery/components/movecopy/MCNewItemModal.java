@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
+import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.components.properties.ColorPickerModal;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -190,11 +191,11 @@ public class MCNewItemModal extends DialogFragment {
 				HFile dirProps = hAPI.getFileProps(dirUID);
 
 				//Get the current directory contents in a list, and add our new file to the top
-				List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
-				dirList.add(0, new Pair<>(newFileUID, fFileName));
+				List<DirItem> dirList = DirUtilities.readDir(dirUID);
+				dirList.add(0, new DirItem(newFileUID, isDir, isLink, fFileName));
 
 				//Write the updated contents back to the directory
-				List<String> dirLines = dirList.stream().map(pair -> pair.first+" "+pair.second)
+				List<String> dirLines = dirList.stream().map(DirItem::toString)
 						.collect(Collectors.toList());
 				byte[] newContent = String.join("\n", dirLines).getBytes();
 				hAPI.writeFile(dirUID, newContent, dirProps.checksum);
