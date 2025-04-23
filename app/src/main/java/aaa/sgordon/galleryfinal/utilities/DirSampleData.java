@@ -176,7 +176,10 @@ public class DirSampleData {
 		DirItem r_l4 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to Divider 1");
 		DirItem r_l5 = new DirItem(hapi.createFile(currentAccount, false, true), "1: Link to Divider 2");
 
-		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(r_l1, r_d1, r_f1, r_f2, r_f3, r_l2, r_l3, r_f4, r_f5, r_f6, r_f7, r_f8,
+		List<DirItem> rootItems = new ArrayList<>(Arrays.asList(r_l1, r_d1,
+				r_f1,
+				//r_f2, r_f3,
+				r_l2, r_l3, r_f4, r_f5, r_f6, r_f7, r_f8,
 				r_div1, r_f9, r_f10, r_f11, r_f12, r_f13, r_f14, r_div2, r_f15, r_f16, r_f17, r_f18, r_l4, r_l5));
 		writeDirList(root, rootItems);
 
@@ -387,6 +390,7 @@ public class DirSampleData {
 		HybridAPI hAPI = HybridAPI.getInstance();
 		try {
 			//Grab the current contents
+			System.out.println("Locking for fake import");
 			hAPI.lockLocal(dirUID);
 			List<Pair<UUID, String>> dirList = DirUtilities.readDir(dirUID);
 			String checksum = hAPI.getFileProps(dirUID).checksum;
@@ -394,7 +398,7 @@ public class DirSampleData {
 
 			//Add a number of random fake files
 			for(int i = 0; i < numFiles; i++) {
-				dirList.add(0, new Pair<>(UUID.randomUUID(), "File number "+ (dirList.size()+i) ));
+				dirList.add(0, new Pair<>(UUID.randomUUID(), "New Media "+ (dirList.size()+i) +".jpg"));
 			}
 
 			//Write the list back to the directory
@@ -408,6 +412,7 @@ public class DirSampleData {
 		}
 		catch (IOException e) { throw new RuntimeException(e); }
 		finally {
+			System.out.println("Unlocking for fake import");
 			hAPI.unlockLocal(dirUID);
 		}
 	}

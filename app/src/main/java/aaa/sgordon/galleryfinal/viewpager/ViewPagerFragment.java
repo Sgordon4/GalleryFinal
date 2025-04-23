@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.transition.ChangeBounds;
 import androidx.transition.ChangeClipBounds;
@@ -21,6 +22,7 @@ import com.google.android.material.transition.MaterialContainerTransform;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,12 +39,17 @@ import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class ViewPagerFragment extends Fragment {
 	private FragViewpagerBinding binding;
-	private DirectoryViewModel dirViewModel;
-	private int currPos = -1;
+	private VPViewModel viewModel;
+
+	private ViewPagerAdapter adapter;
 
 
-	public static ViewPagerFragment initialize(int fromPosition) {
+	private MutableLiveData<List<ListItem>> tempDoNotUse;
+	private VPViewModel.VPCallback tempCBDoNotUse;
+	public static ViewPagerFragment initialize(int fromPosition, MutableLiveData<List<ListItem>> list, VPViewModel.VPCallback callback) {
 		ViewPagerFragment fragment = new ViewPagerFragment();
+		fragment.tempDoNotUse = list;
+		fragment.tempCBDoNotUse = callback;
 
 		Bundle bundle = new Bundle();
 		bundle.putInt("fromPosition", fromPosition);
@@ -51,25 +58,14 @@ public class ViewPagerFragment extends Fragment {
 		return fragment;
 	}
 
-	@Override
-	public void onStop() {
-		//Pass back the current ViewPager position
-		ViewPagerAdapter adapter = (ViewPagerAdapter) binding.viewpager.getAdapter();
-		dirViewModel.viewPagerCurrItem = adapter.list.get(binding.viewpager.getCurrentItem());
-
-		super.onStop();
-	}
-
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		Fragment dirFragment = getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
-		if(dirFragment == null) throw new RuntimeException("Directory fragment not found");
-
-		dirViewModel = new ViewModelProvider(dirFragment).get(DirectoryViewModel.class);
-
+		viewModel = new ViewModelProvider(this,
+				new VPViewModel.Factory(tempDoNotUse, tempCBDoNotUse))
+				.get(VPViewModel.class);
 
 
 		MaterialContainerTransform transform = new MaterialContainerTransform();
@@ -80,6 +76,10 @@ public class ViewPagerFragment extends Fragment {
 		setSharedElementEnterTransition(transform);
 
 
+		//Postpone the transition until the viewPager is ready, but only if this is our first creation
+		//WARNING: The ViewPage Fragment MUST call 'requireParentFragment().startPostponedEnterTransition();'
+		if(savedInstanceState == null)
+			postponeEnterTransition();
 
 		setEnterSharedElementCallback(new SharedElementCallback() {
 			@Override
@@ -87,7 +87,8 @@ public class ViewPagerFragment extends Fragment {
 				if(names.isEmpty()) return;
 
 				//Get the currently displayed ViewPage and the media view inside of it
-				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+currPos);
+				long id = adapter.getItemId(viewModel.currPos);
+				Fragment viewPage = getChildFragmentManager().findFragmentByTag("f"+id);
 				View media = viewPage.requireView().findViewById(R.id.media);
 
 				sharedElements.put(names.get(0), media);
@@ -111,12 +112,6 @@ public class ViewPagerFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 		binding = FragViewpagerBinding.inflate(inflater, container, false);
-
-		//Postpone the transition until the viewPager is ready, but only if this is our first creation
-		//WARNING: The ViewPage Fragment MUST call 'requireParentFragment().startPostponedEnterTransition();'
-		if(savedInstanceState == null)
-			postponeEnterTransition();
-
 		return binding.getRoot();
 	}
 
@@ -124,18 +119,19 @@ public class ViewPagerFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		ViewPagerAdapter adapter = new ViewPagerAdapter(this);
+		adapter = new ViewPagerAdapter(this);
 		binding.viewpager.setAdapter(adapter);
 		binding.viewpager.setOffscreenPageLimit(1);
 
+		viewModel.list.observe(getViewLifecycleOwner(), this::updateList);
 
-		dirViewModel.getFilterRegistry().filteredList.observe(getViewLifecycleOwner(), this::updateList);
 
 		binding.viewpager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
 			@Override
 			public void onPageSelected(int position) {
 				super.onPageSelected(position);
-				currPos = position;
+				System.out.println("Page changed!");
+				viewModel.currPos = position;
 			}
 		});
 	}
@@ -147,14 +143,26 @@ public class ViewPagerFragment extends Fragment {
 
 		//TODO If there are 0 items (all removed), leave
 
-		((ViewPagerAdapter) binding.viewpager.getAdapter()).setList(mediaOnly);
+		adapter.setList(mediaOnly);
 
-		if(currPos == -1) {
+		if(viewModel.currPos == -1) {
 			Bundle args = requireArguments();
 			int fromPos = args.getInt("fromPosition");
+			ListItem launchItem = newList.get(fromPos);
 
-			currPos = mediaOnly.indexOf(newList.get(fromPos));
-			binding.viewpager.setCurrentItem(currPos, false);
+			viewModel.currPos = mediaOnly.indexOf(launchItem);
+			binding.viewpager.setCurrentItem(viewModel.currPos, false);
 		}
+	}
+
+
+	@Override
+	public void onStop() {
+		//Pass back the current item
+		//TODO Will error if no items
+		ListItem currItem = adapter.list.get(binding.viewpager.getCurrentItem());
+		viewModel.callback.onClose(currItem);
+
+		super.onStop();
 	}
 }

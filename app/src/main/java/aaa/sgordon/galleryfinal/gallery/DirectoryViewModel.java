@@ -1,5 +1,9 @@
 package aaa.sgordon.galleryfinal.gallery;
 
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -17,8 +21,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -46,8 +54,6 @@ public class DirectoryViewModel extends ViewModel {
 
 	public final MutableLiveData< List<ListItem> > fileList;
 	public final MutableLiveData< Map<String, Set<UUID>> > fileTags;
-
-	public ListItem viewPagerCurrItem = null;
 
 
 	public DirCache getDirCache() {
@@ -178,7 +184,18 @@ public class DirectoryViewModel extends ViewModel {
 		//Add some items to start to fill in the screen for testing with scrolling
 		Thread importStart = new Thread(() -> DirSampleData.fakeImportFiles(listItem.fileUID, 50));
 		//importStart.start();
+
+
+		//Loop importing items for testing viewpager
+		System.out.println("Done with viewmodel");
+		scheduler = Executors.newSingleThreadScheduledExecutor();
+		Runnable runnable = () -> {
+			//'Import' to this directory
+			DirSampleData.fakeImportFiles(listItem.fileUID, 1);
+		};
+		//scheduler.scheduleWithFixedDelay(runnable, 4000, 4000, TimeUnit.MILLISECONDS);
 	}
+	private final ScheduledExecutorService scheduler;
 	@Override
 	protected void onCleared() {
 		super.onCleared();

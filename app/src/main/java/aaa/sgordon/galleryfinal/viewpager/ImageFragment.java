@@ -43,6 +43,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
@@ -195,7 +196,7 @@ public class ImageFragment extends Fragment {
 		});
 
 
-
+		requireParentFragment().startPostponedEnterTransition();
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(media.getContext())
@@ -203,7 +204,8 @@ public class ImageFragment extends Fragment {
 				.listener(new RequestListener<Drawable>() {
 					@Override
 					public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
-						requireParentFragment().startPostponedEnterTransition();
+						//try { requireParentFragment().startPostponedEnterTransition(); }
+						//catch (IllegalStateException ignored) {}
 						return false;
 					}
 
@@ -246,7 +248,7 @@ public class ImageFragment extends Fragment {
 						dragPage.onMediaReady(actualHeight);
 
 
-						requireParentFragment().startPostponedEnterTransition();
+						//requireParentFragment().startPostponedEnterTransition();
 						return false;
 					}
 				})
@@ -268,9 +270,12 @@ public class ImageFragment extends Fragment {
 		SubsamplingScaleImageView media = binding.viewA.findViewById(R.id.media);
 		media.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
 			@Override
-			public void onReady() {
+			public void onReady() {}
+			@Override
+			public void onTileLoadError(Exception e) {}
+			@Override
+			public void onPreviewReleased() {}
 
-			}
 			@Override
 			public void onPreviewLoadError(Exception e) {
 				requireParentFragment().startPostponedEnterTransition();
@@ -278,14 +283,6 @@ public class ImageFragment extends Fragment {
 			@Override
 			public void onImageLoadError(Exception e) {
 				requireParentFragment().startPostponedEnterTransition();
-			}
-			@Override
-			public void onTileLoadError(Exception e) {
-				requireParentFragment().startPostponedEnterTransition();
-			}
-			@Override
-			public void onPreviewReleased() {
-
 			}
 			@Override
 			public void onImageLoaded() {

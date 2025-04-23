@@ -35,7 +35,8 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
 			@Override
 			public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot);
+				boolean equal = list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot);
+				return equal;
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
@@ -46,8 +47,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 		};
 		DiffUtil.DiffResult diffs = DiffUtil.calculateDiff(diffCallback);
 
-		list.clear();
-		list.addAll(newList);
+
 
 		diffs.dispatchUpdatesTo(this);
 	}
@@ -76,5 +76,20 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@Override
 	public int getItemCount() {
 		return list.size();
+	}
+
+
+	@Override
+	public long getItemId(int position) {
+		//We're using pathFromRoot since 'duplicate' fileUIDs may be present thanks to links
+		return list.get(position).pathFromRoot.hashCode();
+	}
+	@Override
+	public boolean containsItem(long itemId) {
+		for(int i = 0; i < list.size(); i++) {
+			if(getItemId(i) == itemId)
+				return true;
+		}
+		return false;
 	}
 }

@@ -41,6 +41,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.texteditor.RTEditorFragment;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
+import aaa.sgordon.galleryfinal.viewpager.VPViewModel;
 import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 
 public class AdapterTouchSetup {
@@ -233,49 +234,47 @@ public class AdapterTouchSetup {
 
 
 	private static void launchViewPager(DirFragment dirFragment, BaseViewHolder holder) {
-		//int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
-		int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
-
-		ViewPagerFragment fragment = ViewPagerFragment.initialize(pos);
-
-		View media = holder.itemView.findViewById(R.id.media);
+		int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
+		//int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
+		System.out.println("Launching vp at pos "+pos);
 
 
 		//Fade out the grid when exiting
 		dirFragment.setExitTransition(new MaterialFadeThrough());
 
-		dirFragment.setExitSharedElementCallback(new SharedElementCallback() {
-			@Override
-			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-				ListItem vpItem = dirFragment.dirViewModel.viewPagerCurrItem;
-				if(vpItem == null) return;
-				dirFragment.dirViewModel.viewPagerCurrItem = null;
+		ViewPagerFragment fragment = ViewPagerFragment.initialize(pos, dirFragment.dirViewModel.getFilterRegistry().filteredList, currItem -> {
+			dirFragment.setExitSharedElementCallback(new SharedElementCallback() {
+				@Override
+				public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+					if(currItem == null) return;
 
-
-				//Get the adapter position of the ViewPager item
-				DirRVAdapter adapter = (DirRVAdapter) dirFragment.binding.recyclerview.getAdapter();
-				int adapterPos = -1;
-				for(int i = 0; i < adapter.list.size(); i++) {
-					if(adapter.list.get(i).pathFromRoot.equals(vpItem.pathFromRoot)) {
-						adapterPos = i;
-						break;
+					//Get the adapter position of the ViewPager item
+					DirRVAdapter adapter = (DirRVAdapter) dirFragment.binding.recyclerview.getAdapter();
+					int adapterPos = -1;
+					for(int i = 0; i < adapter.list.size(); i++) {
+						if(adapter.list.get(i).pathFromRoot.equals(currItem.pathFromRoot)) {
+							adapterPos = i;
+							break;
+						}
 					}
+					if(adapterPos == -1) return;
+
+					dirFragment.binding.recyclerview.scrollToPosition(adapterPos);
+
+					//Get the child for the adapter position
+					BaseViewHolder holder = (BaseViewHolder) dirFragment.binding.recyclerview.findViewHolderForAdapterPosition(adapterPos);
+					if(holder == null) return;
+					View media = holder.itemView.findViewById(R.id.media);
+					if(media == null) return;
+
+					sharedElements.put(names.get(0), media);
 				}
-				if(adapterPos == -1) return;
-
-				dirFragment.binding.recyclerview.scrollToPosition(adapterPos);
-
-				//Get the child for the adapter position
-				BaseViewHolder holder = (BaseViewHolder) dirFragment.binding.recyclerview.findViewHolderForAdapterPosition(adapterPos);
-				if(holder == null) return;
-				View media = holder.itemView.findViewById(R.id.media);
-				if(media == null) return;
-
-				sharedElements.put(names.get(0), media);
-			}
+			});
 		});
 
 
+
+		View media = holder.itemView.findViewById(R.id.media);
 		dirFragment.getParentFragmentManager().beginTransaction()
 				.setReorderingAllowed(true)
 				.addSharedElement(media, media.getTransitionName())

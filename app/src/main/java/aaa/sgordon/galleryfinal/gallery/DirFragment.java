@@ -314,6 +314,7 @@ public class DirFragment extends Fragment {
 
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
 			list = hideCollapsedItems(list);
+			System.out.println("Setting list");
 
 			adapter.setList(list);
 			reorderCallback.applyReorder();

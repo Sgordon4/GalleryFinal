@@ -65,6 +65,11 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public int getItemCount() {
 		return list.size();
 	}
+	@Override
+	public long getItemId(int position) {
+		//We're using pathFromRoot since 'duplicate' fileUIDs may be present thanks to links
+		return list.get(position).pathFromRoot.hashCode();
+	}
 	public void setList(List<ListItem> newList) {
 		//Calculate the differences between the current list and the new one
 		DiffUtil.Callback diffCallback = new DiffUtil.Callback() {
@@ -79,12 +84,13 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 			@Override
 			public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
+				//return list.get(oldItemPosition).fileUID.equals(newList.get(newItemPosition).fileUID);
+				return list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot);
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
 				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name) &&
-						list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot) &&
+						//list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot) &&
 						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type) &&
 						list.get(oldItemPosition).fileProps.attrhash.equals(newList.get(newItemPosition).fileProps.attrhash);
 			}
@@ -239,7 +245,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 		return holder;
 	}
-
 
 
 

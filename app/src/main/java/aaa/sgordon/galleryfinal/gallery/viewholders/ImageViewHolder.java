@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -51,6 +53,7 @@ public class ImageViewHolder extends BaseViewHolder {
 		//Using a custom modelLoader to handle HybridAPI FileUIDs
 		Glide.with(image.getContext())
 				.load(listItem.fileUID)
+				.error(new ColorDrawable(ContextCompat.getColor(image.getContext(), R.color.gray)))
 				//.diskCacheStrategy(DiskCacheStrategy.RESOURCE)	//Only cache the transformed image
 				.diskCacheStrategy(DiskCacheStrategy.ALL)
 				.centerCrop()
