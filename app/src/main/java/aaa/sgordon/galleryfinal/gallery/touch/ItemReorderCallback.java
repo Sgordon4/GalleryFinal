@@ -16,7 +16,7 @@ import java.util.List;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 
 public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	private static final String TAG = "Gal.Reorder";

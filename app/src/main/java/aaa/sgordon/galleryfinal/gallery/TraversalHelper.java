@@ -1,10 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.util.Pair;
-
 import androidx.annotation.NonNull;
-
-import com.google.gson.JsonObject;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -20,8 +16,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.repository.caches.DirCache;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;

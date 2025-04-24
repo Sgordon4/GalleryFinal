@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.gallery.viewsetups;
 import static android.os.Looper.getMainLooper;
 
 import android.os.Handler;
-import android.util.Pair;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,11 +19,10 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class ReorderSetup {

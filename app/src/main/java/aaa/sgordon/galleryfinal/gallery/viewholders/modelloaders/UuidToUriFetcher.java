@@ -1,7 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders.modelloaders;
 
 import android.net.Uri;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -12,14 +11,11 @@ import com.bumptech.glide.load.data.DataFetcher;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
 import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.utilities.MyApplication;
 
 public class UuidToUriFetcher implements DataFetcher<InputStream> {

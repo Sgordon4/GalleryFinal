@@ -18,8 +18,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 
 public class FilterController {
 	private final AttrCache attrCache;

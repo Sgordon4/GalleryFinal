@@ -1,9 +1,8 @@
-package aaa.sgordon.galleryfinal.repository.caches;
+package aaa.sgordon.galleryfinal.repository.caches_old;
 
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -15,17 +14,16 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.DirItem;
-import aaa.sgordon.galleryfinal.utilities.DirSampleData;
-import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
+import aaa.sgordon.galleryfinal.utilities.DirSampleData;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 //WARNING: This object should live as long as the Application is running. Keep in Activity ViewModel.
-public class DirCache {
+public class DirCacheOld {
 	private final static String TAG = "Gal.DirCache";
 	private final HybridAPI hAPI;
 	private final HybridListeners.FileChangeListener fileChangeListener;
@@ -36,13 +34,13 @@ public class DirCache {
 	public final Map<UUID, Set<UUID>> subLinks;
 
 
-	public static DirCache getInstance() {
+	public static DirCacheOld getInstance() {
 		return SingletonHelper.INSTANCE;
 	}
 	private static class SingletonHelper {
-		private static final DirCache INSTANCE = new DirCache();
+		private static final DirCacheOld INSTANCE = new DirCacheOld();
 	}
-	private DirCache() {
+	private DirCacheOld() {
 		this.hAPI = HybridAPI.getInstance();
 
 		this.dirContents = new HashMap<>();

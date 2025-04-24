@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository.caches;
+package aaa.sgordon.galleryfinal.repository.caches_old;
 
 import android.util.Pair;
 
@@ -23,7 +23,7 @@ import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 
 //WARNING: This object should live as long as the Application is running. Keep in Activity ViewModel.
-public class AttrCache {
+public class AttrCacheOld {
 	private final static String TAG = "Gal.AttrCache";
 	private final HybridAPI hAPI;
 
@@ -33,13 +33,13 @@ public class AttrCache {
 	private final UpdateListeners updateListeners;
 
 
-	public static AttrCache getInstance() {
+	public static AttrCacheOld getInstance() {
 		return SingletonHelper.INSTANCE;
 	}
 	private static class SingletonHelper {
-		private static final AttrCache INSTANCE = new AttrCache();
+		private static final AttrCacheOld INSTANCE = new AttrCacheOld();
 	}
-	private AttrCache() {
+	private AttrCacheOld() {
 		this.hAPI = HybridAPI.getInstance();
 		this.attrCache = new HashMap<>();
 		this.updateListeners = new UpdateListeners();

@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository.caches;
+package aaa.sgordon.galleryfinal.repository.gallery.caches;
 
 import android.net.Uri;
 import android.os.NetworkOnMainThreadException;
@@ -20,7 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;
@@ -37,9 +39,8 @@ public class LinkCache {
 	private final Map<UUID, LinkTarget> linkTargets;
 
 	//Since, in our current implementation, files cannot change their nature (isDir/isLink), this works well
-	private final Set<UUID> isLink;
-	private final Set<UUID> isDir;
-	private final Set<UUID> isNormal;
+	private final Map<UUID, Boolean> isLink;
+
 
 
 	@NonNull
@@ -54,10 +55,7 @@ public class LinkCache {
 		this.updateListeners = new UpdateListeners();
 
 		this.linkTargets = new HashMap<>();
-
-		this.isLink = new HashSet<>();
-		this.isDir = new HashSet<>();
-		this.isNormal = new HashSet<>();
+		this.isLink = new HashMap<>();
 
 
 		//Whenever any file we have cached is changed, update our data
@@ -71,32 +69,20 @@ public class LinkCache {
 	}
 
 
+	@Nullable
+	public LinkTarget getCachedTarget(UUID linkUID) {
+		return linkTargets.get(linkUID);
+	}
 	public boolean isLink(UUID fileUID) throws FileNotFoundException, ConnectException {
-		if(isLink.contains(fileUID))
-			return true;
-		if(isDir.contains(fileUID))
-			return false;
-		if(isNormal.contains(fileUID))
-			return false;
+		if(isLink.containsKey(fileUID))
+			return isLink.get(fileUID);
 
 		HFile fileProps = hAPI.getFileProps(fileUID);
-		if(fileProps.islink)
-			isLink.add(fileUID);
-		else if(fileProps.isdir)
-			isDir.add(fileUID);
-		else
-			isNormal.add(fileUID);
+		isLink.put(fileUID, fileProps.islink);
+
+		//TODO Cache link target
 
 		return fileProps.islink;
-	}
-	public boolean isDir(UUID fileUID) throws FileNotFoundException, ConnectException {
-		isLink(fileUID);	//Get the above method to do the caching
-		return isDir.contains(fileUID);
-	}
-
-
-	public static boolean isLinkEnd(ListItem item) {
-		return item.type.equals(ListItem.ListItemType.LINKEND);
 	}
 
 
@@ -112,6 +98,9 @@ public class LinkCache {
 		//Grab the target from the repository and cache it
 		LinkTarget target = readLink(fileUID);
 		linkTargets.put(fileUID, target);
+
+		//Notify listeners
+
 		return target;
 	}
 
@@ -119,7 +108,7 @@ public class LinkCache {
 	@NonNull
 	public Pair<Uri, String> getContentInfo(UUID uuid) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		//If the item is a link, the content uri is accessed differently
-		LinkCache.LinkTarget target = null;
+		LinkTarget target = null;
 		if(isLink(uuid))
 			target = getFinalTarget(uuid);
 
@@ -129,12 +118,12 @@ public class LinkCache {
 			return hAPI.getFileContent(uuid);
 		}
 		//If the target is internal, get the content uri from that fileUID's content
-		else if (target instanceof LinkCache.InternalTarget) {
-			return hAPI.getFileContent(((LinkCache.InternalTarget) target).getFileUID());
+		else if (target instanceof InternalTarget) {
+			return hAPI.getFileContent(((InternalTarget) target).getFileUID());
 		}
 		//If the target is external, get the content uri from the target
 		else {//if(target instanceof LinkCache.ExternalTarget) {
-			Uri content = ((LinkCache.ExternalTarget) target).getUri();
+			Uri content = ((ExternalTarget) target).getUri();
 			return new Pair<>(content, content.toString());
 		}
 	}
@@ -320,66 +309,5 @@ public class LinkCache {
 	}
 	public interface UpdateListener {
 		void onDirContentsChanged(UUID uuid);
-	}
-
-
-	//---------------------------------------------------------------------------------------------
-
-	public interface LinkTarget {
-		@NonNull
-		Uri toUri();
-	}
-
-
-	public static class InternalTarget implements LinkTarget {
-		@NonNull
-		private final UUID parentUID;
-		@NonNull
-		private final UUID fileUID;
-
-		public InternalTarget(@NonNull UUID parentUID, @NonNull UUID fileUID) {
-			this.parentUID = parentUID;
-			this.fileUID = fileUID;
-		}
-		@NonNull
-		public UUID getParentUID() { return parentUID; }
-		@NonNull
-		public UUID getFileUID() { return fileUID; }
-
-		@NonNull
-		@Override
-		public String toString() {
-			return toUri().toString();
-		}
-
-		@NonNull
-		public Uri toUri() {
-			Uri.Builder builder = new Uri.Builder();
-			builder.scheme("gallery").appendPath(parentUID.toString()).appendPath(fileUID.toString());
-			return builder.build();
-		}
-	}
-
-
-	public static class ExternalTarget implements LinkTarget {
-		@NonNull
-		private final Uri uri;
-
-		public ExternalTarget(@NonNull Uri uri) {
-			this.uri = uri;
-		}
-		@NonNull
-		public Uri getUri() { return uri; }
-
-		@NonNull
-		@Override
-		public String toString() {
-			return toUri().toString();
-		}
-
-		@NonNull
-		public Uri toUri() {
-			return uri;
-		}
 	}
 }

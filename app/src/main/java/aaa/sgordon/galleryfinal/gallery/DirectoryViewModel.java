@@ -1,17 +1,11 @@
 package aaa.sgordon.galleryfinal.gallery;
 
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.gson.JsonObject;
-
-import org.apache.commons.io.FilenameUtils;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -21,18 +15,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
-import aaa.sgordon.galleryfinal.repository.caches.AttrCache;
-import aaa.sgordon.galleryfinal.repository.caches.DirCache;
-import aaa.sgordon.galleryfinal.repository.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
