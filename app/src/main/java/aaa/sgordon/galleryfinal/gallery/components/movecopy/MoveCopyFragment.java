@@ -38,6 +38,8 @@ import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class MoveCopyFragment extends Fragment {
@@ -79,6 +81,14 @@ public class MoveCopyFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new MCViewModel.Factory(tempItemDoNotUse, isMove))
 				.get(MCViewModel.class);
+
+		if(savedInstanceState == null) {
+			try {
+				viewModel.changeDirectories(tempItemDoNotUse.fileUID);
+			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+				getParentFragmentManager().popBackStack();
+			}
+		}
 	}
 
 	@Nullable
@@ -152,7 +162,7 @@ public class MoveCopyFragment extends Fragment {
 
 		//Set what happens when clicking on an item
 		adapter = new MCAdapter(item -> {
-			if(item.type == ListItem.ListItemType.DIRECTORY || item.type == ListItem.ListItemType.LINKDIRECTORY) {
+			if(item.type == ListItem.Type.DIRECTORY || item.type == ListItem.Type.LINKDIRECTORY) {
 				Path newPathFromRoot = viewModel.currPathFromRoot.resolve(item.pathFromRoot.subpath(1, item.pathFromRoot.getNameCount()));
 				changeDirectory(item.fileUID, item.parentUID, newPathFromRoot);
 			}
@@ -161,6 +171,9 @@ public class MoveCopyFragment extends Fragment {
 			}
 		}, this);
 		recyclerView.setAdapter(adapter);
+
+		//In DirFragment, we listen for attribute updates for things like color, and then update adapter items
+		//Here, we don't care at all
 
 
 
@@ -181,18 +194,18 @@ public class MoveCopyFragment extends Fragment {
 						UUID selected = selectionController.getSelectedList().iterator().next();
 
 						//If the item is a link to a divider, get the internal target...
-						LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
-						if (target instanceof LinkCache.InternalTarget) {
-							LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
+						LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
+						if (target instanceof InternalTarget) {
+							InternalTarget internalTarget = (InternalTarget) target;
 
 							try {
-								nextItem = getNextItem(internalTarget.getParentUID(), internalTarget.getFileUID());
+								nextItem = getNextItem(internalTarget.parentUID, internalTarget.fileUID);
 							}
 							catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
 								//If anything goes wrong, just don't update the next item
 							}
 
-							callback.onConfirm(internalTarget.getParentUID(), nextItem);
+							callback.onConfirm(internalTarget.parentUID, nextItem);
 						}
 						//If not a link to a divider, the item is an actual divider
 						else {
@@ -234,26 +247,24 @@ public class MoveCopyFragment extends Fragment {
 
 	@NonNull
 	private FilterController buildFilterController() {
-		FilterController filterController = new FilterController(viewModel.getFilterRegistry(), viewModel.getAttrCache());
+		FilterController filterController = new FilterController(viewModel.filterRegistry);
 		filterController.addExtraQueryFilter(listItem -> {
 			//Exclude all but the following item types
-			return listItem.type.equals(ListItem.ListItemType.DIRECTORY)
-				|| listItem.type.equals(ListItem.ListItemType.DIVIDER)
-				|| listItem.type.equals(ListItem.ListItemType.LINKDIRECTORY)
-				|| listItem.type.equals(ListItem.ListItemType.LINKDIVIDER);
+			return listItem.type.equals(ListItem.Type.DIRECTORY)
+				|| listItem.type.equals(ListItem.Type.DIVIDER)
+				|| listItem.type.equals(ListItem.Type.LINKDIRECTORY)
+				|| listItem.type.equals(ListItem.Type.LINKDIVIDER);
 		});
 		filterController.addExtraQueryFilter(listItem -> {
 			//Exclude trashed items
-			return !FilenameUtils.getExtension(listItem.name).startsWith("trashed_");
+			return !listItem.isTrashed();
 		});
 		filterController.addExtraQueryFilter(listItem -> {
-			//Exclude hidden Directory items if the active query doesn't match their name exactly. Only Directories can be hidden
-			boolean isHidden = listItem.type.equals(ListItem.ListItemType.DIRECTORY) &&
-					(listItem.fileProps.userattr.has("hidden") && listItem.fileProps.userattr.get("hidden").getAsBoolean());
-			if(!isHidden) return true;
+			//Exclude hidden Directory items if the active query doesn't match their name exactly
+			if(!listItem.isHidden()) return true;
 
 			String activeQuery = filterController.registry.activeQuery.getValue();
-			return listItem.name.equalsIgnoreCase(activeQuery);
+			return listItem.getPrettyName().equalsIgnoreCase(activeQuery);
 		});
 		return filterController;
 	}
@@ -285,7 +296,7 @@ public class MoveCopyFragment extends Fragment {
 				if(isSelected) {
 					ListItem selectedItem = adapter.list.stream().filter(item -> item.fileUID.equals(fileUID)).findFirst().orElse(null);
 					if(selectedItem != null){
-						String text = (viewModel.isMove) ? "Move to " + selectedItem.name : "Copy to " + selectedItem.name;
+						String text = (viewModel.isMove) ? "Move to " + selectedItem.getPrettyName() : "Copy to " + selectedItem.getPrettyName();
 						binding.confirm.post(() -> binding.confirm.setText(text));
 					}
 					//Should never really happen, but jic
@@ -330,6 +341,17 @@ public class MoveCopyFragment extends Fragment {
 				return;
 			}
 
+			//Fetch the directory list and update our livedata
+			try {
+				viewModel.changeDirectories(trueDirAndParent.first);
+			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+				Looper.prepare();
+				Toast.makeText(getContext(), "Could not reach directory!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
+				return;
+			}
+			selectionController.deselectAll();
+
 			viewModel.currDirUID = trueDirAndParent.first;
 			viewModel.currParentUID = trueDirAndParent.second;
 			viewModel.currPathFromRoot = newPathFromRoot;
@@ -337,10 +359,6 @@ public class MoveCopyFragment extends Fragment {
 			updateToolbar(trueDirAndParent.first, trueDirAndParent.second);
 
 			binding.search.post(() -> binding.search.setText(""));
-
-			//Fetch the directory list and update our livedata
-			viewModel.refreshList();
-			selectionController.deselectAll();
 		});
 		change.start();
 	}
@@ -426,8 +444,8 @@ public class MoveCopyFragment extends Fragment {
 	private String getFileNameFromDir(UUID fileUID, UUID parentDirUID) {
 		try {
 			return DirCache.getInstance().getDirContents(parentDirUID).stream()
-					.filter(item -> item.first.equals(fileUID))
-					.map(item -> item.second)
+					.filter(item -> item.fileUID.equals(fileUID))
+					.map(item -> item.name)
 					.findFirst()
 					.orElse(null);
 		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
@@ -445,8 +463,8 @@ public class MoveCopyFragment extends Fragment {
 			//If the previous item is a link...
 			if (linkCache.isLink(maybeDirUID)) {
 				//The fileUID and parentUID are both in the link target
-				LinkCache.InternalTarget target = (LinkCache.InternalTarget) linkCache.getFinalTarget(maybeDirUID);
-				return new Pair<>(target.getFileUID(), target.getParentUID());
+				InternalTarget target = (InternalTarget) linkCache.getFinalTarget(maybeDirUID);
+				return new Pair<>(target.fileUID, target.parentUID);
 			}
 
 			//If prevItem was not a link, we need to find its parent

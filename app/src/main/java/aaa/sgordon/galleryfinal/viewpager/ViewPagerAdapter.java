@@ -56,7 +56,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 	@Override
 	public Fragment createFragment(int position) {
 		ListItem item = list.get(position);
-		String fileExtension = FilenameUtils.getExtension( item.name );
+		String fileExtension = FilenameUtils.getExtension( item.getPrettyName() );
 
 		switch (fileExtension) {
 			case "gif":

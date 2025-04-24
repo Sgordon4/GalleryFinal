@@ -39,10 +39,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.TextRichBinding;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 //TODO Add a character limit
 public class RTEditorFragment extends Fragment {
@@ -58,14 +60,16 @@ public class RTEditorFragment extends Fragment {
 	private LinearLayout toolbarBottom2;
 
 
-	private ListItem tempItemDoNotUse;
-	public static RTEditorFragment initialize(@NonNull ListItem listItem, @NonNull String content) {
+	private HFile tempDoNotUse;
+	public static RTEditorFragment initialize(@NonNull String content, @NonNull String name, @NonNull UUID parentUID, @NonNull HFile fileProps) {
 		RTEditorFragment fragment = new RTEditorFragment();
 
 		Bundle bundle = new Bundle();
 		bundle.putString("content", content);
+		bundle.putString("name", name);
+		bundle.putString("parentUID", parentUID.toString());
 		fragment.setArguments(bundle);
-		fragment.tempItemDoNotUse = listItem;
+		fragment.tempDoNotUse = fileProps;
 
 		return fragment;
 	}
@@ -77,9 +81,12 @@ public class RTEditorFragment extends Fragment {
 
 		Bundle bundle = requireArguments();
 		String content = bundle.getString("content");
+		String name = bundle.getString("name");
+		UUID parentUID = UUID.fromString(bundle.getString("parentUID"));
+		HFile starterProps = tempDoNotUse;
 
 		viewModel = new ViewModelProvider(this,
-				new RTViewModel.Factory(tempItemDoNotUse, content))
+				new RTViewModel.Factory(content, name, parentUID, starterProps))
 				.get(RTViewModel.class);
 	}
 

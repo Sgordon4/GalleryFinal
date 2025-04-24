@@ -19,6 +19,9 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
@@ -55,24 +58,24 @@ public class ReorderSetup {
 
 						//If the item is a link, follow that link
 						if(linkCache.isLink(destinationUID)) {
-							LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(destinationUID);
+							LinkTarget target = LinkCache.getInstance().getFinalTarget(destinationUID);
 
 							//If the link is to an internal file...
-							if(target instanceof LinkCache.InternalTarget) {
-								LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
+							if(target instanceof InternalTarget) {
+								InternalTarget internalTarget = (InternalTarget) target;
 
 								//If the link is to a directory, use the target fileUID
-								if(linkCache.isDir(internalTarget.getFileUID()))
-									destinationUID = internalTarget.getFileUID();
+								if(DirCache.getInstance().isDir(internalTarget.fileUID))
+									destinationUID = internalTarget.fileUID;
 									//If the link is to a single file (like an image/divider), use the target parentUID
 								else
-									destinationUID = internalTarget.getParentUID();
+									destinationUID = internalTarget.parentUID;
 							}
 						}
 
 
 						UUID nextItemUID = null;
-						if(nextItem != null && !LinkCache.isLinkEnd(nextItem))
+						if(nextItem != null && !nextItem.type.equals(ListItem.Type.LINKEND))
 							nextItemUID = nextItem.fileUID;
 
 

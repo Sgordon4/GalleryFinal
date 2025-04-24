@@ -42,7 +42,6 @@ public class LinkCache {
 	private final Map<UUID, Boolean> isLink;
 
 
-
 	@NonNull
 	public static LinkCache getInstance() {
 		return SingletonHelper.INSTANCE;
@@ -60,6 +59,7 @@ public class LinkCache {
 
 		//Whenever any file we have cached is changed, update our data
 		fileChangeListener = uuid -> {
+			//If we have this link cached...
 			if(linkTargets.containsKey(uuid)) {
 				linkTargets.remove(uuid);
 				updateListeners.notifyDataChanged(uuid);
@@ -69,10 +69,7 @@ public class LinkCache {
 	}
 
 
-	@Nullable
-	public LinkTarget getCachedTarget(UUID linkUID) {
-		return linkTargets.get(linkUID);
-	}
+
 	public boolean isLink(UUID fileUID) throws FileNotFoundException, ConnectException {
 		if(isLink.containsKey(fileUID))
 			return isLink.get(fileUID);
@@ -80,12 +77,8 @@ public class LinkCache {
 		HFile fileProps = hAPI.getFileProps(fileUID);
 		isLink.put(fileUID, fileProps.islink);
 
-		//TODO Cache link target
-
 		return fileProps.islink;
 	}
-
-
 	@NonNull
 	public LinkTarget getLinkTarget(UUID fileUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		if(!isLink(fileUID))
@@ -98,8 +91,6 @@ public class LinkCache {
 		//Grab the target from the repository and cache it
 		LinkTarget target = readLink(fileUID);
 		linkTargets.put(fileUID, target);
-
-		//Notify listeners
 
 		return target;
 	}
@@ -119,11 +110,11 @@ public class LinkCache {
 		}
 		//If the target is internal, get the content uri from that fileUID's content
 		else if (target instanceof InternalTarget) {
-			return hAPI.getFileContent(((InternalTarget) target).getFileUID());
+			return hAPI.getFileContent(((InternalTarget) target).fileUID);
 		}
 		//If the target is external, get the content uri from the target
 		else {//if(target instanceof LinkCache.ExternalTarget) {
-			Uri content = ((ExternalTarget) target).getUri();
+			Uri content = target.toUri();
 			return new Pair<>(content, content.toString());
 		}
 	}
@@ -196,11 +187,11 @@ public class LinkCache {
 					InternalTarget internalTarget = (InternalTarget) target;
 
 					//If the link is to a directory, use the target fileUID
-					if(isDir(internalTarget.getFileUID()))
-						fileUID = internalTarget.getFileUID();
+					if(DirCache.getInstance().isDir( internalTarget.fileUID ))
+						fileUID = internalTarget.fileUID;
 						//If the link is to a single file (like an image/divider), use the target parentUID
 					else
-						fileUID = internalTarget.getParentUID();
+						fileUID = internalTarget.parentUID;
 				}
 			}
 		} catch (FileNotFoundException | ConnectException e) {

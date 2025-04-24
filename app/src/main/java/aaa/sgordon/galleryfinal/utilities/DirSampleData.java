@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirItem;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -342,7 +344,7 @@ public class DirSampleData {
 
 		try {
 			hapi.lockLocal(fileUID);
-			LinkCache.InternalTarget targetInternal = new LinkCache.InternalTarget(targetParentUID, targetUID);
+			InternalTarget targetInternal = new InternalTarget(targetParentUID, targetUID);
 			hapi.writeFile(fileUID, targetInternal.toString().getBytes(), HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }
@@ -354,7 +356,7 @@ public class DirSampleData {
 
 		try {
 			hapi.lockLocal(fileUID);
-			LinkCache.ExternalTarget targetExternal = new LinkCache.ExternalTarget(uri);
+			ExternalTarget targetExternal = new ExternalTarget(uri);
 			hapi.writeFile(fileUID, targetExternal.toString().getBytes(), HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }

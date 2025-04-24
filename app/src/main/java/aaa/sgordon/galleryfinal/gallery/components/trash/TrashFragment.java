@@ -218,18 +218,18 @@ public class TrashFragment extends Fragment {
 
 
 
-		FilterController filterController = new FilterController(viewModel.filterRegistry, dirFragment.dirViewModel.getAttrCache());
+		FilterController filterController = new FilterController(viewModel.filterRegistry);
 		dirFragment.dirViewModel.fileList.observe(getViewLifecycleOwner(), filterController::onListUpdated);
 
 		filterController.addExtraQueryFilter(listItem -> {
 			//Include only trashed items
-			return FilenameUtils.getExtension(listItem.name).startsWith("trashed_");
+			return listItem.isTrashed();
 		});
 
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
 			//Remove the .trashed_... suffix from each item so they display correctly
 			list = list.stream().map(item -> new ListItem.Builder(item)
-					.setName(FilenameUtils.removeExtension(item.name)).build())
+					.setRawName(FilenameUtils.removeExtension(item.getRawName())).build())
 					.collect(Collectors.toList());
 
 			if(list.isEmpty())

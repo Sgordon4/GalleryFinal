@@ -59,7 +59,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 	public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
 		//Disallow link ends to be dragged
 		int adapterPos = recyclerView.getChildAdapterPosition(viewHolder.itemView);
-		if(adapterPos == -1 || LinkCache.isLinkEnd(adapter.list.get(adapterPos)))
+		if(adapterPos == -1 || adapter.list.get(adapterPos).type.equals(ListItem.Type.LINKEND))
 			return makeMovementFlags(0, 0);
 
 		int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT;
@@ -154,7 +154,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		Path destination;
 		if(nextItem != null) {
 			//If the nextItem is a link end, we want to put draggedItem at the end of the link
-			if(LinkCache.isLinkEnd(nextItem)) {
+			if(nextItem.type.equals(ListItem.Type.LINKEND)) {
 				destination = nextItem.pathFromRoot;
 				nextItem = null;
 			}
@@ -170,10 +170,10 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		}
 
 
-		Log.d(TAG, String.format("Dragged item '%s'::'%s'", draggedItem.name, draggedItem.fileUID.toString()));
+		Log.d(TAG, String.format("Dragged item '%s'::'%s'", draggedItem.getPrettyName(), draggedItem.fileUID));
 		Log.d(TAG, String.format("Destination %s", destination));
 		if(nextItem == null) Log.d("Gal.Reorder", "Next item is null");
-		else Log.d(TAG, String.format("Next item '%s'::'%s'", nextItem.name, nextItem.fileUID.toString()));
+		else Log.d(TAG, String.format("Next item '%s'::'%s'", nextItem.getPrettyName(), nextItem.fileUID));
 
 
 		//We do not want to move links directly inside themselves or things will visually disappear. Exclude any.
@@ -194,7 +194,7 @@ public class ItemReorderCallback extends ItemTouchHelper.Callback {
 		Path newPath = destination.resolve(draggedItem.pathFromRoot.getFileName());
 		ListItem updatedItem = new ListItem.Builder(draggedItem)
 				.setFilePath(newPath)
-				.setName(draggedItem.name+" ")	//Add a space to force a DiffUtil update
+				.setRawName(draggedItem.getRawName()+" ")	//Add a space to force a DiffUtil update	TODO This sucks
 				.build();
 
 		if(!newPath.equals(draggedItem.pathFromRoot))

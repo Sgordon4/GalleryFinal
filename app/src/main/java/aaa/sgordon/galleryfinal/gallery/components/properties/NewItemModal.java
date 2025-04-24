@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 
 import com.github.naz013.colorslider.ColorSlider;
 import com.google.gson.JsonObject;
@@ -35,18 +36,21 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.modals.LinkTargetModal;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class NewItemModal extends DialogFragment {
-	private final DirFragment dirFragment;
+	private final Fragment fragment;
+	private final UUID dirUID;
 
 	private static final Integer defaultColor = Color.GRAY;
 	private Integer color;
@@ -65,12 +69,13 @@ public class NewItemModal extends DialogFragment {
 
 
 
-	public static void launch(@NonNull DirFragment fragment) {
-		NewItemModal dialog = new NewItemModal(fragment);
+	public static void launch(@NonNull Fragment fragment, @NonNull UUID dirUID) {
+		NewItemModal dialog = new NewItemModal(fragment, dirUID);
 		dialog.show(fragment.getChildFragmentManager(), "edit_item");
 	}
-	private NewItemModal(@NonNull DirFragment fragment) {
-		this.dirFragment = fragment;
+	private NewItemModal(@NonNull Fragment fragment, @NonNull UUID dirUID) {
+		this.fragment = fragment;
+		this.dirUID = dirUID;
 		color = defaultColor;
 	}
 
@@ -148,9 +153,9 @@ public class NewItemModal extends DialogFragment {
 
 		ImageButton browse = view.findViewById(R.id.browse);
 		browse.setOnClickListener(view1 ->
-			LinkTargetModal.launch(dirFragment, dirFragment.dirViewModel.listItem.fileUID, target -> {
+			LinkTargetModal.launch(fragment, dirUID, target -> {
 				internalTarget = target;
-				targetInternal.setText(target.name);
+				targetInternal.setText(target.getPrettyName());
 			})
 		);
 
@@ -184,7 +189,7 @@ public class NewItemModal extends DialogFragment {
 
 
 		colorPickerButton.setOnClickListener(v -> {
-			ColorPickerModal.launch(dirFragment, color, newColor -> {
+			ColorPickerModal.launch(fragment, color, newColor -> {
 				color =  newColor | 0xFF000000;		//Set alpha to 100%
 
 				//Change the color picker button's background color
@@ -290,11 +295,11 @@ public class NewItemModal extends DialogFragment {
 
 				//Write the link target to the new file
 				if(isLink) {
-					LinkCache.LinkTarget linkTarget;
+					LinkTarget linkTarget;
 					if(linkType.getCheckedRadioButtonId() == R.id.internal_link)
-						linkTarget = new LinkCache.InternalTarget(internalTarget.parentUID, internalTarget.fileUID);
+						linkTarget = new InternalTarget(internalTarget.parentUID, internalTarget.fileUID);
 					else
-						linkTarget = new LinkCache.ExternalTarget(Uri.parse(targetExternal.getText().toString()));
+						linkTarget = new ExternalTarget(Uri.parse(targetExternal.getText().toString()));
 
 					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
 				}
@@ -309,7 +314,6 @@ public class NewItemModal extends DialogFragment {
 
 
 			//Add the new file to the top of the current directory
-			UUID dirUID = dirFragment.dirViewModel.listItem.fileUID;
 			try {
 				hAPI.lockLocal(dirUID);
 				HFile dirProps = hAPI.getFileProps(dirUID);

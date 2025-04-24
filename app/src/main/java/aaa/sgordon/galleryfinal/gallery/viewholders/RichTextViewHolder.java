@@ -36,7 +36,7 @@ public class RichTextViewHolder extends BaseViewHolder {
 	public void bind(@NonNull ListItem listItem, @Nullable ListItem parent) {
 		super.bind(listItem, parent);
 
-		String fileName = FilenameUtils.removeExtension(listItem.name);
+		String fileName = FilenameUtils.removeExtension(listItem.getPrettyName());
 		name.setText(fileName);
 
 

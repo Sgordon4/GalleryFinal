@@ -14,6 +14,7 @@ import android.widget.Button;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
@@ -35,12 +36,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.TraversalHelper;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
+import aaa.sgordon.galleryfinal.repository.gallery.FileExplorer;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
@@ -58,14 +58,14 @@ public class LinkTargetModal extends DialogFragment {
 	private SelectionController selectionController;
 
 
-	public static void launch(DirFragment dirFragment, UUID dirUID, LinkTargetCallback callback) {
-		LinkTargetModal dialog = new LinkTargetModal(dirFragment, dirUID, callback);
+	public static void launch(Fragment fragment, UUID dirUID, LinkTargetCallback callback) {
+		LinkTargetModal dialog = new LinkTargetModal(fragment, dirUID, callback);
 
-		FragmentTransaction transaction = dirFragment.getChildFragmentManager().beginTransaction();
+		FragmentTransaction transaction = fragment.getChildFragmentManager().beginTransaction();
 		transaction.add(dialog, "linktarget_fullscreen");
 		transaction.commitAllowingStateLoss();
 	}
-	private LinkTargetModal(DirFragment dirFragment, UUID dirUID, LinkTargetCallback callback) {
+	private LinkTargetModal(Fragment dirFragment, UUID dirUID, LinkTargetCallback callback) {
 		this.callback = callback;
 
 		viewModel = new ViewModelProvider(dirFragment,
@@ -210,7 +210,7 @@ public class LinkTargetModal extends DialogFragment {
 					return;
 				}
 
-				selectionToolbar.setTitle("Target: \""+getSelected().get(0).name+"\"");
+				selectionToolbar.setTitle("Target: \""+getSelected().get(0).getPrettyName()+"\"");
 				confirmButton.setEnabled(true);
 			}
 
@@ -227,7 +227,7 @@ public class LinkTargetModal extends DialogFragment {
 				confirmButton.setEnabled(false);
 			}
 			else {
-				selectionToolbar.setTitle("Target: \"" + selected.get(0).name + "\"");
+				selectionToolbar.setTitle("Target: \"" + selected.get(0).getPrettyName() + "\"");
 				confirmButton.setEnabled(true);
 			}
 
@@ -257,8 +257,10 @@ public class LinkTargetModal extends DialogFragment {
 
 
 
+	//TODO Fix this!!
 	@NonNull
 	private List<ListItem> traverseDir(UUID dirUID) {
+		/*
 		try {
 			//If the item is a link to a directory, follow that link
 			dirUID = LinkCache.getInstance().getLinkDir(dirUID);
@@ -268,7 +270,7 @@ public class LinkTargetModal extends DialogFragment {
 
 			newFileList = newFileList.stream()
 					//Filter out anything that is trashed
-					.filter(item -> !FilenameUtils.getExtension(item.name).startsWith("trashed_"))
+					.filter(item -> !item.isTrashed())
 					.collect(Collectors.toList());
 
 			return newFileList;
@@ -277,6 +279,8 @@ public class LinkTargetModal extends DialogFragment {
 			//TODO Actually handle the error. Dir should be on local, but jic
 			throw new RuntimeException(e);
 		}
+		 */
+		throw new RuntimeException("Stub!");
 	}
 
 

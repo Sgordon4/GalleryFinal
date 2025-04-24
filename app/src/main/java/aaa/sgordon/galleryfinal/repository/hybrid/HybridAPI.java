@@ -151,6 +151,9 @@ public class HybridAPI {
 		//Grab the file properties, which also makes sure the file exists
 		HFile props = getFileProps(fileUID);
 
+		return getFileContent(props);
+	}
+	public Pair<Uri, String> getFileContent(@NonNull HFile props) throws ContentsNotFoundException, ConnectException {
 		//Try to get the file contents from local. If they exist, return that.
 		try { return new Pair<>(localRepo.getContentUri(props.checksum), props.checksum); }
 		catch (ContentsNotFoundException ignored) { }
@@ -160,7 +163,7 @@ public class HybridAPI {
 		catch (ContentsNotFoundException ignored) { }
 
 		//If the contents don't exist in either, throw an exception
-		throw new ContentsNotFoundException(String.format("Contents not found for fileUID='%s'", fileUID));
+		throw new ContentsNotFoundException(String.format("Contents not found for fileUID='%s'", props.fileuid));
 	}
 
 

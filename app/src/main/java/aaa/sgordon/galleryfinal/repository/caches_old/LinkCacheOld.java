@@ -96,7 +96,7 @@ public class LinkCacheOld {
 
 
 	public static boolean isLinkEnd(ListItem item) {
-		return item.type.equals(ListItem.ListItemType.LINKEND);
+		return item.type.equals(ListItem.Type.LINKEND);
 	}
 
 

@@ -150,7 +150,7 @@ public class DirUtilities {
 			//If the item's parent is a link, we need the target dir or target parent
 			UUID parentUID = LinkCache.getInstance().getLinkDir(item.parentUID);
 			dirMap.putIfAbsent(parentUID, new HashMap<>());
-			dirMap.get(parentUID).put(item.fileUID, item.name);
+			dirMap.get(parentUID).put(item.fileUID, item.getRawName());
 		}
 
 
@@ -382,7 +382,7 @@ public class DirUtilities {
 
 			//Convert the list items to UUID::String pairs
 			List<DirItem> moveOrdering = toMove.stream()
-					.map(item -> new DirItem(item.fileUID, item.isDir, item.isLink, item.name))
+					.map(item -> new DirItem(item.fileUID, item.isDir, item.isLink, item.getRawName()))
 					.collect(Collectors.toList());
 
 			//Insert the moved files at the correct position, making sure to reposition files already in the directory
@@ -481,7 +481,7 @@ public class DirUtilities {
 		for(ListItem item : toCopy) {
 			try {
 				UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
-				newFiles.add(new DirItem(newFileUID, item.isDir, item.isLink, "Copy of "+item.name));
+				newFiles.add(new DirItem(newFileUID, item.isDir, item.isLink, "Copy of "+item.getPrettyName()));
 				System.out.println("CopyID: "+newFileUID+" from: "+item.fileUID);
 			}
 			catch (FileNotFoundException e) {
@@ -571,7 +571,7 @@ public class DirUtilities {
 			int count = 0;
 			//Fucking SAF replaces all spaces with underscores so we're just doing that here to avoid catastrophic failure
 			//What a shitty fucking joke of an API
-			String sanitizedName = SAFGoFuckYourself.sanitizeFilename(item.name);
+			String sanitizedName = SAFGoFuckYourself.sanitizeFilename(item.getRawName());
 			do {
 				String fileName = FilenameUtils.removeExtension(sanitizedName);
 				String extension = FilenameUtils.getExtension(sanitizedName);

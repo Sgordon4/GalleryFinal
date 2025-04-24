@@ -125,8 +125,8 @@ public class MainActivity extends AppCompatActivity {
 				Handler mainHandler = new Handler(getMainLooper());
 				mainHandler.post(() -> {
 
-					ListItem startItem = new ListItem(rootDirectoryUID, null, "Gallery App",
-							Paths.get(rootDirectoryUID.toString()), rootProps, rootZone, ListItem.ListItemType.DIRECTORY);
+					ListItem startItem = new ListItem(rootDirectoryUID, null, true, false,
+							"Gallery App", Paths.get(rootDirectoryUID.toString()), ListItem.Type.DIRECTORY);
 					DirFragment fragment = DirFragment.initialize(startItem);
 
 					getSupportFragmentManager().beginTransaction()

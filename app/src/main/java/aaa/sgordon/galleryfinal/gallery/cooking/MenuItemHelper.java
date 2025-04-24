@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.MenuItem;
@@ -10,8 +12,10 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
+import androidx.documentfile.provider.DocumentFile;
 
 import com.google.gson.JsonObject;
+import com.leinardi.android.speeddial.SpeedDialActionItem;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,25 +24,25 @@ import java.nio.file.NotDirectoryException;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
-import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.ImportHelper;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.modals.ZoningModal;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
+import aaa.sgordon.galleryfinal.gallery.components.properties.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.SettingsFragment;
 import aaa.sgordon.galleryfinal.gallery.components.trash.TrashFragment;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
@@ -46,6 +50,7 @@ import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 public class MenuItemHelper {
 	private DirFragment dirFragment;
 	private ActivityResultLauncher<Intent> exportPickerLauncher;
+	public ActivityResultLauncher<Intent> filePickerLauncher;
 
 	//TODO Move SelectionController definition to onCreate in DirFragment
 	private DirRVAdapter adapter;
@@ -58,6 +63,18 @@ public class MenuItemHelper {
 		exportPickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
 			ExportStorageHandler.onStorageLocationPicked(dirFragment.requireActivity(), result);
 			onExport();
+		});
+
+		filePickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+				List<Uri> uris = ImportHelper.getUrisFromIntent(result.getData());
+				Map<Uri, DocumentFile> fileInfo = ImportHelper.getFileInfoForUris(dirFragment.requireContext(), uris);
+
+				Thread importThread = new Thread(() -> {
+					ImportHelper.importFiles(dirFragment.requireContext(), dirFragment.dirViewModel.listItem.fileUID, uris, fileInfo);
+				});
+				importThread.start();
+			}
 		});
 	}
 
@@ -89,6 +106,7 @@ public class MenuItemHelper {
 			onSettings();
 			return true;
 		}
+
 		return false;
 	}
 
@@ -115,14 +133,6 @@ public class MenuItemHelper {
 		else if(menuItem.getItemId() == R.id.move || menuItem.getItemId() == R.id.copy) {
 			boolean isMove = menuItem.getItemId() == R.id.move;
 			onMoveCopy(isMove);
-
-			/*
-			//TODO Make actual path from root
-			Path pathFromRootButNotReally = Paths.get(dirFragment.dirViewModel.getDirUID().toString());
-			MoveCopyFullscreen.launch(dirFragment, pathFromRootButNotReally, destinationUID -> {
-				new Thread(() -> onMoveCopy(destinationUID, isMove)).start();
-			});
-			 */
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.zoning) {
@@ -142,6 +152,35 @@ public class MenuItemHelper {
 		}
 		else if(menuItem.getItemId() == R.id.share) {
 			onShare();
+			return true;
+		}
+
+		return false;
+	}
+
+
+	//---------------------------------------------------------------------------------------------
+
+
+	public boolean onFabItemClicked(SpeedDialActionItem actionItem) {
+		if(actionItem.getId() == R.id.new_item) {
+			NewItemModal.launch(dirFragment, dirFragment.dirViewModel.listItem.fileUID);
+			return true;
+		}
+		else if(actionItem.getId() == R.id.import_image) {
+			//Launch the file picker intent
+			Intent filePicker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+			//filePicker.setType("image/*");
+			filePicker.setType("*/*");
+			filePicker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+			filePicker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+			filePicker = Intent.createChooser(filePicker, "Select Items to Import");
+
+			filePickerLauncher.launch(filePicker);
+			return true;
+		}
+		else if(actionItem.getId() == R.id.take_photo) {
+			Toast.makeText(dirFragment.requireContext(), "No worky :)", Toast.LENGTH_SHORT).show();
 			return true;
 		}
 
@@ -190,7 +229,7 @@ public class MenuItemHelper {
 				Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
 				handler.post(() -> {
 					SettingsFragment settingsFragment = SettingsFragment
-							.newInstance(dirUID, dirFragment.dirViewModel.listItem.name, props);
+							.newInstance(dirUID, dirFragment.dirViewModel.listItem.getPrettyName(), props);
 					dirFragment.getChildFragmentManager().beginTransaction()
 							.replace(R.id.dir_child_container, settingsFragment)
 							.addToBackStack("Settings")
@@ -234,55 +273,12 @@ public class MenuItemHelper {
 					Looper.prepare();
 					Toast.makeText(dirFragment.requireContext(), "Operation failed, could not write!", Toast.LENGTH_SHORT).show();
 				}
-
-				//onMoveCopyConfirmed(destinationUID, isMove)
 			}).start();
 		});
 		dirFragment.getChildFragmentManager().beginTransaction()
 				.replace(R.id.dir_child_container, fragment, MoveCopyFragment.class.getSimpleName())
 				.addToBackStack(null)
 				.commit();
-	}
-
-
-	private void onMoveCopyConfirmed(UUID destinationUID, boolean isMove) {
-		//Passing a fake item to move/copy will place the items at the start when the function can't find it
-		UUID nextItem = UUID.randomUUID();
-
-		//If the destination is an internal target...
-		LinkCache.LinkTarget target = LinkCache.getInstance().getFinalTarget(destinationUID);
-		if (target instanceof LinkCache.InternalTarget) {
-			try {
-				LinkCache.InternalTarget internalTarget = (LinkCache.InternalTarget) target;
-
-				//If the target is a single item, we want to find the item directly after it
-				if(!LinkCache.getInstance().isDir(internalTarget.getFileUID()))
-					nextItem = getNextItem(internalTarget.getParentUID(), internalTarget.getFileUID());
-			}
-			catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-				//If anything goes wrong, just don't update the next item
-			}
-		}
-
-
-		//Get the selected items
-		List<ListItem> toMove = getSelected();
-		System.out.println("Moving to "+destinationUID+" after "+nextItem);
-
-		try {
-			if(isMove)
-				DirUtilities.moveFiles(toMove, destinationUID, nextItem);
-			else
-				DirUtilities.copyFiles(toMove, destinationUID, nextItem);
-		}
-		catch (FileNotFoundException | NotDirectoryException | ContentsNotFoundException | ConnectException e) {
-			Looper.prepare();
-			Toast.makeText(dirFragment.requireContext(), "Operation failed!", Toast.LENGTH_SHORT).show();
-		}
-		catch (IOException e) {
-			Looper.prepare();
-			Toast.makeText(dirFragment.requireContext(), "Operation failed, could not write!", Toast.LENGTH_SHORT).show();
-		}
 	}
 
 
@@ -325,7 +321,7 @@ public class MenuItemHelper {
 			//Update each item's name with a 'trashed' suffix
 			String suffix = ".trashed_"+ Instant.now().getEpochSecond();
 			List<ListItem> renamed = toTrash.stream()
-					.map(item -> new ListItem.Builder(item).setName(item.name + suffix).build())
+					.map(item -> new ListItem.Builder(item).setRawName(item.getRawName() + suffix).build())
 					.collect(Collectors.toList());
 
 			//And 'trash' them
@@ -349,20 +345,6 @@ public class MenuItemHelper {
 
 
 	//---------------------------------------------------------------------------------------------
-
-
-	private UUID getNextItem(UUID parentDirUID, UUID targetUID)
-			throws ContentsNotFoundException, FileNotFoundException, ConnectException {
-
-		//For each item in the parent directory...
-		List<DirItem> dirList = DirCache.getInstance().getDirContents(parentDirUID);
-		for(int i = 0; i < dirList.size(); i++) {
-			//If we find the target, return the next item (or null)
-			if (dirList.get(i).fileUID.equals(targetUID))
-				return (i+1 < dirList.size()) ? dirList.get(i+1).fileUID : null;
-		}
-		throw new FileNotFoundException("Target not found! \nParent='"+parentDirUID+"', \nTarget='"+targetUID+"'");
-	}
 
 
 	private List<ListItem> getSelected() {

@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.nio.file.Paths;
@@ -33,8 +32,8 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		this.callbacks = callbacks;
 		list = new ArrayList<>();
 
-		newItemPlaceholder = new ListItem(UUID.randomUUID(), null, "Create a New Directory", Paths.get(""),
-				new HFile(UUID.randomUUID(), UUID.randomUUID()), null, ListItem.ListItemType.UNREACHABLE);
+		newItemPlaceholder = new ListItem(UUID.randomUUID(), null, false, false,
+				"Create a New Directory", Paths.get(""), ListItem.Type.UNREACHABLE);
 	}
 
 

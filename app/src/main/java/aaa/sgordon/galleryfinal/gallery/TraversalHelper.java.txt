@@ -58,17 +58,17 @@ public class TraversalHelper {
 				if (!fileProps.islink) {
 					if(fileProps.isdir)
 						files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-								ListItem.ListItemType.DIRECTORY));
+								ListItem.Type.DIRECTORY));
 					else {
 						//If the file extension is ".div", this is a divider
 						if(FilenameUtils.getExtension(entry.name).equals("div")) {
 							files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-									ListItem.ListItemType.DIVIDER));
+									ListItem.Type.DIVIDER));
 						}
 						//Otherwise, this is a normal file
 						else {
 							files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-									ListItem.ListItemType.NORMAL));
+									ListItem.Type.NORMAL));
 						}
 					}
 
@@ -87,14 +87,14 @@ public class TraversalHelper {
 				//If this is a link but it's trashed, we don't want to follow it
 				if(isTrashed) {
 					files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-							ListItem.ListItemType.LINKBROKEN));
+							ListItem.Type.LINKBROKEN));
 					continue;
 				}
 
 				Set<UUID> localVisited = new HashSet<>(visited);
 				if(!localVisited.add(fileUID)) {    //Prevent cycles
 					files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-							ListItem.ListItemType.LINKCYCLE));
+							ListItem.Type.LINKCYCLE));
 					continue;
 				}
 
@@ -102,7 +102,7 @@ public class TraversalHelper {
 				try {
 					//Traverse the link
 					ListItem topLink = new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-							ListItem.ListItemType.LINKSINGLE);
+							ListItem.Type.LINKSINGLE);
 
 					files.addAll(traverseLink(fileUID, topLink, localVisited, thisFilePath));
 				}
@@ -110,7 +110,7 @@ public class TraversalHelper {
 					//If we're here, traverseLink threw this exception
 					//If we can't find the link's contents, this is an issue, link is broken
 					files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-							ListItem.ListItemType.LINKBROKEN));
+							ListItem.Type.LINKBROKEN));
 					continue;
 				}
 			}
@@ -120,7 +120,7 @@ public class TraversalHelper {
 
 				//If the file isn't found (file may be local on another device) or we just can't reach it, treat it as unreachable
 				files.add(new ListItem(fileUID, parentUID, entry.isDir, entry.isLink, entry.name, thisFilePath,
-						ListItem.ListItemType.UNREACHABLE));
+						ListItem.Type.UNREACHABLE));
 				continue;
 			}
 		}
@@ -144,7 +144,7 @@ public class TraversalHelper {
 
 		//If the target is external, mark this as an external link and return
 		if(linkTarget instanceof LinkCache.ExternalTarget) {
-			return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKEXTERNAL).build());
+			return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKEXTERNAL).build());
 		}
 
 
@@ -160,7 +160,7 @@ public class TraversalHelper {
 		}
 
 		if(!visited.add(target.getFileUID()))	//Prevent cycles
-			return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKCYCLE).build());
+			return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKCYCLE).build());
 
 
 		//If the target is trashed, we don't want to follow it
@@ -176,14 +176,14 @@ public class TraversalHelper {
 				//...and it's a trashed file, mark as broken
 				if(FilenameUtils.getExtension(pair.name).startsWith("trashed_"))
 					return List.of(new ListItem.Builder(topLink)
-							.setType(ListItem.ListItemType.LINKBROKEN).build());
+							.setType(ListItem.Type.LINKBROKEN).build());
 			}
 		}
 
 		//If the targeted file doesn't exist in its parent directory, mark the link as broken
 		if(!exists)
 			return List.of(new ListItem.Builder(topLink)
-					.setType(ListItem.ListItemType.LINKBROKEN).build());
+					.setType(ListItem.Type.LINKBROKEN).build());
 
 
 
@@ -198,7 +198,7 @@ public class TraversalHelper {
 			else if(fileProps.isdir) {
 				List<ListItem> files = new ArrayList<>();
 				files.add(new ListItem.Builder(topLink)
-						.setType(ListItem.ListItemType.LINKDIRECTORY).build());
+						.setType(ListItem.Type.LINKDIRECTORY).build());
 
 				//Traverse the directory
 				List<DirItem> contents = dirCache.getDirContents(target.getFileUID());
@@ -206,8 +206,8 @@ public class TraversalHelper {
 
 				//Ad a bookend for the link
 				files.add(new ListItem.Builder(topLink)
-						.setName("END of "+topLink.name)
-						.setType(ListItem.ListItemType.LINKEND).build());
+						.setRawName("END of "+topLink.name)
+						.setType(ListItem.Type.LINKEND).build());
 
 				return files;
 			}
@@ -222,20 +222,20 @@ public class TraversalHelper {
 
 				//If the target is no longer in the parent directory, the link is broken and we're done here
 				if(!targetItem.isPresent()) {
-					return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKBROKEN).build());
+					return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKBROKEN).build());
 				}
 
 				//If the target does not refer to a divider item, this link points to a single item
 				String targetName = targetItem.get().name;
 				if(!FilenameUtils.getExtension(targetName).equals("div")) {
-					return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKSINGLE).build());
+					return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKSINGLE).build());
 				}
 
 
 				//--------------------------------------------
 
 				//If we're here, the target is a divider item.
-				files.add(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKDIVIDER).build());
+				files.add(new ListItem.Builder(topLink).setType(ListItem.Type.LINKDIVIDER).build());
 
 				//Since the target is a divider item, we need to traverse only the "divider's items"
 				List<DirItem> dividerItems = sublistDividerItems(targetParentContents, target.getFileUID());
@@ -243,23 +243,23 @@ public class TraversalHelper {
 
 				//Ad a bookend for the link
 				files.add(new ListItem.Builder(topLink)
-						.setName("END of "+topLink.name)
-						.setType(ListItem.ListItemType.LINKEND).build());
+						.setRawName("END of "+topLink.name)
+						.setType(ListItem.Type.LINKEND).build());
 
 				return files;
 			}
 		}
 		catch (FileNotFoundException e) {
 			//If the target isn't found, mark as unreachable (file may be local on another device)
-			return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKUNREACHABLE).build());
+			return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKUNREACHABLE).build());
 		}
 		catch (ConnectException e) {
 			//If we can't reach the target, mark as unreachable
-			return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKUNREACHABLE).build());
+			return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKUNREACHABLE).build());
 		}
 		catch (ContentsNotFoundException e) {
 			//If we can't find the link's contents, this is an issue, link is broken
-			return List.of(new ListItem.Builder(topLink).setType(ListItem.ListItemType.LINKBROKEN).build());
+			return List.of(new ListItem.Builder(topLink).setType(ListItem.Type.LINKBROKEN).build());
 		}
 	}
 

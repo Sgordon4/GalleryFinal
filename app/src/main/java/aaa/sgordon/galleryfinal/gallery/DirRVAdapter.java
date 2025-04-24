@@ -89,7 +89,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			}
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-				return list.get(oldItemPosition).name.equals(newList.get(newItemPosition).name) &&
+				return list.get(oldItemPosition).getRawName().equals(newList.get(newItemPosition).getRawName()) &&
 						//list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot) &&
 						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type) &&
 						list.get(oldItemPosition).fileProps.attrhash.equals(newList.get(newItemPosition).fileProps.attrhash);
@@ -173,7 +173,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		}
 
 		//Get the filename extension
-		String extension = FilenameUtils.getExtension(item.name);
+		String extension = FilenameUtils.getExtension(item.getPrettyName());
 		switch (extension) {
 			case "txt":
 				return 8;		//Text

@@ -55,11 +55,9 @@ public class ViewPageViewModel extends ViewModel {
 		this.pathFromRoot = listItem.pathFromRoot;
 		this.parentUID = listItem.parentUID;
 
-		this.fileProps = listItem.fileProps;
-		this.zoning = listItem.zoning;
-
-		this.fileName = FilenameUtils.getBaseName(listItem.name);
-		this.fileExtension = FilenameUtils.getExtension(listItem.name);
+		String name = listItem.getPrettyName();
+		this.fileName = FilenameUtils.getBaseName(name);
+		this.fileExtension = FilenameUtils.getExtension(name);
 		if(!this.fileExtension.isEmpty()) this.fileExtension = "."+this.fileExtension;
 
 		JsonElement descElement = listItem.fileProps.userattr.get("description");

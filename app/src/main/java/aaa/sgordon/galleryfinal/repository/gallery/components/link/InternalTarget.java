@@ -12,21 +12,10 @@ public class InternalTarget implements LinkTarget {
 	public final UUID parentUID;
 	@NonNull
 	public final UUID fileUID;
-	@NonNull
-	public final Type type;
 
-	public enum Type {
-		DIRECTORY,
-		LINK,
-		DIVIDER,
-		NORMAL
-	}
-
-
-	public InternalTarget(@NonNull UUID parentUID, @NonNull UUID fileUID, @NonNull Type type) {
+	public InternalTarget(@NonNull UUID parentUID, @NonNull UUID fileUID) {
 		this.parentUID = parentUID;
 		this.fileUID = fileUID;
-		this.type = type;
 	}
 
 	@NonNull

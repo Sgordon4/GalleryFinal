@@ -19,7 +19,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 
 public class FilterController {
 	private final AttrCache attrCache;
@@ -27,9 +26,9 @@ public class FilterController {
 	private final List<Predicate<ListItem>> extraQueryFilters;
 	private final List<Predicate<ListItem>> extraTagFilters;
 
-	public FilterController(FilterRegistry registry, AttrCache attrCache) {
+	public FilterController(FilterRegistry registry) {
 		this.registry = registry;
-		this.attrCache = attrCache;
+		this.attrCache = AttrCache.getInstance();
 		this.extraQueryFilters = new ArrayList<>();
 		this.extraTagFilters = new ArrayList<>();
 	}
@@ -136,7 +135,7 @@ public class FilterController {
 
 		return list.stream().filter(item -> {
 			//Make sure the fileName contains the query string
-			return item.name.toLowerCase().contains(filterQuery.toLowerCase());
+			return item.getPrettyName().toLowerCase().contains(filterQuery.toLowerCase());
 		}).collect(Collectors.toList());
 	}
 
@@ -147,7 +146,7 @@ public class FilterController {
 		return list.stream().filter(item -> {
 			//If we're filtering for tags, make sure each item has all filtered tags
 
-			if(LinkCache.isLinkEnd(item))
+			if(item.type.equals(ListItem.Type.LINKEND))
 				return false;	//Exclude ends, since we can't reorder
 
 			try {

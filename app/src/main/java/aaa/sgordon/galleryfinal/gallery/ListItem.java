@@ -3,6 +3,8 @@ package aaa.sgordon.galleryfinal.gallery;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.onegravity.rteditor.utils.io.FilenameUtils;
+
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -14,13 +16,13 @@ public class ListItem {
 	public final boolean isDir;
 	public final boolean isLink;
 	@NonNull
-	public final String name;
+	private final String name;
 	@NonNull
 	public final Path pathFromRoot;
 	@NonNull
-	public final ListItemType type;
+	public final Type type;
 
-	public enum ListItemType {
+	public enum Type {
 		NORMAL,
 		DIRECTORY,
 		DIVIDER,
@@ -36,7 +38,7 @@ public class ListItem {
 	}
 	
 
-	public ListItem(@NonNull UUID fileUID, @Nullable UUID parentUID, boolean isDir, boolean isLink, @NonNull String name, @NonNull Path pathFromRoot, @NonNull ListItemType type) {
+	public ListItem(@NonNull UUID fileUID, @Nullable UUID parentUID, boolean isDir, boolean isLink, @NonNull String name, @NonNull Path pathFromRoot, @NonNull Type type) {
 		this.fileUID = fileUID;
 		this.parentUID = parentUID;
 		this.isDir = isDir;
@@ -45,6 +47,33 @@ public class ListItem {
 		this.pathFromRoot = pathFromRoot;
 		this.type = type;
 	}
+
+
+	public String getRawName() {
+		return name;
+	}
+	public String getPrettyName() {
+		String name = this.name;
+
+		if(isHidden())
+			name = name.substring(1);
+		if(isTrashed())
+			name = FilenameUtils.removeExtension(name);
+
+		return name;
+	}
+
+	public boolean isHidden() {
+		return isDir && name.startsWith(".");
+	}
+	public boolean isCollapsed() {
+		return !isDir && name.startsWith(".");
+	}
+	public boolean isTrashed() {
+		return FilenameUtils.getExtension(name).startsWith(".trashed_");
+	}
+
+
 
 	@NonNull
 	@Override
@@ -68,7 +97,7 @@ public class ListItem {
 		private boolean isLink;
 		private String name;
 		private Path filePath;
-		private ListItemType type;
+		private Type type;
 
 		public Builder(@NonNull ListItem item) {
 			this.fileUID = item.fileUID;
@@ -96,15 +125,15 @@ public class ListItem {
 			this.isLink = isLink;
 			return this;
 		}
-		public Builder setName(@NonNull String name) {
-			this.name = name;
+		public Builder setRawName(@NonNull String rawName) {
+			this.name = rawName;
 			return this;
 		}
 		public Builder setFilePath(@NonNull Path filePath) {
 			this.filePath = filePath;
 			return this;
 		}
-		public Builder setType(@NonNull ListItemType type) {
+		public Builder setType(@NonNull Type type) {
 			this.type = type;
 			return this;
 		}

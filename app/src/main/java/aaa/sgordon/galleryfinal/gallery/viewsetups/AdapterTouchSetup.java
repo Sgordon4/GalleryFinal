@@ -165,8 +165,6 @@ public class AdapterTouchSetup {
 
 
 	private static void launchRichTextEditor(DirFragment dirFragment, BaseViewHolder holder) {
-		ListItem listItem = holder.getListItem();
-
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
@@ -174,18 +172,19 @@ public class AdapterTouchSetup {
 		//Note: This current setup won't work if the note is a link to a note.
 		//We don't have those atm, but if we add them later (doubt it) we'll need to change this.
 		Thread launch = new Thread(() -> {
-			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
-				//Get updated file props just in case
-				HFile fileProps = hAPI.getFileProps(listItem.fileUID);
-				ListItem item = new ListItem.Builder(listItem).setFileProps(fileProps).build();
+				ListItem listItem = holder.getListItem();
+				UUID parentUID = listItem.parentUID;
 
-				Uri contentUri = hAPI.getFileContent(item.fileUID).first;
+				HybridAPI hAPI = HybridAPI.getInstance();
+
+				HFile fileProps = hAPI.getFileProps(listItem.fileUID);
+				Uri contentUri = hAPI.getFileContent(fileProps).first;
 				String content = Utilities.readFile(contentUri);
 
 				Handler handler = new Handler(Looper.getMainLooper());
 				handler.post(() -> {
-					RTEditorFragment fragment = RTEditorFragment.initialize(item, content);
+					RTEditorFragment fragment = RTEditorFragment.initialize(content, listItem.getRawName(), parentUID, fileProps);
 					dirFragment.getParentFragmentManager().beginTransaction()
 							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 							.addToBackStack(null)
@@ -212,15 +211,26 @@ public class AdapterTouchSetup {
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
-		String password = "";
-		if(listItem.fileProps.userattr.has("password"))
-			password = listItem.fileProps.userattr.get("password").getAsString();
+		try {
+			HybridAPI hAPI = HybridAPI.getInstance();
+			HFile fileProps = hAPI.getFileProps(listItem.fileUID);
 
-		//If there is a password, launch the password modal first
-		if(!password.isEmpty())
-			PasswordModal.launch(dirFragment, listItem.name, password, () -> launchDirFragment(dirFragment, listItem));
-		else
-			launchDirFragment(dirFragment, listItem);
+			String password = "";
+			if(fileProps.userattr.has("password"))
+				password = fileProps.userattr.get("password").getAsString();
+
+			//If there is a password, launch the password modal first
+			if(!password.isEmpty())
+				PasswordModal.launch(dirFragment, listItem.getPrettyName(), password, () -> launchDirFragment(dirFragment, listItem));
+			else
+				launchDirFragment(dirFragment, listItem);
+		}
+		catch (FileNotFoundException e) {
+			Toast.makeText(dirFragment.requireContext(), "The file is not accessible from this device!", Toast.LENGTH_SHORT).show();
+		}
+		catch (ConnectException e) {
+			Toast.makeText(dirFragment.requireContext(), "Could not connect to the server!", Toast.LENGTH_SHORT).show();
+		}
 	}
 
 	private static void launchDirFragment(DirFragment dirFragment, ListItem listItem) {

@@ -1,11 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
@@ -14,14 +11,10 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -30,8 +23,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
-
-import org.apache.commons.io.FilenameUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +34,6 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.MainViewModel;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
-import aaa.sgordon.galleryfinal.gallery.components.properties.NewItemModal;
 import aaa.sgordon.galleryfinal.gallery.cooking.MenuItemHelper;
 import aaa.sgordon.galleryfinal.gallery.cooking.ToolbarStyler;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
@@ -60,10 +50,10 @@ public class DirFragment extends Fragment {
 	public FragDirBinding binding;
 	public DirectoryViewModel dirViewModel;
 
-	public ActivityResultLauncher<Intent> filePickerLauncher;
-
 	private MenuItemHelper menuItemHelper;
 	private SelectionController selectionController;
+
+	private AttrCache.UpdateListener attrListener;
 
 
 	private ListItem tempItemDoNotUse;
@@ -89,19 +79,6 @@ public class DirFragment extends Fragment {
 
 		menuItemHelper = new MenuItemHelper();
 		menuItemHelper.onCreate(this);
-
-
-		filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-				List<Uri> uris = ImportHelper.getUrisFromIntent(result.getData());
-				Map<Uri, DocumentFile> fileInfo = ImportHelper.getFileInfoForUris(getContext(), uris);
-
-				Thread importThread = new Thread(() -> {
-					ImportHelper.importFiles(getContext(), dirViewModel.listItem.fileUID, uris, fileInfo);
-				});
-				importThread.start();
-			}
-		});
 	}
 
 
@@ -176,6 +153,13 @@ public class DirFragment extends Fragment {
 
 		MaterialToolbar selectionToolbar = binding.galleryAppbar.selectionToolbar;
 		selectionToolbar.setOnMenuItemClickListener(menuItemHelper::onSelectionItemClicked);
+
+		binding.fab.inflate(R.menu.gallery_menu_fab);
+		binding.fab.setOnActionSelectedListener(actionItem -> {
+			boolean handled = menuItemHelper.onFabItemClicked(actionItem);
+			if(handled) binding.fab.close();
+			return handled;
+		});
 
 
 
@@ -254,19 +238,17 @@ public class DirFragment extends Fragment {
 
 
 
-		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry(), dirViewModel.getAttrCache());
+		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry());
 		filterController.addExtraQueryFilter(listItem -> {
 			//Exclude trashed items
-			return !FilenameUtils.getExtension(listItem.name).startsWith("trashed_");
+			return !listItem.isTrashed();
 		});
 		filterController.addExtraQueryFilter(listItem -> {
-			//Exclude hidden Directory items if the active query doesn't match their name exactly. Only Directories can be hidden
-			boolean isHidden = listItem.type.equals(ListItem.ListItemType.DIRECTORY) &&
-					(listItem.fileProps.userattr.has("hidden") && listItem.fileProps.userattr.get("hidden").getAsBoolean());
-			if(!isHidden) return true;
+			//Exclude hidden Directory items if the active query doesn't match their name exactly
+			if(!listItem.isHidden()) return true;
 
 			String activeQuery = filterController.registry.activeQuery.getValue();
-			return listItem.name.equalsIgnoreCase(activeQuery);
+			return listItem.getPrettyName().equalsIgnoreCase(activeQuery);
 		});
 
 		FilterSetup.setupFilters(this, filterController);
@@ -278,7 +260,7 @@ public class DirFragment extends Fragment {
 			//Grab the UUIDs of all the files in the new list for use with tagging
 			//Don't include link ends, we only consider their parents
 			List<UUID> fileUIDs = list.stream()
-					.filter(item -> !item.type.equals(ListItem.ListItemType.LINKEND))
+					.filter(item -> !item.type.equals(ListItem.Type.LINKEND))
 					.map(item -> item.fileUID)
 					.collect(Collectors.toList());
 
@@ -317,6 +299,36 @@ public class DirFragment extends Fragment {
 		});
 
 
+		//Upon attribute updates, update relevant adapter items
+		AttrCache attrCache = AttrCache.getInstance();
+		attrListener = uuid -> {
+			List<ListItem> adapterList = adapter.list;
+
+			//Exclude link ends (only consider their parent link), then map each item to UUID
+			List<UUID> fileUIDs = adapterList.stream()
+					.filter(item -> !item.type.equals(ListItem.Type.LINKEND))
+					.map(item -> item.fileUID)
+					.collect(Collectors.toList());
+
+			//If none of our files changed, leave
+			if(!fileUIDs.contains(uuid)) return;
+
+
+			//Update the tags
+			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
+			dirViewModel.fileTags.postValue(newTags);
+
+
+			//For each file in the adapter list...
+			for(int i = 0; i < adapterList.size(); i++) {
+				ListItem item = adapterList.get(i);
+
+				//If the file has an attribute update, notify the adapter
+				if(item.fileUID.equals(uuid))
+					adapter.notifyItemChanged(i);
+			}
+		};
+		attrCache.addListener(attrListener);
 
 
 
@@ -333,6 +345,9 @@ public class DirFragment extends Fragment {
 			dragSelectCallback.onMotionEvent(motionEvent);
 			return false;
 		});
+
+
+
 
 
 
@@ -380,33 +395,7 @@ public class DirFragment extends Fragment {
 		});
 
 
-		binding.fab.inflate(R.menu.gallery_menu_fab);
 
-		binding.fab.setOnActionSelectedListener(actionItem -> {
-			if (actionItem.getId() == R.id.new_item) {
-				System.out.println("Clicked new item");
-				NewItemModal.launch(this);
-			}
-			else if (actionItem.getId() == R.id.import_image) {
-				System.out.println("Clicked import image");
-
-				//Launch the file picker intent
-				Intent filePicker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-				//filePicker.setType("image/*");
-				filePicker.setType("*/*");
-				filePicker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-				filePicker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-				filePicker = Intent.createChooser(filePicker, "Select Items to Import");
-
-				filePickerLauncher.launch(filePicker);
-			}
-			else if (actionItem.getId() == R.id.take_photo) {
-				System.out.println("Clicked take photo");
-				Toast.makeText(requireContext(), "No worky :)", Toast.LENGTH_SHORT).show();
-			}
-			binding.fab.close();
-			return true;
-		});
 
 
 
@@ -429,16 +418,16 @@ public class DirFragment extends Fragment {
 		for(ListItem item : list) {
 			if(collapsedItem != null) {
 				//If the collapsed item is a link, wait until we reach the linkEnd to un-collapse
-				if(collapsedItem.fileProps.islink &&
-								item.type == ListItem.ListItemType.LINKEND &&
+				if(collapsedItem.isLink &&
+								item.type == ListItem.Type.LINKEND &&
 								collapsedItem.fileUID.equals(item.fileUID))
 					collapsedItem = null;
 				//If the collapsed item is a Divider, wait until we reach another divider or link to un-collapse
-				else if(collapsedItem.type.equals(ListItem.ListItemType.DIVIDER) && (
-								item.type.equals(ListItem.ListItemType.LINKDIRECTORY) ||
-								item.type.equals(ListItem.ListItemType.LINKDIVIDER) ||
-								item.type.equals(ListItem.ListItemType.LINKEND) ||
-								item.type.equals(ListItem.ListItemType.DIVIDER)))
+				else if(collapsedItem.type.equals(ListItem.Type.DIVIDER) && (
+								item.type.equals(ListItem.Type.LINKDIRECTORY) ||
+								item.type.equals(ListItem.Type.LINKDIVIDER) ||
+								item.type.equals(ListItem.Type.LINKEND) ||
+								item.type.equals(ListItem.Type.DIVIDER)))
 					collapsedItem = null;
 			}
 
@@ -448,10 +437,10 @@ public class DirFragment extends Fragment {
 			newList.add(item);
 
 			//If this item is a Divider, LinkDivider, or LinkDirectory and is collapsed, remember it
-			if((item.fileProps.userattr.has("collapsed") && item.fileProps.userattr.get("collapsed").getAsBoolean()) && (
-					item.type.equals(ListItem.ListItemType.DIVIDER) ||
-					item.type.equals(ListItem.ListItemType.LINKDIVIDER) ||
-					item.type.equals(ListItem.ListItemType.LINKDIRECTORY)))
+			if((item.isCollapsed()) && (
+					item.type.equals(ListItem.Type.DIVIDER) ||
+					item.type.equals(ListItem.Type.LINKDIVIDER) ||
+					item.type.equals(ListItem.Type.LINKDIRECTORY)))
 				collapsedItem = item;
 		}
 		return newList;
