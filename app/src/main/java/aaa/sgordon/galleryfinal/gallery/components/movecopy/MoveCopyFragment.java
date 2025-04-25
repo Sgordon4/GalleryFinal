@@ -162,7 +162,6 @@ public class MoveCopyFragment extends Fragment {
 			Set<UUID> seen = new HashSet<>();
 			list = list.stream().filter(item -> seen.add(item.fileUID)).collect(Collectors.toList());
 
-			System.out.println("Seting adapter list with size "+list.size());
 			adapter.setList(list);
 		});
 
