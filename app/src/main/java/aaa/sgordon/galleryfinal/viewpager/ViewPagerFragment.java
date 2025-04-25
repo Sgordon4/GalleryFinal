@@ -130,7 +130,6 @@ public class ViewPagerFragment extends Fragment {
 			@Override
 			public void onPageSelected(int position) {
 				super.onPageSelected(position);
-				System.out.println("Page changed!");
 				viewModel.currPos = position;
 			}
 		});
@@ -141,7 +140,9 @@ public class ViewPagerFragment extends Fragment {
 		List<ListItem> mediaOnly = newList.stream()
 				.filter(item -> Utilities.isFileMedia( item.getPrettyName() )).collect(Collectors.toList());
 
-		//TODO If there are 0 items (all removed), leave
+		//If there are no media items, leave
+		if(newList.isEmpty())
+			getParentFragmentManager().popBackStack();
 
 		adapter.setList(mediaOnly);
 
@@ -159,7 +160,6 @@ public class ViewPagerFragment extends Fragment {
 	@Override
 	public void onStop() {
 		//Pass back the current item
-		//TODO Will error if no items
 		ListItem currItem = adapter.list.get(binding.viewpager.getCurrentItem());
 		viewModel.callback.onClose(currItem);
 

@@ -14,6 +14,7 @@ import androidx.core.app.SharedElementCallback;
 import androidx.recyclerview.widget.ItemTouchHelper;
 
 import com.google.android.material.transition.MaterialFadeThrough;
+import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -36,6 +37,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.GifViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.ImageViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
@@ -211,26 +213,32 @@ public class AdapterTouchSetup {
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
-		try {
-			HybridAPI hAPI = HybridAPI.getInstance();
-			HFile fileProps = hAPI.getFileProps(listItem.fileUID);
+		AttrCache.getInstance().getAttrAsync(listItem.fileUID, new AttrCache.AttrCallback() {
+			@Override
+			public void onAttrReady(@NonNull JsonObject attr) {
+				String password = "";
+				if(attr.has("password"))
+					password = attr.get("password").getAsString();
 
-			String password = "";
-			if(fileProps.userattr.has("password"))
-				password = fileProps.userattr.get("password").getAsString();
-
-			//If there is a password, launch the password modal first
-			if(!password.isEmpty())
-				PasswordModal.launch(dirFragment, listItem.getPrettyName(), password, () -> launchDirFragment(dirFragment, listItem));
-			else
-				launchDirFragment(dirFragment, listItem);
-		}
-		catch (FileNotFoundException e) {
-			Toast.makeText(dirFragment.requireContext(), "The file is not accessible from this device!", Toast.LENGTH_SHORT).show();
-		}
-		catch (ConnectException e) {
-			Toast.makeText(dirFragment.requireContext(), "Could not connect to the server!", Toast.LENGTH_SHORT).show();
-		}
+				//If there is a password, launch the password modal first
+				if(!password.isEmpty())
+					PasswordModal.launch(dirFragment, listItem.getPrettyName(), password, () -> launchDirFragment(dirFragment, listItem));
+				else
+					launchDirFragment(dirFragment, listItem);
+			}
+			@Override
+			public void onConnectException() {
+				Looper.prepare();
+				Toast.makeText(dirFragment.requireContext(), "The file is not accessible from this device!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
+			}
+			@Override
+			public void onFileNotFoundException() {
+				Looper.prepare();
+				Toast.makeText(dirFragment.requireContext(), "Could not connect to the server!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
+			}
+		});
 	}
 
 	private static void launchDirFragment(DirFragment dirFragment, ListItem listItem) {
@@ -283,6 +291,7 @@ public class AdapterTouchSetup {
 		});
 
 
+		System.out.println(fragment);
 
 		View media = holder.itemView.findViewById(R.id.media);
 		dirFragment.getParentFragmentManager().beginTransaction()

@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 			//Get the root directory UID from the shared preferences if it already exists, or create the test setup if not
 			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
 			String rootUIDString = prefs.getString("UUID", null);
-			//rootUIDString = null;
+			rootUIDString = null;
 			if(rootUIDString == null)
 				rootUIDString = createTestSetup();
 
@@ -117,27 +117,19 @@ public class MainActivity extends AppCompatActivity {
 			viewModel.testInt += 1;
 
 
-			try {
-				HFile rootProps = HybridAPI.getInstance().getFileProps(rootDirectoryUID);
-				HZone rootZone = HybridAPI.getInstance().getZoningInfo(rootDirectoryUID);
+			//Use the rootDirectoryUID to start the first fragment
+			Handler mainHandler = new Handler(getMainLooper());
+			mainHandler.post(() -> {
 
-				//Use the rootDirectoryUID to start the first fragment
-				Handler mainHandler = new Handler(getMainLooper());
-				mainHandler.post(() -> {
+				ListItem startItem = new ListItem(rootDirectoryUID, null, true, false,
+						"Gallery App", Paths.get(rootDirectoryUID.toString()), ListItem.Type.DIRECTORY);
+				DirFragment fragment = DirFragment.initialize(startItem);
 
-					ListItem startItem = new ListItem(rootDirectoryUID, null, true, false,
-							"Gallery App", Paths.get(rootDirectoryUID.toString()), ListItem.Type.DIRECTORY);
-					DirFragment fragment = DirFragment.initialize(startItem);
-
-					getSupportFragmentManager().beginTransaction()
-							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
-							.addToBackStack(null)
-							.commit();
-				});
-			}
-			catch (FileNotFoundException | ConnectException e) {
-				throw new RuntimeException(e);
-			}
+				getSupportFragmentManager().beginTransaction()
+						.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
+						.addToBackStack(null)
+						.commit();
+			});
 		});
 		launchThread.start();
 	}

@@ -33,6 +33,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -73,23 +74,6 @@ public class ImageFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
-
-		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
-			@Override
-			public void onDataReady(HFile fileProps, HZone zoning) {
-				setBottomSheetInfo();
-			}
-
-			@Override
-			public void onConnectException() {
-
-			}
-
-			@Override
-			public void onFileNotFoundException() {
-
-			}
-		});
 	}
 
 
@@ -109,20 +93,32 @@ public class ImageFragment extends Fragment {
 		});
 
 
-		setBottomSheetInfo();
+		//setBottomSheetInfo();
 
 		return binding.getRoot();
 	}
 
 
-	public static final int SIZE_THRESHOLD = 1024 * 1024 * 6;	//3MB
+	public static final int SIZE_THRESHOLD = 1024 * 1024 * 8;	//8MB
 
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		setupTitleAndDescription();
+		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
+			@Override
+			public void onConnectException() {}
+			@Override
+			public void onFileNotFoundException() {}
+			@Override
+			public void onDataReady(HFile fileProps, HZone zoning) {
+				setBottomSheetInfo();
+			}
+		});
+
+		setupTitle();
+
 
 		if(viewModel.fileProps.filesize < SIZE_THRESHOLD)
 			usePhotoView();
@@ -315,8 +311,16 @@ public class ImageFragment extends Fragment {
 	}
 
 
+	@Override
+	public void onPause() {
+		viewModel.persistFileNameImmediately();
+		viewModel.persistDescriptionImmediately();
+		super.onPause();
+	}
 
-	private void setupTitleAndDescription() {
+
+
+	private void setupTitle() {
 		//Show the filename in the BottomSheet
 		EditText filename = binding.viewB.findViewById(R.id.filename);
 		TextView extension = binding.viewB.findViewById(R.id.extension);
@@ -342,9 +346,12 @@ public class ImageFragment extends Fragment {
 		extension.post(() -> {
 			updateExtensionTranslation(viewModel.fileName);
 		});
+	}
 
+	private void setBottomSheetInfo() {
 		EditText description = binding.viewB.findViewById(R.id.description);
 		description.setText(viewModel.description);
+		description.setEnabled(true);
 		description.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -357,9 +364,8 @@ public class ImageFragment extends Fragment {
 				viewModel.persistDescription();
 			}
 		});
-	}
 
-	private void setBottomSheetInfo() {
+
 		//Format the creation date
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
 		Date date = new Date(viewModel.fileProps.createtime*1000);

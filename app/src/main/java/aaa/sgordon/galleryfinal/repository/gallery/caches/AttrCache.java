@@ -68,6 +68,7 @@ public class AttrCache {
 	}
 
 
+	@NonNull
 	public JsonObject getAttr(UUID fileUID) throws FileNotFoundException, ConnectException {
 		//If we have the attributes cached, just use that
 		if(attrCache.containsKey(fileUID))
@@ -81,12 +82,34 @@ public class AttrCache {
 
 		return attr;
 	}
+	@NonNull
 	public String getAttrHash(UUID fileUID) throws FileNotFoundException, ConnectException {
 		if(!attrCache.containsKey(fileUID))
 			getAttr(fileUID);
 
 		return attrCache.get(fileUID).first;
 	}
+
+
+	public void getAttrAsync(@NonNull UUID fileUID, @NonNull AttrCallback callback) {
+		Thread attrThread = new Thread(() -> {
+			try {
+				JsonObject attr = getAttr(fileUID);
+				callback.onAttrReady(attr);
+			} catch (FileNotFoundException e) {
+				callback.onFileNotFoundException();
+			} catch (ConnectException e) {
+				callback.onConnectException();
+			}
+		});
+		attrThread.start();
+	}
+	public interface AttrCallback {
+		void onAttrReady(@NonNull JsonObject attr);
+		void onConnectException();
+		void onFileNotFoundException();
+	}
+
 
 
 	//Compile a list of all the tags used by any file in the provided list

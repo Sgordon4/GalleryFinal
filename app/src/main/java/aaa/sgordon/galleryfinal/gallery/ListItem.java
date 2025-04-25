@@ -5,8 +5,13 @@ import androidx.annotation.Nullable;
 
 import com.onegravity.rteditor.utils.io.FilenameUtils;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.UUID;
+
+import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class ListItem {
 	@NonNull
@@ -57,23 +62,82 @@ public class ListItem {
 
 		if(isHidden())
 			name = name.substring(1);
+		if(isCollapsed())
+			name = name.substring(1);
 		if(isTrashed())
 			name = FilenameUtils.removeExtension(name);
 
 		return name;
 	}
 
+	//-----------------------------------------------
+
+	public boolean isTrashed() {
+		return FilenameUtils.getExtension(name).startsWith("trashed_");
+	}
 	public boolean isHidden() {
 		return isDir && name.startsWith(".");
 	}
 	public boolean isCollapsed() {
 		return !isDir && name.startsWith(".");
 	}
-	public boolean isTrashed() {
-		return FilenameUtils.getExtension(name).startsWith(".trashed_");
+
+
+	public void setTrashed(boolean trashed) {
+		if(parentUID == null) return;
+		if(!trashed && !isTrashed()) return;
+		if(trashed && isTrashed()) return;
+
+		String name = getRawName();
+		if(trashed) name += ".trashed_"+Instant.now().getEpochSecond();
+		else name = FilenameUtils.removeExtension(name);
+
+		rename(name);
+	}
+	public void setHidden(boolean hidden) {
+		if(parentUID == null) return;
+		if(!isDir) return;
+		if(hidden && isHidden()) return;
+		if(!hidden && !isHidden()) return;
+
+		String name = getRawName();
+		if(!hidden) name = name.substring(1);
+		else name = "."+name;
+
+		rename(name);
+	}
+	public void setCollapsed(boolean collapsed) {
+		if(parentUID == null) return;
+		if(isDir) return;
+		if(collapsed && isCollapsed()) return;
+		if(!collapsed && !isCollapsed()) return;
+
+		String name = getRawName();
+		if(!collapsed) name = name.substring(1);
+		else name = "."+name;
+
+		rename(name);
 	}
 
 
+	private void rename(String newName) {
+		if(parentUID == null) return;
+
+		Thread renameThread = new Thread(() -> {
+			try {
+				//If parent is a link, we need the target dir or target parent
+				UUID dirUID = LinkCache.getInstance().getLinkDir(parentUID);
+
+				DirUtilities.renameFile(fileUID, dirUID, newName);
+			} catch (IOException e) {
+				//Just don't rename
+			}
+		});
+		renameThread.start();
+	}
+
+
+	//-----------------------------------------------
 
 	@NonNull
 	@Override

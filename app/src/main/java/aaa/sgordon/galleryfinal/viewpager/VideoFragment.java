@@ -34,6 +34,8 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.LegacyPlayerControlView;
 
+import com.google.gson.JsonObject;
+
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.text.SimpleDateFormat;
@@ -81,23 +83,6 @@ public class VideoFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
-
-		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
-			@Override
-			public void onDataReady(HFile fileProps, HZone zoning) {
-				setBottomSheetInfo();
-			}
-
-			@Override
-			public void onConnectException() {
-
-			}
-
-			@Override
-			public void onFileNotFoundException() {
-
-			}
-		});
 	}
 
 
@@ -125,7 +110,7 @@ public class VideoFragment extends Fragment {
 		});
 
 
-		setBottomSheetInfo();
+		//setBottomSheetInfo();
 
 		return binding.getRoot();
 	}
@@ -139,51 +124,18 @@ public class VideoFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-
-		//Show the filename in the BottomSheet
-		EditText filename = binding.viewB.findViewById(R.id.filename);
-		TextView extension = binding.viewB.findViewById(R.id.extension);
-		filename.setText(viewModel.fileName);
-		filename.addTextChangedListener(new TextWatcher() {
+		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
 			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			public void onConnectException() {}
 			@Override
-			public void afterTextChanged(Editable s) {}
-
+			public void onFileNotFoundException() {}
 			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				//Move the extension visually to the end of the filename
-				String text = (s == null) ? "" : s.toString();
-				updateExtensionTranslation(text);
-
-				//Persist the filename
-				viewModel.fileName = text;
-				viewModel.persistFileName();
-			}
-		});
-		extension.setText(viewModel.fileExtension);
-		extension.post(() -> {
-			updateExtensionTranslation(viewModel.fileName);
-		});
-
-		EditText description = binding.viewB.findViewById(R.id.description);
-		description.setText(viewModel.description);
-		description.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-			@Override
-			public void afterTextChanged(Editable s) {}
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				viewModel.description = (s == null) ? "" : s.toString();
-				viewModel.persistDescription();
+			public void onDataReady(HFile fileProps, HZone zoning) {
+				setBottomSheetInfo();
 			}
 		});
 
-
-
-		//-----------------------------------------------
+		setupTitle();
 
 
 		zoomPanHandler = new ZoomPanHandler(textureView);
@@ -395,26 +347,52 @@ public class VideoFragment extends Fragment {
 
 	//---------------------------------------------------------------------------------------------
 
-	private void updateExtensionTranslation(String text) {
+	private void setupTitle() {
+		//Show the filename in the BottomSheet
 		EditText filename = binding.viewB.findViewById(R.id.filename);
 		TextView extension = binding.viewB.findViewById(R.id.extension);
+		filename.setText(viewModel.fileName);
+		filename.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
 
-		if(text.isEmpty())
-			text = filename.getHint().toString();
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				//Move the extension visually to the end of the filename
+				String text = (s == null) ? "" : s.toString();
+				updateExtensionTranslation(text);
 
-		TextPaint paint = filename.getPaint();
-		int textWidth = (int) paint.measureText(text);
-
-		textWidth = Math.min(textWidth, filename.getWidth());
-
-		int parentWidth = ((View) filename.getParent()).getWidth();
-		int extensionWidth = extension.getWidth();
-		int translationX = (parentWidth - textWidth - extensionWidth);
-		extension.setTranslationX(-translationX);
+				//Persist the filename
+				viewModel.fileName = text;
+				viewModel.persistFileName();
+			}
+		});
+		extension.setText(viewModel.fileExtension);
+		extension.post(() -> {
+			updateExtensionTranslation(viewModel.fileName);
+		});
 	}
 
-
 	private void setBottomSheetInfo() {
+		EditText description = binding.viewB.findViewById(R.id.description);
+		description.setText(viewModel.description);
+		description.setEnabled(true);
+		description.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				viewModel.description = (s == null) ? "" : s.toString();
+				viewModel.persistDescription();
+			}
+		});
+
+
 		//Format the creation date
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
 		Date date = new Date(viewModel.fileProps.createtime*1000);
@@ -443,6 +421,24 @@ public class VideoFragment extends Fragment {
 
 		String backupText = getString(R.string.vp_backup, zone, fileSizeString);
 		zoningText.setText(backupText);
+	}
+
+	private void updateExtensionTranslation(String text) {
+		EditText filename = binding.viewB.findViewById(R.id.filename);
+		TextView extension = binding.viewB.findViewById(R.id.extension);
+
+		if(text.isEmpty())
+			text = filename.getHint().toString();
+
+		TextPaint paint = filename.getPaint();
+		int textWidth = (int) paint.measureText(text);
+
+		textWidth = Math.min(textWidth, filename.getWidth());
+
+		int parentWidth = ((View) filename.getParent()).getWidth();
+		int extensionWidth = extension.getWidth();
+		int translationX = (parentWidth - textWidth - extensionWidth);
+		extension.setTranslationX(-translationX);
 	}
 
 

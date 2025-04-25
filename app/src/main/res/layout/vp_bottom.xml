@@ -86,7 +86,6 @@
         android:layout_height="wrap_content"
         android:paddingHorizontal="4dp"
 
-        android:text="@string/lorem_ipsum"
         android:hint="Description..."
         android:inputType="textMultiLine"
         android:maxLines="20"
@@ -96,7 +95,8 @@
         android:scrollIndicators="top|bottom"
 
         android:alpha="0.6"
-        android:background="@android:color/transparent"/>
+        android:background="@android:color/transparent"
+        android:enabled="false"/>
 
 
     <Space

@@ -41,7 +41,7 @@ public class FilterSetup {
 		binding.galleryAppbar.filterBar.search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				fControl.onQueryChanged(charSequence.toString(), dirViewModel.fileTags.getValue());
+				fControl.onQueryChanged(charSequence.toString(), dirViewModel.getFileTags());
 			}
 
 			@Override
@@ -58,7 +58,7 @@ public class FilterSetup {
 		});
 
 		binding.galleryAppbar.filterBar.searchGo.setOnClickListener(view2 ->
-				fControl.onActiveQueryChanged( binding.galleryAppbar.filterBar.search.getText().toString(), dirViewModel.fileList.getValue()));
+				fControl.onActiveQueryChanged( binding.galleryAppbar.filterBar.search.getText().toString(), dirViewModel.getFileList()));
 
 		binding.galleryAppbar.filterBar.searchClear.setOnClickListener(view2 ->
 				binding.galleryAppbar.filterBar.search.setText(""));
@@ -67,7 +67,7 @@ public class FilterSetup {
 		//Color icons based on filter results
 
 		binding.galleryAppbar.filterBar.tagClear.setOnClickListener(view2 -> {
-			fControl.onActiveTagsChanged(new HashSet<>(), dirViewModel.fileList.getValue());
+			fControl.onActiveTagsChanged(new HashSet<>(), dirViewModel.getFileList());
 			//Using this too so we refresh tag list (make sure this doesn't backfire if we change things)
 			//dirViewModel.onActiveQueryChanged(dirViewModel.activeQuery.getValue());
 		});
@@ -80,7 +80,7 @@ public class FilterSetup {
 			ImageButton tagClear = binding.galleryAppbar.filterBar.tagClear;
 			tagClear.setSelected(!tags.isEmpty());
 
-			fControl.filter(dirViewModel.fileList.getValue());
+			fControl.filter(dirViewModel.getFileList());
 		});
 
 
@@ -178,7 +178,7 @@ public class FilterSetup {
 					else
 						activeTags.add(tag);
 
-					fControl.onActiveTagsChanged(activeTags, dirViewModel.fileList.getValue());
+					fControl.onActiveTagsChanged(activeTags, dirViewModel.getFileList());
 				});
 
 				chips.add(chip);

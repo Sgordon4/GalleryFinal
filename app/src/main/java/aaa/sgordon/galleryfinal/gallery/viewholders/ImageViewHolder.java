@@ -1,9 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.viewholders;
 
-import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -13,9 +10,14 @@ import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.google.gson.JsonObject;
+
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 
 public class ImageViewHolder extends BaseViewHolder {
 	public View child;
@@ -32,22 +34,8 @@ public class ImageViewHolder extends BaseViewHolder {
 	public void bind(@NonNull ListItem listItem, @Nullable ListItem parent) {
 		super.bind(listItem, parent);
 
-		//Change the border color of the child
-		if(parent != null && parent.fileProps.userattr.has("color")) {
-			Drawable background = child.getBackground();
-			if (background instanceof GradientDrawable) {
-				GradientDrawable shapeDrawable = (GradientDrawable) background;
-				shapeDrawable.setStroke(4, parent.fileProps.userattr.get("color").getAsInt());
-			}
-		} else {
-			//Reset the default background color
-			//We need to do this or the card will retain previous background colors from other items thanks to the RecyclerView
-			Drawable background = child.getBackground();
-			if (background instanceof GradientDrawable) {
-				GradientDrawable shapeDrawable = (GradientDrawable) background;
-				shapeDrawable.setStroke(4, Color.TRANSPARENT);
-			}
-		}
+		ColorUtil.setBorderColor(null, child);
+		if(parent != null) ColorUtil.setBorderColorAsync(parent.fileUID, child);
 
 
 		//Using a custom modelLoader to handle HybridAPI FileUIDs

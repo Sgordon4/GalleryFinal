@@ -7,7 +7,6 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import org.apache.commons.io.FilenameUtils;
@@ -60,9 +59,6 @@ public class ViewPageViewModel extends ViewModel {
 		this.fileExtension = FilenameUtils.getExtension(name);
 		if(!this.fileExtension.isEmpty()) this.fileExtension = "."+this.fileExtension;
 
-		JsonElement descElement = listItem.fileProps.userattr.get("description");
-		this.description = (descElement == null) ? "" : descElement.getAsString();
-
 
 		scheduler = Executors.newScheduledThreadPool(2);
 		descriptionChangeRunnable = () -> {
@@ -90,6 +86,8 @@ public class ViewPageViewModel extends ViewModel {
 				persistFileName();
 			}
 		};
+
+		new Thread(this::refreshData).start();
 	}
 
 
@@ -103,29 +101,32 @@ public class ViewPageViewModel extends ViewModel {
 	private DataRefreshedListener dataRefreshedListener;
 	public void setDataReadyListener(DataRefreshedListener listener) {
 		dataRefreshedListener = listener;
+
+		if(fileProps != null)
+			listener.onDataReady(fileProps, zoning);
 	}
 
 	public void refreshData() {
-		Thread thread = new Thread(() -> {
-			try {
-				HybridAPI hAPI = HybridAPI.getInstance();
+		try {
+			HybridAPI hAPI = HybridAPI.getInstance();
 
-				zoning = hAPI.getZoningInfo(fileUID);
-				fileProps = hAPI.getFileProps(fileUID);
+			fileProps = hAPI.getFileProps(fileUID);
+			zoning = hAPI.getZoningInfo(fileUID);
 
-				if(dataRefreshedListener != null)
-					dataRefreshedListener.onDataReady(fileProps, zoning);
-			}
-			catch (FileNotFoundException e) {
-				if(dataRefreshedListener != null)
-					dataRefreshedListener.onFileNotFoundException();
-			}
-			catch (ConnectException e) {
-				if(dataRefreshedListener != null)
-					dataRefreshedListener.onConnectException();
-			}
-		});
-		thread.start();
+			if(fileProps.userattr.has("description"))
+				description = fileProps.userattr.get("description").getAsString();
+
+			if(dataRefreshedListener != null)
+				dataRefreshedListener.onDataReady(fileProps, zoning);
+		}
+		catch (FileNotFoundException e) {
+			if(dataRefreshedListener != null)
+				dataRefreshedListener.onFileNotFoundException();
+		}
+		catch (ConnectException e) {
+			if(dataRefreshedListener != null)
+				dataRefreshedListener.onConnectException();
+		}
 	}
 
 	//---------------------------------------------------------------------------------------------

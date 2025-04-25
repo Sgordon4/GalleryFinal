@@ -248,7 +248,7 @@ public class DirSampleData {
 		DirItem deChild_f3 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 3");
 		DirItem deChild_f4 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 4");
 		DirItem deChild_f5 = new DirItem(hapi.createFile(currentAccount, false, false), false, false, "DC: File 5");
-		DirItem deChild_l1_cycle = new DirItem(hapi.createFile(currentAccount, false, true), false, false, "DC: Link Cycle");
+		DirItem deChild_l1_cycle = new DirItem(hapi.createFile(currentAccount, false, true), false, true, "DC: Link Cycle");
 
 		DirItem deChild_f6_fake = new DirItem(UUID.randomUUID(), false, false, "DC: File Fake");		//Create a file with a fake UUID
 

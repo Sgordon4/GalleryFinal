@@ -195,7 +195,7 @@ public class TrashFragment extends Fragment {
 		selectionToolbar.setNavigationOnClickListener(v -> selectionController.stopSelecting());
 
 		//Deselect any items that were removed from the list
-		dirFragment.dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
+		dirFragment.dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
 			if(selectionController.isSelecting()) {
 				//Grab all UUIDs from the full list
 				Set<UUID> inAdapter = adapter.list.stream()
@@ -219,7 +219,7 @@ public class TrashFragment extends Fragment {
 
 
 		FilterController filterController = new FilterController(viewModel.filterRegistry);
-		dirFragment.dirViewModel.fileList.observe(getViewLifecycleOwner(), filterController::onListUpdated);
+		dirFragment.dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), filterController::onListUpdated);
 
 		filterController.addExtraQueryFilter(listItem -> {
 			//Include only trashed items

@@ -280,30 +280,28 @@ public class EditItemModal extends DialogFragment {
 		UUID fileUID = selectionController.getSelectedList().iterator().next();
 
 		//Get the filename from the file list
-		String fileName = null;
-		UUID dirUID = null;
+		ListItem listItem = null;
 		for(ListItem item : adapterList) {
 			UUID itemUID = item.fileUID;
 
 			if(itemUID.equals(fileUID)) {
-				fileName = item.name;
-				dirUID = item.parentUID;
+				listItem = item;
 				break;
 			}
 		}
-		if(fileName == null) {
+		if(listItem == null) {
 			Toast.makeText(dirFragment.getContext(), "Selected file was removed, cannot edit!", Toast.LENGTH_SHORT).show();
 			return false;
 		}
-		if(dirUID == null) {
+		if(listItem.parentUID == null) {
 			throw new RuntimeException("Somehow DirUID is null");
 		}
 
 
 		//TODO Get the dirUID from the path and update the name
 
-		String finalFileName = fileName;
-		UUID finalDirUID = dirUID;
+		String fileName = listItem.getRawName();
+		UUID dirUID = listItem.parentUID;
 		Thread thread = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
@@ -317,7 +315,7 @@ public class EditItemModal extends DialogFragment {
 				String description = descriptionElement == null ? null : descriptionElement.getAsString();
 
 				//Compile them into a props object
-				EditItemModal.EditProps props = new EditItemModal.EditProps(fileUID, finalDirUID, finalFileName, color, description);
+				EditItemModal.EditProps props = new EditItemModal.EditProps(fileUID, dirUID, fileName, color, description);
 
 
 				//Launch the edit modal

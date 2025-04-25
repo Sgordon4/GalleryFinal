@@ -47,7 +47,7 @@
             android:maxLines="1" />
 
         <com.google.android.material.divider.MaterialDivider
-            android:id="@+id/divider"
+            android:id="@+id/color"
             android:layout_width="0dp"
             android:layout_height="2dp"
             tools:ignore="NestedWeights"

@@ -325,7 +325,6 @@ public class DirUtilities {
 	//TODO Cut this up into pieces (this is my last resort)
 	public static boolean moveFiles(@NonNull List<ListItem> toMove, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException, NotDirectoryException, IOException {
-		//System.out.println("Moving files!");
 
 		if(toMove.isEmpty()) {
 			Log.w(TAG, "moveFiles was called with no files to move!");
@@ -380,7 +379,7 @@ public class DirUtilities {
 			}
 
 
-			//Convert the list items to UUID::String pairs
+			//Convert the list items to DirItems
 			List<DirItem> moveOrdering = toMove.stream()
 					.map(item -> new DirItem(item.fileUID, item.isDir, item.isLink, item.getRawName()))
 					.collect(Collectors.toList());

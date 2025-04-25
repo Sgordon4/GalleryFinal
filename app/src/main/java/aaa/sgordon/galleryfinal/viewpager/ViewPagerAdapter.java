@@ -47,7 +47,8 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 		};
 		DiffUtil.DiffResult diffs = DiffUtil.calculateDiff(diffCallback);
 
-
+		list.clear();
+		list.addAll(newList);
 
 		diffs.dispatchUpdatesTo(this);
 	}

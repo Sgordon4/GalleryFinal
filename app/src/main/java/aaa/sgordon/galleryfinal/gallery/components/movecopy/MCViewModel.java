@@ -34,10 +34,20 @@ public class MCViewModel extends ViewModel {
 	public Path currPathFromRoot;
 
 	private final FileExplorer fileExplorer;
-	public final MutableLiveData<List<ListItem>> fileList;
 
 	public final SelectionController.SelectionRegistry selectionRegistry;
 	public final FilterController.FilterRegistry filterRegistry;
+
+
+	public List<ListItem> getFileList() {
+		return fileExplorer.list.getValue();
+	}
+	public MutableLiveData< List<ListItem> > getFileListLiveData() {
+		return fileExplorer.list;
+	}
+	public void postFileList(List<ListItem> list) {
+		fileExplorer.list.postValue(list);
+	}
 
 
 	public MCViewModel(ListItem startItem, boolean isMove) {
@@ -52,12 +62,17 @@ public class MCViewModel extends ViewModel {
 		this.selectionRegistry = new SelectionController.SelectionRegistry();
 		this.filterRegistry = new FilterController.FilterRegistry();
 
-		this.fileList = new MutableLiveData<>();
-		this.fileList.setValue(new ArrayList<>());
 
-
-		MediatorLiveData<List<ListItem>> mediator = new MediatorLiveData<>();
-		mediator.addSource(fileExplorer.list, fileList::postValue);
+		//Fetch the directory list and update our livedata
+		Thread updateViaTraverse = new Thread(() -> {
+			try {
+				fileExplorer.traverseDir(currDirUID);
+			}
+			catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+				throw new RuntimeException(e);
+			}
+		});
+		updateViaTraverse.start();
 	}
 
 	public void changeDirectories(UUID newDirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {

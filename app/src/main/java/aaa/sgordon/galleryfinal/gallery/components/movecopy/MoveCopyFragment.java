@@ -129,7 +129,7 @@ public class MoveCopyFragment extends Fragment {
 
 		FilterController filterController = buildFilterController();
 		//Update the filtered list when the directory contents update
-		viewModel.fileList.observe(getViewLifecycleOwner(), filterController::onListUpdated);
+		viewModel.getFileListLiveData().observe(getViewLifecycleOwner(), filterController::onListUpdated);
 		//Update the adapter when the filtered list updates
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
 			//Remove duplicates
@@ -143,7 +143,7 @@ public class MoveCopyFragment extends Fragment {
 		binding.search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				filterController.onActiveQueryChanged(charSequence.toString(), viewModel.fileList.getValue());
+				filterController.onActiveQueryChanged(charSequence.toString(), viewModel.getFileList());
 			}
 
 			@Override

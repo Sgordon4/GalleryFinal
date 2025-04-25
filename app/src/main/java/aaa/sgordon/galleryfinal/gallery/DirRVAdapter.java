@@ -90,9 +90,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			@Override
 			public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
 				return list.get(oldItemPosition).getRawName().equals(newList.get(newItemPosition).getRawName()) &&
-						//list.get(oldItemPosition).pathFromRoot.equals(newList.get(newItemPosition).pathFromRoot) &&
-						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type) &&
-						list.get(oldItemPosition).fileProps.attrhash.equals(newList.get(newItemPosition).fileProps.attrhash);
+						list.get(oldItemPosition).type.equals(newList.get(newItemPosition).type);
 			}
 
 			//TODO Override getChangePayload if we end up using ItemAnimator
@@ -115,7 +113,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		//If the item comes from a link, find the parent
 		if(item.pathFromRoot.getNameCount() > 2) {
 			for(int i = position-1; i >= 0; i--) {
-				if(item.parentUID.equals( list.get(i).fileUID) ) {
+				if(list.get(i).fileUID.equals( item.parentUID ) ) {
 					parent = list.get(i);
 					break;
 				}

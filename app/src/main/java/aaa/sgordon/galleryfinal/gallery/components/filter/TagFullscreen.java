@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.gallery.components.filter;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -11,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -87,7 +85,7 @@ public class TagFullscreen extends DialogFragment {
 		search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				Map<String, Set<UUID>> filtered = filterTags(charSequence.toString(), dirViewModel.fileTags.getValue());
+				Map<String, Set<UUID>> filtered = filterTags(charSequence.toString(), dirViewModel.getFileTags());
 				refreshChips(filtered);
 				//dirViewModel.onQueryChanged(charSequence.toString());
 			}
@@ -110,8 +108,8 @@ public class TagFullscreen extends DialogFragment {
 			change.start();
 		});
 
-		dirViewModel.fileTags.observe(getViewLifecycleOwner(), tags -> {
-			Map<String, Set<UUID>> filtered = filterTags(search.getText().toString(), dirViewModel.fileTags.getValue());
+		dirViewModel.getFileTagsLiveData().observe(getViewLifecycleOwner(), tags -> {
+			Map<String, Set<UUID>> filtered = filterTags(search.getText().toString(), dirViewModel.getFileTags());
 			refreshChips(filtered);
 		});
 	}

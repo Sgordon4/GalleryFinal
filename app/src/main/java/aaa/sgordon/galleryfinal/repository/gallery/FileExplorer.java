@@ -55,6 +55,8 @@ public class FileExplorer {
 
 			refreshList();
 		};
+		dirCache.addListener(dirListener);
+
 		linkListener = uuid -> {
 			//If this update isn't for us, ignore it
 			if(!linkDependencies.contains(uuid))
@@ -62,6 +64,7 @@ public class FileExplorer {
 
 			refreshList();
 		};
+		linkCache.addListener(linkListener);
 	}
 	public void destroy() {
 		dirCache.removeListener(dirListener);
@@ -119,7 +122,7 @@ public class FileExplorer {
 				for(Path path : item.pathFromRoot) {
 					printPath = printPath.resolve(path.getFileName().toString().substring(0, 8));
 				}
-				System.out.println(printPath+"   "+item.type+" "+item.getPrettyName());
+				System.out.println(printPath+"   "+item.type+" "+item.getRawName());
 			}
 
 			printed = true;
@@ -290,16 +293,16 @@ public class FileExplorer {
 			files.add(new ListItem.Builder(topLink).setType(ListItem.Type.LINKDIRECTORY).build());
 
 			//Traverse the directory
-			files.addAll(traverseDirectory(target.fileUID, targetDirContents, new HashSet<>(visited), currPath));
+			files.addAll(traverseDirectory(topLink.fileUID, targetDirContents, new HashSet<>(visited), currPath));
 
 			//Add a link end
-			files.add(new ListItem.Builder(topLink).setRawName("END of "+topLink.getPrettyName()).setType(ListItem.Type.LINKEND).build());
+			files.add(new ListItem.Builder(topLink).setRawName("END of "+topLink.getRawName()).setType(ListItem.Type.LINKEND).build());
 
 			return files;
 		}
 		else {
 			//If the link target is a divider item, we want to display only the "divider's items", including any links contained within
-			if(FilenameUtils.getExtension(targetItem.name).equals(".div")) {
+			if(FilenameUtils.getExtension(targetItem.name).equals("div")) {
 				dirDependencies.add(target.parentUID);
 
 				//Get only the divider's items from the parent
@@ -313,7 +316,7 @@ public class FileExplorer {
 				files.add(new ListItem.Builder(topLink).setType(ListItem.Type.LINKDIVIDER).build());
 
 				//Traverse the divider's segment of the directory
-				files.addAll(traverseDirectory(target.parentUID, dividerItems, new HashSet<>(visited), currPath));
+				files.addAll(traverseDirectory(topLink.fileUID, dividerItems, new HashSet<>(visited), currPath));
 
 				//Add a link end
 				files.add(new ListItem.Builder(topLink).setRawName("END of "+topLink.getPrettyName()).setType(ListItem.Type.LINKEND).build());
@@ -328,7 +331,7 @@ public class FileExplorer {
 	}
 
 
-	//When displaying links to dividers, we want to show all items after the divider up until the next divider (or dir end)
+	//When displaying links to dividers, we want to show all items after the divider up until the next link or divider (or dir end)
 	@Nullable
 	private static List<DirItem> sublistDividerItems(List<DirItem> parentContents, UUID dividerUID) {
 		//Find the index of the divider within the parent directory contents
@@ -343,15 +346,15 @@ public class FileExplorer {
 		if (dividerIndex == -1) return null;
 
 
-		//Find the next divider after the given dividerUID, or the end of the list
-		//Note: Divider's only stop at other '.div' files. This includes skipping links unless they're named 'Something.div'
-		int nextDividerIndex;
-		for(nextDividerIndex = dividerIndex+1; nextDividerIndex < parentContents.size(); nextDividerIndex++) {
-			if(FilenameUtils.getExtension( parentContents.get(nextDividerIndex).name ).equals("div"))
+		//Find the next link or divider after the given dividerUID, or the end of the list
+		int nextIndex;
+		for(nextIndex = dividerIndex+1; nextIndex < parentContents.size(); nextIndex++) {
+			DirItem nextItem = parentContents.get(nextIndex);
+			if(nextItem.isLink || FilenameUtils.getExtension( nextItem.name ).equals("div"))
 				break;
 		}
 
 		//Return the items between the given divider and the next divider (or end of list)
-		return parentContents.subList(dividerIndex + 1, nextDividerIndex);
+		return parentContents.subList(dividerIndex + 1, nextIndex);
 	}
 }

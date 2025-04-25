@@ -3,6 +3,7 @@ package aaa.sgordon.galleryfinal.gallery;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -24,13 +25,13 @@ import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
 public class DirectoryViewModel extends ViewModel {
 	private final static String TAG = "Gal.Dir.VM";
+	public final ListItem listItem;
+
 	private final FileExplorer fileExplorer;
+	private final MutableLiveData< Map<String, Set<UUID>> > fileTags;
+
 	private final FilterController.FilterRegistry filterRegistry;
 	private final SelectionController.SelectionRegistry selectionRegistry;
-
-	public final ListItem listItem;
-	public final MutableLiveData< List<ListItem> > fileList;
-	public final MutableLiveData< Map<String, Set<UUID>> > fileTags;
 
 
 	public FilterController.FilterRegistry getFilterRegistry() {
@@ -40,25 +41,40 @@ public class DirectoryViewModel extends ViewModel {
 		return selectionRegistry;
 	}
 
+	public List<ListItem> getFileList() {
+		return fileExplorer.list.getValue();
+	}
+	public MutableLiveData< List<ListItem> > getFileListLiveData() {
+		return fileExplorer.list;
+	}
+	public void postFileList(List<ListItem> list) {
+		fileExplorer.list.postValue(list);
+	}
+
+	public Map<String, Set<UUID>> getFileTags() {
+		return fileTags.getValue();
+	}
+	public MutableLiveData< Map<String, Set<UUID>> > getFileTagsLiveData() {
+		return fileTags;
+	}
+	public void postFileTags(Map<String, Set<UUID>> tags) {
+		fileTags.postValue(tags);
+	}
+
 
 	public DirectoryViewModel(ListItem listItem) {
 		this.listItem = listItem;
+
+		this.fileTags = new MutableLiveData<>();
+		this.fileTags.setValue(new HashMap<>());
 
 		this.filterRegistry = new FilterController.FilterRegistry();
 		this.selectionRegistry = new SelectionController.SelectionRegistry();
 
 		this.fileExplorer = new FileExplorer();
-		this.fileList = new MutableLiveData<>();
-		this.fileList.setValue(new ArrayList<>());
 
-		this.fileTags = new MutableLiveData<>();
-		this.fileTags.setValue(new HashMap<>());
 
 		System.out.println("Creating viewmodel! FileUID='"+listItem.fileUID+"'");
-
-
-		MediatorLiveData<List<ListItem>> mediator = new MediatorLiveData<>();
-		mediator.addSource(fileExplorer.list, fileList::postValue);
 
 		//Fetch the directory list and update our livedata
 		Thread updateViaTraverse = new Thread(() -> {
@@ -73,7 +89,6 @@ public class DirectoryViewModel extends ViewModel {
 
 
 		//Loop importing items for testing viewpager
-		System.out.println("Done with viewmodel");
 		scheduler = Executors.newSingleThreadScheduledExecutor();
 		Runnable runnable = () -> {
 			//'Import' to this directory

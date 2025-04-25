@@ -2,12 +2,9 @@ package aaa.sgordon.galleryfinal.viewpager;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.Editable;
 import android.text.TextPaint;
 import android.text.TextWatcher;
@@ -32,6 +29,7 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.google.gson.JsonObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -68,23 +66,6 @@ public class GifFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
-
-		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
-			@Override
-			public void onDataReady(HFile fileProps, HZone zoning) {
-				setBottomSheetInfo();
-			}
-
-			@Override
-			public void onConnectException() {
-
-			}
-
-			@Override
-			public void onFileNotFoundException() {
-
-			}
-		});
 	}
 
 	@Nullable
@@ -110,7 +91,7 @@ public class GifFragment extends Fragment {
 		});
 
 
-		setBottomSheetInfo();
+		//setBottomSheetInfo();
 
 		return binding.getRoot();
 	}
@@ -126,7 +107,18 @@ public class GifFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
-		setupTitleAndDescription();
+		viewModel.setDataReadyListener(new ViewPageViewModel.DataRefreshedListener() {
+			@Override
+			public void onConnectException() {}
+			@Override
+			public void onFileNotFoundException() {}
+			@Override
+			public void onDataReady(HFile fileProps, HZone zoning) {
+				setBottomSheetInfo();
+			}
+		});
+
+		setupTitle();
 
 
 		ImageView media = binding.viewA.findViewById(R.id.media);
@@ -237,7 +229,7 @@ public class GifFragment extends Fragment {
 
 
 
-	private void setupTitleAndDescription() {
+	private void setupTitle() {
 		//Show the filename in the BottomSheet
 		EditText filename = binding.viewB.findViewById(R.id.filename);
 		TextView extension = binding.viewB.findViewById(R.id.extension);
@@ -263,9 +255,12 @@ public class GifFragment extends Fragment {
 		extension.post(() -> {
 			updateExtensionTranslation(viewModel.fileName);
 		});
+	}
 
+	private void setBottomSheetInfo() {
 		EditText description = binding.viewB.findViewById(R.id.description);
 		description.setText(viewModel.description);
+		description.setEnabled(true);
 		description.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -278,9 +273,8 @@ public class GifFragment extends Fragment {
 				viewModel.persistDescription();
 			}
 		});
-	}
 
-	private void setBottomSheetInfo() {
+
 		//Format the creation date
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, MMM d, yyyy • h:mm a");
 		Date date = new Date(viewModel.fileProps.createtime*1000);

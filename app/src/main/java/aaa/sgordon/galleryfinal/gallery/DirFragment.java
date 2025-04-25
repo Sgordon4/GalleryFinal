@@ -25,6 +25,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -212,7 +213,8 @@ public class DirFragment extends Fragment {
 
 
 		//Deselect any items that were removed from the list
-		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
+		//Note: This technically doesn't handle trashed items, but selection ends upon trashing so it doesn't matter
+		dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
 			if(selectionController.isSelecting()) {
 				//Grab all UUIDs from the full list
 				Set<UUID> inAdapter = adapter.list.stream()
@@ -240,10 +242,6 @@ public class DirFragment extends Fragment {
 
 		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry());
 		filterController.addExtraQueryFilter(listItem -> {
-			//Exclude trashed items
-			return !listItem.isTrashed();
-		});
-		filterController.addExtraQueryFilter(listItem -> {
 			//Exclude hidden Directory items if the active query doesn't match their name exactly
 			if(!listItem.isHidden()) return true;
 
@@ -253,8 +251,9 @@ public class DirFragment extends Fragment {
 
 		FilterSetup.setupFilters(this, filterController);
 
-		dirViewModel.fileList.observe(getViewLifecycleOwner(), list -> {
-			filterController.onListUpdated(list);
+		dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
+			//Don't compile tags and don't allow filtering for trashed items
+			list = hideTrashedItems(list);
 
 
 			//Grab the UUIDs of all the files in the new list for use with tagging
@@ -264,16 +263,24 @@ public class DirFragment extends Fragment {
 					.map(item -> item.fileUID)
 					.collect(Collectors.toList());
 
+
+			//Don't allow filtering for collapsed items
+			list = hideCollapsedItems(list);
+			System.out.println(Arrays.toString(list.toArray()));
+
+			filterController.onListUpdated(list);
+
+
 			//Grab all tags for each fileUID
 			//TODO Expand this to include a list of files per tag
 			Thread getTags = new Thread(() -> {
 				Map<String, Set<UUID>> newTags = AttrCache.getInstance().compileTags(fileUIDs);
 
-				dirViewModel.fileTags.postValue(newTags);
+				dirViewModel.postFileTags(newTags);
 			});
 			getTags.start();
 		});
-		dirViewModel.fileTags.observe(getViewLifecycleOwner(), filterController::onTagsUpdated);
+		dirViewModel.getFileTagsLiveData().observe(getViewLifecycleOwner(), filterController::onTagsUpdated);
 
 
 		//-----------------------------------------------------------------------------------------
@@ -290,10 +297,13 @@ public class DirFragment extends Fragment {
 
 		//-----------------------------------------------------------------------------------------
 
-		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
-			list = hideCollapsedItems(list);
-			System.out.println("Setting list");
 
+		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
+			try {
+				throw new Exception();
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
@@ -316,7 +326,7 @@ public class DirFragment extends Fragment {
 
 			//Update the tags
 			Map<String, Set<UUID>> newTags = attrCache.compileTags(fileUIDs);
-			dirViewModel.fileTags.postValue(newTags);
+			dirViewModel.postFileTags(newTags);
 
 
 			//For each file in the adapter list...
@@ -412,6 +422,39 @@ public class DirFragment extends Fragment {
 
 
 
+
+	//Hide items that are trashed, or part of trashed links
+	private List<ListItem> hideTrashedItems(List<ListItem> list) {
+		List<ListItem> newList = new ArrayList<>();
+
+		ListItem trashedLink = null;
+		for(ListItem item : list) {
+			//If we are working inside a trashed link...
+			if (trashedLink != null) {
+				//Wait until we reach the linkEnd to un-trash
+				if (item.type == ListItem.Type.LINKEND && trashedLink.fileUID.equals(item.fileUID)) {
+					trashedLink = null;
+					continue;	//also skip the linkEnd
+				}
+			}
+
+			//Skip items inside trashed links
+			if(trashedLink != null)
+				continue;
+
+			//Skip trashed items
+			if(item.isTrashed()) {
+				if(item.isLink)
+					trashedLink = item;
+				continue;
+			}
+
+			newList.add(item);
+		}
+		return newList;
+	}
+
+	//Hide items that are part of collapsed links or dividers
 	private List<ListItem> hideCollapsedItems(List<ListItem> list) {
 		List<ListItem> newList = new ArrayList<>();
 		ListItem collapsedItem = null;
@@ -422,6 +465,7 @@ public class DirFragment extends Fragment {
 								item.type == ListItem.Type.LINKEND &&
 								collapsedItem.fileUID.equals(item.fileUID))
 					collapsedItem = null;
+
 				//If the collapsed item is a Divider, wait until we reach another divider or link to un-collapse
 				else if(collapsedItem.type.equals(ListItem.Type.DIVIDER) && (
 								item.type.equals(ListItem.Type.LINKDIRECTORY) ||
