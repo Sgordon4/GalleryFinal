@@ -44,15 +44,15 @@ import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class MoveCopyFragment extends Fragment {
-	private static final String TAG = "Gal.MC";
-	private DirMovecopyBinding binding;
+	protected static final String TAG = "Gal.MC";
+	protected DirMovecopyBinding binding;
 	public MCViewModel viewModel;
 
-	private MCAdapter adapter;
-	private SelectionController selectionController;
+	protected MCAdapter adapter;
+	protected SelectionController selectionController;
 
 
-	private ListItem tempItemDoNotUse;
+	protected ListItem tempItemDoNotUse;
 	public static MoveCopyFragment newInstance(ListItem startItem, boolean isMove) {
 		MoveCopyFragment fragment = new MoveCopyFragment();
 		fragment.tempItemDoNotUse = startItem;
@@ -194,10 +194,10 @@ public class MoveCopyFragment extends Fragment {
 
 
 
-		String text = getConfirmText(null);
-		binding.confirm.setText(text);
+		updateConfirmButton(null);
 		binding.confirm.setOnClickListener(v -> {
-			onConfirm();
+			new Thread(this::onConfirm).start();
+			getParentFragmentManager().popBackStack();
 		});
 
 
@@ -220,45 +220,41 @@ public class MoveCopyFragment extends Fragment {
 
 
 	protected void onConfirm() {
-		if(callback != null) {
-			Thread doThings = new Thread(() -> {
-				//Passing a fake item to move/copy will place the items at the start when the function can't find it
-				UUID nextItem = UUID.randomUUID();
+		if(callback == null) return;
 
-				if(selectionController.getNumSelected() > 0) {
-					UUID selected = selectionController.getSelectedList().iterator().next();
+		//Passing a fake item to move/copy will place the items at the start when the function can't find it
+		UUID nextItem = UUID.randomUUID();
 
-					//If the item is a link to a divider, get the internal target...
-					LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
-					if (target instanceof InternalTarget) {
-						InternalTarget internalTarget = (InternalTarget) target;
+		if(selectionController.getNumSelected() > 0) {
+			UUID selected = selectionController.getSelectedList().iterator().next();
 
-						try {
-							nextItem = getNextItem(internalTarget.parentUID, internalTarget.fileUID);
-						}
-						catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-							//If anything goes wrong, just don't update the next item
-						}
+			//If the item is a link to a divider, get the internal target...
+			LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
+			if (target instanceof InternalTarget) {
+				InternalTarget internalTarget = (InternalTarget) target;
 
-						callback.onConfirm(internalTarget.parentUID, nextItem);
-					}
-					//If not a link to a divider, the item is an actual divider
-					else {
-						try {
-							nextItem = getNextItem(viewModel.currDirUID, selected);
-						}
-						catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-							//If anything goes wrong, just don't update the next item
-						}
-						callback.onConfirm(viewModel.currDirUID, nextItem);
-					}
+				try {
+					nextItem = getNextItem(internalTarget.parentUID, internalTarget.fileUID);
 				}
-				else
-					callback.onConfirm(viewModel.currDirUID, nextItem);
-			});
-			doThings.start();
+				catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+					//If anything goes wrong, just don't update the next item
+				}
+
+				callback.onConfirm(internalTarget.parentUID, nextItem);
+			}
+			//If not a link to a divider, the item is an actual divider
+			else {
+				try {
+					nextItem = getNextItem(viewModel.currDirUID, selected);
+				}
+				catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+					//If anything goes wrong, just don't update the next item
+				}
+				callback.onConfirm(viewModel.currDirUID, nextItem);
+			}
 		}
-		getParentFragmentManager().popBackStack();
+		else
+			callback.onConfirm(viewModel.currDirUID, nextItem);
 	}
 
 
@@ -328,8 +324,7 @@ public class MoveCopyFragment extends Fragment {
 			@Override
 			public void onNumSelectedChanged(int numSelected) {
 				if(numSelected == 0) {
-					String text = getConfirmText(null);
-					binding.confirm.post(() -> binding.confirm.setText(text));
+					updateConfirmButton(null);
 				}
 			}
 
@@ -343,8 +338,7 @@ public class MoveCopyFragment extends Fragment {
 				if(isSelected) {
 					ListItem selectedItem = adapter.list.stream().filter(item -> item.fileUID.equals(fileUID)).findFirst().orElse(null);
 					if(selectedItem != null){
-						String text = getConfirmText(selectedItem);
-						binding.confirm.post(() -> binding.confirm.setText(text));
+						updateConfirmButton(selectedItem);
 					}
 					//Should never really happen, but jic
 					else
@@ -378,12 +372,17 @@ public class MoveCopyFragment extends Fragment {
 	}
 
 
-	protected String getConfirmText(@Nullable ListItem selectedItem) {
+
+	protected void updateConfirmButton(@Nullable ListItem selectedItem) {
+		String text;
 		if(selectedItem == null)
-			return (viewModel.isMove) ? "Move Here" : "Copy Here";
+			text = (viewModel.isMove) ? "Move Here" : "Copy Here";
 		else
-			return (viewModel.isMove) ? "Move to " + selectedItem.getPrettyName() : "Copy to " + selectedItem.getPrettyName();
+			text = (viewModel.isMove) ? "Move to " + selectedItem.getPrettyName() : "Copy to " + selectedItem.getPrettyName();
+
+		binding.confirm.post(() -> binding.confirm.setText(text));
 	}
+
 
 	//---------------------------------------------------------------------------------------------
 
@@ -410,11 +409,14 @@ public class MoveCopyFragment extends Fragment {
 			viewModel.currParentUID = trueDirAndParent.second;
 			viewModel.currPathFromRoot = newPathFromRoot;
 
-			updateToolbar(trueDirAndParent.first, trueDirAndParent.second);
-
-			binding.search.post(() -> binding.search.setText(""));
+			onDirectoryChanged(trueDirAndParent.first, trueDirAndParent.second, newPathFromRoot);
 		});
 		change.start();
+	}
+
+	protected void onDirectoryChanged(UUID dirUID, UUID parentUID, Path pathFromRoot) {
+		updateToolbar(dirUID, parentUID);
+		binding.search.post(() -> binding.search.setText(""));
 	}
 
 
@@ -495,7 +497,7 @@ public class MoveCopyFragment extends Fragment {
 
 
 	@Nullable
-	private String getFileNameFromDir(UUID fileUID, UUID parentDirUID) {
+	protected String getFileNameFromDir(UUID fileUID, UUID parentDirUID) {
 		try {
 			return DirCache.getInstance().getDirContents(parentDirUID).stream()
 					.filter(item -> item.fileUID.equals(fileUID))

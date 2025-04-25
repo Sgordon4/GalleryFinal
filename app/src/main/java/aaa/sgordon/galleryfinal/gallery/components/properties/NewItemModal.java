@@ -24,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.github.naz013.colorslider.ColorSlider;
 import com.google.gson.JsonObject;
@@ -31,6 +32,7 @@ import com.google.gson.JsonObject;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,8 +40,7 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.components.modals.LinkTargetModal;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
+import aaa.sgordon.galleryfinal.gallery.components.linkselect.LinkSelectFragment;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
@@ -49,7 +50,8 @@ import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class NewItemModal extends DialogFragment {
-	private final Fragment fragment;
+	private final Fragment parentFragment;
+	private final ListItem dirItem;
 	private final UUID dirUID;
 
 	private static final Integer defaultColor = Color.GRAY;
@@ -69,13 +71,14 @@ public class NewItemModal extends DialogFragment {
 
 
 
-	public static void launch(@NonNull Fragment fragment, @NonNull UUID dirUID) {
-		NewItemModal dialog = new NewItemModal(fragment, dirUID);
-		dialog.show(fragment.getChildFragmentManager(), "edit_item");
+	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startItem) {
+		NewItemModal dialog = new NewItemModal(parentFragment, startItem);
+		dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
 	}
-	private NewItemModal(@NonNull Fragment fragment, @NonNull UUID dirUID) {
-		this.fragment = fragment;
-		this.dirUID = dirUID;
+	private NewItemModal(@NonNull Fragment parentFragment, @NonNull ListItem dirItem) {
+		this.parentFragment = parentFragment;
+		this.dirItem = dirItem;
+		this.dirUID = dirItem.fileUID;
 		color = defaultColor;
 	}
 
@@ -152,12 +155,39 @@ public class NewItemModal extends DialogFragment {
 		//---------------------------------------------------------
 
 		ImageButton browse = view.findViewById(R.id.browse);
+		browse.setOnClickListener(v -> {
+			LinkSelectFragment fragment = LinkSelectFragment.newInstance(dirItem);
+			fragment.setLinkSelectCallback(target -> {
+				internalTarget = target;
+				targetInternal.setText(target.getPrettyName());
+			});
+
+			parentFragment.getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
+				@Override
+				public void onBackStackChanged() {
+					System.out.println("BackStack size = "+parentFragment.getChildFragmentManager().getBackStackEntryCount());
+					//If back stack is empty, child fragment is gone
+					if (parentFragment.getChildFragmentManager().getBackStackEntryCount() == 0) {
+						if (getDialog() != null)
+							getDialog().show();
+						parentFragment.getChildFragmentManager().removeOnBackStackChangedListener(this);
+					}
+				}
+			});
+			getDialog().hide();
+			parentFragment.getChildFragmentManager().beginTransaction()
+					.replace(R.id.dir_child_container, fragment, LinkSelectFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
+		});
+		/*
 		browse.setOnClickListener(view1 ->
 			LinkTargetModal.launch(fragment, dirUID, target -> {
 				internalTarget = target;
 				targetInternal.setText(target.getPrettyName());
 			})
 		);
+		 */
 
 
 
@@ -189,7 +219,7 @@ public class NewItemModal extends DialogFragment {
 
 
 		colorPickerButton.setOnClickListener(v -> {
-			ColorPickerModal.launch(fragment, color, newColor -> {
+			ColorPickerModal.launch(parentFragment, color, newColor -> {
 				color =  newColor | 0xFF000000;		//Set alpha to 100%
 
 				//Change the color picker button's background color

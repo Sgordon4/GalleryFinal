@@ -164,7 +164,7 @@ public class MenuItemHelper {
 
 	public boolean onFabItemClicked(SpeedDialActionItem actionItem) {
 		if(actionItem.getId() == R.id.new_item) {
-			NewItemModal.launch(dirFragment, dirFragment.dirViewModel.listItem.fileUID);
+			NewItemModal.launch(dirFragment, dirFragment.dirViewModel.listItem);
 			return true;
 		}
 		else if(actionItem.getId() == R.id.import_image) {
