@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -266,17 +268,16 @@ public class DirFragment extends Fragment {
 
 			//Don't allow filtering for collapsed items
 			list = hideCollapsedItems(list);
-			System.out.println(Arrays.toString(list.toArray()));
-
-			filterController.onListUpdated(list);
 
 
-			//Grab all tags for each fileUID
-			//TODO Expand this to include a list of files per tag
+			List<ListItem> finalList = list;
 			Thread getTags = new Thread(() -> {
+				//Grab all tags for each fileUID
+				//TODO Expand this to include a list of files per tag
 				Map<String, Set<UUID>> newTags = AttrCache.getInstance().compileTags(fileUIDs);
 
 				dirViewModel.postFileTags(newTags);
+				filterController.onListUpdated(finalList);
 			});
 			getTags.start();
 		});
@@ -298,12 +299,9 @@ public class DirFragment extends Fragment {
 		//-----------------------------------------------------------------------------------------
 
 
+		//TODO This gets called twice on start/return for the same list because of the observer above
+		// Brain too small rn to fix that, and it doesn't really matter
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
-			try {
-				throw new Exception();
-			}catch (Exception e) {
-				e.printStackTrace();
-			}
 			adapter.setList(list);
 			reorderCallback.applyReorder();
 		});
@@ -329,14 +327,17 @@ public class DirFragment extends Fragment {
 			dirViewModel.postFileTags(newTags);
 
 
-			//For each file in the adapter list...
-			for(int i = 0; i < adapterList.size(); i++) {
-				ListItem item = adapterList.get(i);
+			Handler handler = new Handler(Looper.getMainLooper());
+			handler.post(() -> {
+				//For each file in the adapter list...
+				for(int i = 0; i < adapterList.size(); i++) {
+					ListItem item = adapterList.get(i);
 
-				//If the file has an attribute update, notify the adapter
-				if(item.fileUID.equals(uuid))
-					adapter.notifyItemChanged(i);
-			}
+					//If the file has an attribute update, notify the adapter
+					if(item.fileUID.equals(uuid))
+						adapter.notifyItemChanged(i);
+				}
+			});
 		};
 		attrCache.addListener(attrListener);
 
@@ -419,6 +420,7 @@ public class DirFragment extends Fragment {
 			}
 		});
 	}
+	private boolean firstTime = true;
 
 
 

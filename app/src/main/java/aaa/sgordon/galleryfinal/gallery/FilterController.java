@@ -101,17 +101,6 @@ public class FilterController {
 
 
 
-
-	public void filter(List<ListItem> fullList) {
-		Thread filter = new Thread(() -> {
-			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList, extraQueryFilters);
-			filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
-			registry.filteredList.postValue(filtered);
-		});
-		filter.start();
-	}
-
-
 	private Map<String, Set<UUID>> filterTagsByQuery(String query, Map<String, Set<UUID>> tags) {
 		Map<String, Set<UUID>> filtered = new HashMap<>();
 		for(Map.Entry<String, Set<UUID>> entry : tags.entrySet()) {
@@ -146,8 +135,8 @@ public class FilterController {
 		return list.stream().filter(item -> {
 			//If we're filtering for tags, make sure each item has all filtered tags
 
-			if(item.type.equals(ListItem.Type.LINKEND))
-				return false;	//Exclude ends, since we can't reorder
+			//if(item.type.equals(ListItem.Type.LINKEND))
+			//	return false;	//Exclude ends, since we can't reorder
 
 			try {
 				//Get the tags for the file. Since we have tags, if they have no tags filter them out
@@ -156,12 +145,20 @@ public class FilterController {
 				JsonArray fileTags = attrs.getAsJsonArray("tags");
 				if(fileTags == null)  return false;
 
-				//Check if any of the tags we're searching for are contained in the file's tags
+				/*
+				//Check if ANY of the tags we're searching for are contained in the file's tags
 				for(JsonElement tag : fileTags) {
-					if(filterTags.contains(tag.getAsString())) {
+					if(filterTags.contains(tag.getAsString()))
 						return true;
-					}
 				}
+				 */
+
+				//Check if ALL of the tags we're searching for are contained in the file's tags
+				Set<String> fileTagSet = new HashSet<>();
+				for(JsonElement tag : fileTags)
+					fileTagSet.add(tag.getAsString());
+				return fileTagSet.containsAll(filterTags);
+
 			} catch (FileNotFoundException | ConnectException e) {
 				//Skip
 			}
