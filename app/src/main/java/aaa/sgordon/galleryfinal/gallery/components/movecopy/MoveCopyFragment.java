@@ -24,6 +24,7 @@ import org.apache.commons.io.FilenameUtils;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -126,24 +127,14 @@ public class MoveCopyFragment extends Fragment {
 		});
 
 
-
 		FilterController filterController = buildFilterController();
-		//Update the filtered list when the directory contents update
-		viewModel.getFileListLiveData().observe(getViewLifecycleOwner(), filterController::onListUpdated);
-		//Update the adapter when the filtered list updates
-		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
-			//Remove duplicates
-			Set<UUID> seen = new HashSet<>();
-			list = list.stream().filter(item -> seen.add(item.fileUID)).collect(Collectors.toList());
-
-			adapter.setList(list);
-		});
-
 
 		binding.search.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				filterController.onActiveQueryChanged(charSequence.toString(), viewModel.getFileList());
+				List<ListItem> list = viewModel.getFileList();
+				list = hideTrashedItems(list);
+				filterController.onActiveQueryChanged(charSequence.toString(), list);
 			}
 
 			@Override
@@ -152,6 +143,28 @@ public class MoveCopyFragment extends Fragment {
 			public void afterTextChanged(Editable editable) {}
 		});
 		binding.searchClear.setOnClickListener(view2 -> binding.search.setText(""));
+
+
+
+		//Believe it or not, this is covered by the text listener above (changeDir calls search.setText)
+		/*
+		//Update the filtered list when the directory contents update
+		viewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
+			System.out.println("Observing change");
+			list = hideTrashedItems(list);
+			System.out.println("Filter list size: "+list.size());
+			filterController.onListUpdated(list);
+		});
+		 */
+		//Update the adapter when the filtered list updates
+		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
+			//Remove duplicates
+			Set<UUID> seen = new HashSet<>();
+			list = list.stream().filter(item -> seen.add(item.fileUID)).collect(Collectors.toList());
+
+			System.out.println("Seting adapter list with size "+list.size());
+			adapter.setList(list);
+		});
 
 
 
@@ -244,6 +257,37 @@ public class MoveCopyFragment extends Fragment {
 	}
 
 
+	//Hide items that are trashed, or part of trashed links
+	private List<ListItem> hideTrashedItems(List<ListItem> list) {
+		List<ListItem> newList = new ArrayList<>();
+
+		ListItem trashedLink = null;
+		for(ListItem item : list) {
+			//If we are working inside a trashed link...
+			if (trashedLink != null) {
+				//Wait until we reach the linkEnd to un-trash
+				if (item.type == ListItem.Type.LINKEND && trashedLink.fileUID.equals(item.fileUID)) {
+					trashedLink = null;
+					continue;	//also skip the linkEnd
+				}
+			}
+
+			//Skip items inside trashed links
+			if(trashedLink != null)
+				continue;
+
+			//Skip trashed items
+			if(item.isTrashed()) {
+				if(item.isLink)
+					trashedLink = item;
+				continue;
+			}
+
+			newList.add(item);
+		}
+		return newList;
+	}
+
 
 	@NonNull
 	private FilterController buildFilterController() {
@@ -254,10 +298,6 @@ public class MoveCopyFragment extends Fragment {
 				|| listItem.type.equals(ListItem.Type.DIVIDER)
 				|| listItem.type.equals(ListItem.Type.LINKDIRECTORY)
 				|| listItem.type.equals(ListItem.Type.LINKDIVIDER);
-		});
-		filterController.addExtraQueryFilter(listItem -> {
-			//Exclude trashed items
-			return !listItem.isTrashed();
 		});
 		filterController.addExtraQueryFilter(listItem -> {
 			//Exclude hidden Directory items if the active query doesn't match their name exactly

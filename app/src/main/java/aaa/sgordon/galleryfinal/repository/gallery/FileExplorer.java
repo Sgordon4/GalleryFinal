@@ -105,7 +105,7 @@ public class FileExplorer {
 	//	If LinkCache does not have link, post fetch on other thread and leave
 
 
-	boolean printed = false;
+	boolean printed = true;
 	public void traverseDir(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		linkDependencies.clear();
 		dirDependencies.clear();

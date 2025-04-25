@@ -52,6 +52,10 @@ public class FilterController {
 			//Filter the list of files based on the current query
 			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fileList, extraQueryFilters);
 			filtered =  filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+			System.out.println("OnListUpdated, list size = "+fileList.size());
+			System.out.println("Filtered = "+filtered.size());
+			if(fileList.size() == 6)
+				System.out.println("AAAAA");
 			registry.filteredList.postValue(filtered);
 		});
 		filter.start();
@@ -83,6 +87,8 @@ public class FilterController {
 		Thread filter = new Thread(() -> {
 			List<ListItem> filtered = filterListByQuery(newActiveQuery, fullList, extraQueryFilters);
 			filtered = filterListByTags(registry.activeTags.getValue(), filtered, attrCache);
+			System.out.println("OnActiveQueryChanged");
+			System.out.println("Filtered list size "+filtered.size());
 			registry.filteredList.postValue(filtered);
 		});
 		filter.start();
@@ -94,6 +100,7 @@ public class FilterController {
 		Thread filter = new Thread(() -> {
 			List<ListItem> filtered = filterListByQuery(registry.activeQuery.getValue(), fullList, extraQueryFilters);
 			filtered = filterListByTags(newActiveTags, filtered, attrCache);
+			System.out.println("OnActiveTagsChanged");
 			registry.filteredList.postValue(filtered);
 		});
 		filter.start();
