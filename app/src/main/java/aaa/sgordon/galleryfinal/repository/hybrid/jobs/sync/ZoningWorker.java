@@ -166,7 +166,6 @@ public class ZoningWorker extends Worker {
 	@NonNull
 	@Override
 	public Result doWork() {
-		System.out.println("Doing work: ");
 		Map<String, Object> data = getInputData().getKeyValueMap();
 
 		String fileUIDString = (String) data.get("FILEUID");

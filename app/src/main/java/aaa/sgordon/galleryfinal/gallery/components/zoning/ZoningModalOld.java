@@ -1,7 +1,6 @@
-package aaa.sgordon.galleryfinal.gallery.components.modals;
+package aaa.sgordon.galleryfinal.gallery.components.zoning;
 
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,7 +29,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 
-public class ZoningModal extends DialogFragment {
+public class ZoningModalOld extends DialogFragment {
 	private LinkTargetViewModel viewModel;
 	private RadioGroup radioGroup;
 
@@ -40,11 +39,11 @@ public class ZoningModal extends DialogFragment {
 
 
 	public static void launch(@NonNull Fragment fragment, @NonNull List<UUID> files) {
-		ZoningModal dialog = ZoningModal.newInstance(files);
+		ZoningModalOld dialog = ZoningModalOld.newInstance(files);
 		dialog.show(fragment.getChildFragmentManager(), "zoning");
 	}
-	public static ZoningModal newInstance(@NonNull List<UUID> files) {
-		ZoningModal fragment = new ZoningModal();
+	public static ZoningModalOld newInstance(@NonNull List<UUID> files) {
+		ZoningModalOld fragment = new ZoningModalOld();
 
 		ArrayList<String> uuidStrings = new ArrayList<>();
 		for (UUID uuid : files) uuidStrings.add(uuid.toString());
@@ -122,7 +121,7 @@ public class ZoningModal extends DialogFragment {
 					//Enqueue a zoning worker for each file
 					for(UUID fileUID : viewModel.fileUIDs) {
 						try {
-							hAPI.setZoning(fileUID, isLocal, isRemote);
+							hAPI.putZoning(fileUID, isLocal, isRemote);
 						} catch (Exception e) {
 							//Honestly idgaf
 						}

@@ -26,9 +26,11 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 	public List<ListItem> list;
 	private final ListItem newItemPlaceholder;
+	public boolean showCreateNewDir;
 
-	public MCAdapter(@NonNull MCAdapterCallbacks callbacks, @NonNull MoveCopyFragment fragment) {
+	public MCAdapter(@NonNull MCAdapterCallbacks callbacks, @NonNull MoveCopyFragment fragment, boolean showCreateNewDir) {
 		this.fragment = fragment;
+		this.showCreateNewDir = showCreateNewDir;
 		this.callbacks = callbacks;
 		list = new ArrayList<>();
 
@@ -47,7 +49,12 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		list = newList;
 
 		//Add a Create New Directory item
-		list.add(0, newItemPlaceholder);
+		if(showCreateNewDir) {
+			list.add(0, newItemPlaceholder);
+		}
+		else {
+			//TODO Add a "nothing here" item
+		}
 
 		//When changing dirs, we want the full dataset to reset, even if there are common items
 		//Dir content updates also change the list, but we should be displaying so few items that idc

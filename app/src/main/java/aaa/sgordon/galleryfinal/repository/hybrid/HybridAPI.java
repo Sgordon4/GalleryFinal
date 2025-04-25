@@ -6,7 +6,6 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.room.Room;
 
 import com.google.gson.JsonObject;
 
@@ -25,7 +24,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.ZoningWorker;
 import aaa.sgordon.galleryfinal.repository.local.database.LocalDatabase;
@@ -33,7 +31,6 @@ import aaa.sgordon.galleryfinal.utilities.MyApplication;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.Sync;
-import aaa.sgordon.galleryfinal.repository.hybrid.jobs.sync.SyncWorkers;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.repository.local.LocalRepo;
 import aaa.sgordon.galleryfinal.repository.local.types.LContent;
@@ -487,18 +484,16 @@ public class HybridAPI {
 
 	@Nullable
 	public HZone getZoningInfo(@NonNull UUID fileUID) {
-		//Since this method is really just to show the user what zones a file is in,
-		// try to get zoning data from any enqueued workers first
-		HZone zoning = ZoningWorker.getActiveWorkZoning(fileUID);
-		if(zoning != null) return zoning;
-
-		//Get the true zoning data from our DB
+		//Get the current zoning data from our DB
 		return Sync.getInstance().zoningDAO.get(fileUID);
 	}
-
-	public void setZoning(@NonNull UUID fileUID, boolean shouldBeLocal, boolean shouldBeRemote) {
-		ZoningWorker.enqueue(fileUID, shouldBeLocal, shouldBeRemote);
+	@Nullable
+	public HZone getPendingZoningInfo(@NonNull UUID fileUID) {
+		//Get the pending zoning data from our workers
+		return ZoningWorker.getActiveWorkZoning(fileUID);
 	}
 
-
+	public void putZoning(@NonNull UUID fileUID, boolean shouldBeLocal, boolean shouldBeRemote) {
+		ZoningWorker.enqueue(fileUID, shouldBeLocal, shouldBeRemote);
+	}
 }

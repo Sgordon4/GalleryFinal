@@ -38,12 +38,15 @@ import com.google.gson.JsonObject;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
+import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.gallery.cooking.MenuItemHelper;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
@@ -74,6 +77,8 @@ public class ImageFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
+
+		setupCarousel();
 	}
 
 
@@ -431,5 +436,12 @@ public class ImageFragment extends Fragment {
 				}
 			}
 		}
+	}
+
+
+	private void setupCarousel() {
+		DirFragment dirFragment = (DirFragment) getParentFragment().getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
+		MenuItemHelper helper = new MenuItemHelper();
+		helper.onCreate(dirFragment);
 	}
 }

@@ -35,7 +35,7 @@ import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ImportHelper;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
-import aaa.sgordon.galleryfinal.gallery.components.modals.ZoningModal;
+import aaa.sgordon.galleryfinal.gallery.components.zoning.ZoningModal;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.gallery.components.properties.EditItemModal;
 import aaa.sgordon.galleryfinal.gallery.components.properties.NewItemModal;
@@ -49,8 +49,8 @@ import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class MenuItemHelper {
 	private DirFragment dirFragment;
-	private ActivityResultLauncher<Intent> exportPickerLauncher;
 	public ActivityResultLauncher<Intent> filePickerLauncher;
+	private ActivityResultLauncher<Intent> exportPickerLauncher;
 
 	//TODO Move SelectionController definition to onCreate in DirFragment
 	private DirRVAdapter adapter;
@@ -59,11 +59,6 @@ public class MenuItemHelper {
 
 	public void onCreate(DirFragment dirFragment) {
 		this.dirFragment = dirFragment;
-
-		exportPickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			ExportStorageHandler.onStorageLocationPicked(dirFragment.requireActivity(), result);
-			onExport();
-		});
 
 		filePickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
 			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
@@ -75,6 +70,11 @@ public class MenuItemHelper {
 				});
 				importThread.start();
 			}
+		});
+
+		exportPickerLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			ExportStorageHandler.onStorageLocationPicked(dirFragment.requireActivity(), result);
+			onExport();
 		});
 	}
 

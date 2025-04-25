@@ -181,7 +181,7 @@ public class MoveCopyFragment extends Fragment {
 			else {
 				selectionController.toggleSelectItem(item.fileUID);
 			}
-		}, this);
+		}, this, true);
 		recyclerView.setAdapter(adapter);
 
 		//In DirFragment, we listen for attribute updates for things like color, and then update adapter items

@@ -1,8 +1,10 @@
-package aaa.sgordon.galleryfinal.gallery.components.linkselect;
+package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.nio.file.Path;
@@ -25,6 +27,12 @@ public class LinkSelectFragment extends MoveCopyFragment {
 		fragment.setArguments(args);
 
 		return fragment;
+	}
+
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		adapter.showCreateNewDir = false;
 	}
 
 	@Override
