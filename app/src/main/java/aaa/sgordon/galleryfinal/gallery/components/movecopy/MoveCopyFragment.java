@@ -194,48 +194,10 @@ public class MoveCopyFragment extends Fragment {
 
 
 
-		String text = (viewModel.isMove) ? "Move Here" : "Copy Here";
+		String text = getConfirmText(null);
 		binding.confirm.setText(text);
 		binding.confirm.setOnClickListener(v -> {
-			if(callback != null) {
-				Thread doThings = new Thread(() -> {
-					//Passing a fake item to move/copy will place the items at the start when the function can't find it
-					UUID nextItem = UUID.randomUUID();
-
-					if(selectionController.getNumSelected() > 0) {
-						UUID selected = selectionController.getSelectedList().iterator().next();
-
-						//If the item is a link to a divider, get the internal target...
-						LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
-						if (target instanceof InternalTarget) {
-							InternalTarget internalTarget = (InternalTarget) target;
-
-							try {
-								nextItem = getNextItem(internalTarget.parentUID, internalTarget.fileUID);
-							}
-							catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-								//If anything goes wrong, just don't update the next item
-							}
-
-							callback.onConfirm(internalTarget.parentUID, nextItem);
-						}
-						//If not a link to a divider, the item is an actual divider
-						else {
-							try {
-								nextItem = getNextItem(viewModel.currDirUID, selected);
-							}
-							catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
-								//If anything goes wrong, just don't update the next item
-							}
-							callback.onConfirm(viewModel.currDirUID, nextItem);
-						}
-					}
-					else
-						callback.onConfirm(viewModel.currDirUID, nextItem);
-				});
-				doThings.start();
-			}
-			getParentFragmentManager().popBackStack();
+			onConfirm();
 		});
 
 
@@ -254,6 +216,52 @@ public class MoveCopyFragment extends Fragment {
 		}
 		throw new FileNotFoundException("Target not found! \nParent='"+parentDirUID+"', \nTarget='"+targetUID+"'");
 	}
+
+
+
+	protected void onConfirm() {
+		if(callback != null) {
+			Thread doThings = new Thread(() -> {
+				//Passing a fake item to move/copy will place the items at the start when the function can't find it
+				UUID nextItem = UUID.randomUUID();
+
+				if(selectionController.getNumSelected() > 0) {
+					UUID selected = selectionController.getSelectedList().iterator().next();
+
+					//If the item is a link to a divider, get the internal target...
+					LinkTarget target = LinkCache.getInstance().getFinalTarget(selected);
+					if (target instanceof InternalTarget) {
+						InternalTarget internalTarget = (InternalTarget) target;
+
+						try {
+							nextItem = getNextItem(internalTarget.parentUID, internalTarget.fileUID);
+						}
+						catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+							//If anything goes wrong, just don't update the next item
+						}
+
+						callback.onConfirm(internalTarget.parentUID, nextItem);
+					}
+					//If not a link to a divider, the item is an actual divider
+					else {
+						try {
+							nextItem = getNextItem(viewModel.currDirUID, selected);
+						}
+						catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+							//If anything goes wrong, just don't update the next item
+						}
+						callback.onConfirm(viewModel.currDirUID, nextItem);
+					}
+				}
+				else
+					callback.onConfirm(viewModel.currDirUID, nextItem);
+			});
+			doThings.start();
+		}
+		getParentFragmentManager().popBackStack();
+	}
+
+
 
 
 	//Hide items that are trashed, or part of trashed links
@@ -320,7 +328,7 @@ public class MoveCopyFragment extends Fragment {
 			@Override
 			public void onNumSelectedChanged(int numSelected) {
 				if(numSelected == 0) {
-					String text = (viewModel.isMove) ? "Move Here" : "Copy Here";
+					String text = getConfirmText(null);
 					binding.confirm.post(() -> binding.confirm.setText(text));
 				}
 			}
@@ -335,7 +343,7 @@ public class MoveCopyFragment extends Fragment {
 				if(isSelected) {
 					ListItem selectedItem = adapter.list.stream().filter(item -> item.fileUID.equals(fileUID)).findFirst().orElse(null);
 					if(selectedItem != null){
-						String text = (viewModel.isMove) ? "Move to " + selectedItem.getPrettyName() : "Copy to " + selectedItem.getPrettyName();
+						String text = getConfirmText(selectedItem);
 						binding.confirm.post(() -> binding.confirm.setText(text));
 					}
 					//Should never really happen, but jic
@@ -369,6 +377,13 @@ public class MoveCopyFragment extends Fragment {
 		return controller;
 	}
 
+
+	protected String getConfirmText(@Nullable ListItem selectedItem) {
+		if(selectedItem == null)
+			return (viewModel.isMove) ? "Move Here" : "Copy Here";
+		else
+			return (viewModel.isMove) ? "Move to " + selectedItem.getPrettyName() : "Copy to " + selectedItem.getPrettyName();
+	}
 
 	//---------------------------------------------------------------------------------------------
 

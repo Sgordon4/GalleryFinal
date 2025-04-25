@@ -105,14 +105,16 @@ public class FileExplorer {
 	//	If LinkCache does not have link, post fetch on other thread and leave
 
 
-	boolean printed = true;
+	boolean printed = false;
 	public void traverseDir(UUID dirUID) throws ContentsNotFoundException, FileNotFoundException, ConnectException {
 		linkDependencies.clear();
 		dirDependencies.clear();
 		currentDirUID = dirUID;
 
 		List<DirItem> dirContents = dirCache.getDirContents(dirUID);
-		List<ListItem> newList = traverseDirectory(dirUID, dirContents, new HashSet<>(), Paths.get(dirUID.toString()));
+		Set<UUID> visited = new HashSet<>();
+		visited.add(dirUID);
+		List<ListItem> newList = traverseDirectory(dirUID, dirContents, visited, Paths.get(dirUID.toString()));
 
 		if(!printed) {
 			System.out.println("NewFiles: ");
