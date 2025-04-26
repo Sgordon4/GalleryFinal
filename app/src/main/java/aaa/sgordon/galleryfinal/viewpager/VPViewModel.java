@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import java.util.List;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 
 public class VPViewModel extends ViewModel {
 	public final MutableLiveData<List<ListItem>> list;

@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.viewpager;
+package aaa.sgordon.galleryfinal.viewpager.viewpages;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -34,8 +34,6 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.LegacyPlayerControlView;
 
-import com.google.gson.JsonObject;
-
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.text.SimpleDateFormat;
@@ -44,7 +42,7 @@ import java.util.Locale;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;

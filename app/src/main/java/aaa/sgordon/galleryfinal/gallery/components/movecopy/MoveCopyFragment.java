@@ -31,14 +31,14 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.DirMovecopyBinding;
-import aaa.sgordon.galleryfinal.gallery.DirItem;
+import aaa.sgordon.galleryfinal.repository.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
@@ -144,17 +144,6 @@ public class MoveCopyFragment extends Fragment {
 		binding.searchClear.setOnClickListener(view2 -> binding.search.setText(""));
 
 
-
-		//Believe it or not, this is covered by the text listener above (changeDir calls search.setText)
-		/*
-		//Update the filtered list when the directory contents update
-		viewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
-			System.out.println("Observing change");
-			list = hideTrashedItems(list);
-			System.out.println("Filter list size: "+list.size());
-			filterController.onListUpdated(list);
-		});
-		 */
 		//Update the adapter when the filtered list updates
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
 			//Remove duplicates

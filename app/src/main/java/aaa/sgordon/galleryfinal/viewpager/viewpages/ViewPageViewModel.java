@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.viewpager;
+package aaa.sgordon.galleryfinal.viewpager.viewpages;
 
 import android.util.Log;
 import android.widget.Toast;
@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;

@@ -17,7 +17,7 @@ import com.google.gson.JsonObject;
 
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
 
 public class BaseViewHolder extends RecyclerView.ViewHolder {

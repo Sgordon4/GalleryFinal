@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.repository.gallery.components.link;
+package aaa.sgordon.galleryfinal.repository.gallery.link;
 
 import android.net.Uri;
 

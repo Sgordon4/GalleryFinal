@@ -15,7 +15,7 @@ import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 
 public class DragSelectCallback extends ItemTouchHelper.Callback {
 	RecyclerView recyclerView;

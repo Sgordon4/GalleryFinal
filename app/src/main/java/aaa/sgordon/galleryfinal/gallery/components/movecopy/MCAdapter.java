@@ -13,12 +13,11 @@ import java.util.List;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DirectoryViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.DividerViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
-import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	private final MoveCopyFragment fragment;

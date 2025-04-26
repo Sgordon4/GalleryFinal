@@ -33,7 +33,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.ImportHelper;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.filter.TagFullscreen;
 import aaa.sgordon.galleryfinal.gallery.components.zoning.ZoningModal;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
@@ -102,7 +102,6 @@ public class MenuItemHelper {
 			return true;
 		}
 		else if (menuItem.getItemId() == R.id.settings) {
-			System.out.println("Clicked settings");
 			onSettings();
 			return true;
 		}
@@ -141,7 +140,7 @@ public class MenuItemHelper {
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.zoning) {
-			ZoningModal.launch(dirFragment, getSelected().stream().map(item -> item.fileUID).collect(Collectors.toList()));
+			ZoningModal.launch(dirFragment, getSelected());
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.export) {
@@ -262,7 +261,6 @@ public class MenuItemHelper {
 			new Thread(() -> {
 				//Get the selected items
 				List<ListItem> toMove = getSelected();
-				System.out.println("Moving to "+destinationUID+" after "+nextItem);
 
 				try {
 					if(isMove)

@@ -11,7 +11,10 @@ import org.apache.commons.io.FilenameUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
+import aaa.sgordon.galleryfinal.viewpager.viewpages.GifFragment;
+import aaa.sgordon.galleryfinal.viewpager.viewpages.ImageFragment;
+import aaa.sgordon.galleryfinal.viewpager.viewpages.VideoFragment;
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
 	public List<ListItem> list;

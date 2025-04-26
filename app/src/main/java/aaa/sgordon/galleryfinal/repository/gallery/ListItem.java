@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery;
+package aaa.sgordon.galleryfinal.repository.gallery;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

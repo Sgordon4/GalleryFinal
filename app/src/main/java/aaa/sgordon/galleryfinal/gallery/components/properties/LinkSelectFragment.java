@@ -10,11 +10,11 @@ import androidx.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.LinkTarget;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class LinkSelectFragment extends MoveCopyFragment {

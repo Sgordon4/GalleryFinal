@@ -20,26 +20,27 @@ import java.net.ConnectException;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class EditItemModal extends NewItemModal {
-	protected final ListItem startItem;
-	protected final JsonObject startAttr;
 
 	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull ListItem startDir) {
 		AttrCache.getInstance().getAttrAsync(startItem.fileUID, new AttrCache.AttrCallback() {
 			@Override
 			public void onAttrReady(@NonNull JsonObject attr) {
-				EditItemModal dialog = new EditItemModal(parentFragment, startItem, attr, startDir);
+				EditItemModal dialog = new EditItemModal();
+				dialog.tempStartDirDoNotUse = startDir;
+				dialog.tempStartItemDoNotUse = startItem;
+				dialog.tempStartAttrDoNotUse = attr;
 				dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
 			}
 			@Override
@@ -51,11 +52,6 @@ public class EditItemModal extends NewItemModal {
 				Toast.makeText(parentFragment.requireContext(), "File not found!", Toast.LENGTH_SHORT).show();
 			}
 		});
-	}
-	protected EditItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull JsonObject startAttr, @NonNull ListItem startDir) {
-		super(parentFragment, startDir);
-		this.startItem = startItem;
-		this.startAttr = startAttr;
 	}
 
 	@NonNull
@@ -76,57 +72,57 @@ public class EditItemModal extends NewItemModal {
 			//---------------------------------------------------------
 			// Name
 
-			this.itemName = startItem.getPrettyName();
+			viewModel.itemName = viewModel.startItem.getPrettyName();
 
 			//---------------------------------------------------------
 			// Color
 
-			if(startAttr.has("color"))
-				color = startAttr.get("color").getAsInt();
+			if(viewModel.startAttr.has("color"))
+				viewModel.color = viewModel.startAttr.get("color").getAsInt();
 
-			if(startItem.isMedia())
+			if(viewModel.startItem.isMedia())
 				binding.colorSection.setVisibility(View.GONE);
 
 			//---------------------------------------------------------
 			// Dropdown
 
-			if(startItem.isDir) {
-				this.selectedDropdownItem = "Directory";
+			if(viewModel.startItem.isDir) {
+				viewModel.selectedDropdownItem = "Directory";
 			}
-			else if(startItem.isLink) {
-				this.selectedDropdownItem = "Link";
-				this.isInternalLinkSelected = !startItem.type.equals(ListItem.Type.LINKEXTERNAL);
+			else if(viewModel.startItem.isLink) {
+				viewModel.selectedDropdownItem = "Link";
+				viewModel.isInternalLinkSelected = !viewModel.startItem.type.equals(ListItem.Type.LINKEXTERNAL);
 			}
-			else if(startItem.type.equals(ListItem.Type.DIVIDER)) {
-				this.selectedDropdownItem = "Divider";
+			else if(viewModel.startItem.type.equals(ListItem.Type.DIVIDER)) {
+				viewModel.selectedDropdownItem = "Divider";
 			}
 			else {
-				this.selectedDropdownItem = "Notes";
+				viewModel.selectedDropdownItem = "Notes";
 			}
 
 			//---------------------------------------------------------
 			// Link Selection
 
-			if(startItem.isLink) {
+			if(viewModel.startItem.isLink) {
 				Thread fetchLinkInfo = new Thread(() -> {
 					try {
 						LinkCache linkCache = LinkCache.getInstance();
-						LinkTarget target = linkCache.getLinkTarget(startItem.fileUID);
+						LinkTarget target = linkCache.getLinkTarget(viewModel.startItem.fileUID);
 
 						if(target instanceof InternalTarget) {
 							InternalTarget inTarget = (InternalTarget) target;
-							this.internalTarget = inTarget;
+							viewModel.internalTarget = inTarget;
 
 							Pair<UUID, UUID> trueDirAndParent = linkCache.getTrueDirAndParent(inTarget.fileUID, inTarget.parentUID);
-							this.internalTargetName = (trueDirAndParent != null) ?
+							viewModel.internalTargetName = (trueDirAndParent != null) ?
 									DirUtilities.getFileNameFromDir(trueDirAndParent.first, trueDirAndParent.second) :
 									"Unknown Item";
 
-							binding.targetInternal.post(() -> binding.targetInternal.setText(this.internalTargetName));
+							binding.targetInternal.post(() -> binding.targetInternal.setText(viewModel.internalTargetName));
 						}
 						else if(target instanceof ExternalTarget) {
-							this.externalTarget = target.toUri().toString();
-							binding.targetExternal.post(() -> binding.targetExternal.setText(this.externalTarget));
+							viewModel.externalTarget = target.toUri().toString();
+							binding.targetExternal.post(() -> binding.targetExternal.setText(viewModel.externalTarget));
 						}
 					}
 					catch (ContentsNotFoundException | FileNotFoundException | ConnectException ignored) {}
@@ -147,33 +143,33 @@ public class EditItemModal extends NewItemModal {
 	@Override
 	protected void onConfirm() {
 		String newName = binding.name.getText().toString();
-		String oldName = startItem.getPrettyName();
+		String oldName = viewModel.startItem.getPrettyName();
 		if(!newName.equals(oldName))
-			startItem.rename(newName);
+			viewModel.startItem.rename(newName);
 
 
 		Thread writeChanges = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
-				hAPI.lockLocal(startItem.fileUID);
-				HFile fileProps = hAPI.getFileProps(startItem.fileUID);
+				hAPI.lockLocal(viewModel.startItem.fileUID);
+				HFile fileProps = hAPI.getFileProps(viewModel.startItem.fileUID);
 
-				if(color != null)
-					fileProps.userattr.addProperty("color", color);
+				if(viewModel.color != null)
+					fileProps.userattr.addProperty("color", viewModel.color);
 				else
 					fileProps.userattr.remove("color");
-				hAPI.setAttributes(startItem.fileUID, fileProps.userattr, fileProps.attrhash);
+				hAPI.setAttributes(viewModel.startItem.fileUID, fileProps.userattr, fileProps.attrhash);
 
 
 				//Write the link target to the new file
-				if(startItem.isLink) {
+				if(viewModel.startItem.isLink) {
 					LinkTarget linkTarget;
 					if(binding.linkType.getCheckedRadioButtonId() == R.id.internal_link)
-						linkTarget = internalTarget;
+						linkTarget = viewModel.internalTarget;
 					else
-						linkTarget = new ExternalTarget(Uri.parse(externalTarget));
+						linkTarget = new ExternalTarget(Uri.parse(viewModel.externalTarget));
 
-					hAPI.writeFile(startItem.fileUID, linkTarget.toString().getBytes(), fileProps.checksum);
+					hAPI.writeFile(viewModel.startItem.fileUID, linkTarget.toString().getBytes(), fileProps.checksum);
 				}
 			}
 			catch (FileNotFoundException e) {
@@ -188,7 +184,7 @@ public class EditItemModal extends NewItemModal {
 			} catch (IOException e) {
 				//Ignore idgaf
 			} finally {
-				hAPI.unlockLocal(startItem.fileUID);
+				hAPI.unlockLocal(viewModel.startItem.fileUID);
 			}
 		});
 		writeChanges.start();

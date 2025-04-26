@@ -1,15 +1,12 @@
 package aaa.sgordon.galleryfinal.gallery;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.gallery.FileExplorer;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirSampleData;
 
@@ -73,8 +71,6 @@ public class DirectoryViewModel extends ViewModel {
 
 		this.fileExplorer = new FileExplorer();
 
-
-		System.out.println("Creating viewmodel! FileUID='"+listItem.fileUID+"'");
 
 		//Fetch the directory list and update our livedata
 		Thread updateViaTraverse = new Thread(() -> {

@@ -15,13 +15,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.DirItem;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 //TODO This isn't particularly thread-safe

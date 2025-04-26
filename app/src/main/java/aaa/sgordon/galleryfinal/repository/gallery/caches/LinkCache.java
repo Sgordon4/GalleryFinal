@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridListeners;

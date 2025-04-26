@@ -251,13 +251,12 @@ public class Sync {
 			//May be worth grabbing all journals for file, not just the recent ones
 
 			//TODO Merging is very hard, and my brain is very smooth.
-			// Therefore, I am setting it so the local file is ALWAYS written to remote instead of merging.
+			// Therefore, I am setting it so the remote file is ALWAYS written to local instead of merging
 			// This IF condition should never occur for a one-device-per-account setup like we'll have initially,
 			// but this MUST be rectified for this to be respectable
 
 			Log.w(TAG, "Repos were supposed to be merged, but merge is not implemented yet! FileUID='"+fileUID+"'");
-			remoteHasChanges = false;
-			//TODO Maybe we should default to keeping remote changes instead...
+			remoteHasChanges = true;
 		}
 
 
@@ -322,23 +321,33 @@ public class Sync {
 			try {
 				localRepo.lock(fileUID);
 
-				LFile localProps = localRepo.getFileProps(fileUID);
+				//Get the local properties if they exist
+				LFile localProps = null;
+				try { localProps = localRepo.getFileProps(fileUID); }
+				catch (FileNotFoundException ignored) { }
 
 				HZone zoningInfo = zoningDAO.get(fileUID);
-				if(zoningInfo == null) zoningInfo = new HZone(fileUID, false, true);
-				//If zoning doesn't exist, assume local is a temp write.
-
-				//Create/update the zoning info
+				//Correct any missing zoning data
+				if(zoningInfo == null) zoningInfo = new HZone(fileUID, (localProps != null), true);
 				zoningInfo.isRemote = true;
-				zoningDAO.put(zoningInfo);
+
+				//Dirs and Links for the current account should be zoned to both
+				if(remoteProps.isdir || remoteProps.islink)
+					zoningInfo = new HZone(fileUID, true, true);
+
 
 				//If the file is not supposed to be on local, don't follow through on copying data to local
-				if(!zoningInfo.isLocal)
+				if(!zoningInfo.isLocal) {
+					zoningDAO.delete(fileUID);	//Also remove any incorrectly existing local zoning data
 					return new Pair<>(localSyncID, remoteSyncID);
+				}
+
+				//Create/update the zoning info
+				zoningDAO.put(zoningInfo);
 
 
 				//If the file contents should be on local and they don't match, copy them over
-				if(!remoteProps.checksum.equals(localProps.checksum)) {
+				if(localProps == null || !remoteProps.checksum.equals(localProps.checksum)) {
 					Uri remoteContent = remoteRepo.getContentDownloadUri(remoteProps.checksum);
 					localRepo.writeContents(remoteProps.checksum, remoteContent);
 				}

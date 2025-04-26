@@ -8,16 +8,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.divider.MaterialDivider;
-import com.google.gson.JsonObject;
 
 import org.apache.commons.io.FilenameUtils;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
-
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 
 public class LinkViewHolder extends BaseViewHolder {
 	public View child;

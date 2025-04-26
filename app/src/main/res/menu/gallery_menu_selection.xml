@@ -11,17 +11,17 @@
         app:showAsAction="always" />
 
     <item
-        android:id="@+id/tag"
-        android:title="Tags"
-        android:icon="@drawable/icon_label"
-        app:showAsAction="always"/>
-
-    <item
         android:id="@+id/filter"
         android:title="Filter"
         android:icon="@drawable/icon_filter"
         app:showAsAction="always"
         android:checkable="true"/>
+
+    <item
+        android:id="@+id/tag"
+        android:title="Tags"
+        android:icon="@drawable/icon_label"
+        app:showAsAction="always"/>
 
     <item
         android:id="@+id/share"

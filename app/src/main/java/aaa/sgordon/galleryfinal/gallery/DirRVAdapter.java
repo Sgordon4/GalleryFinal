@@ -28,6 +28,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.TextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 
 public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 	public List<ListItem> list;

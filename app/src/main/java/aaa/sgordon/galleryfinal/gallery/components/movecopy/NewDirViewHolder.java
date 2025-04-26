@@ -8,7 +8,7 @@ import androidx.fragment.app.Fragment;
 
 import java.util.UUID;
 
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.viewholders.BaseViewHolder;
 
 public class NewDirViewHolder extends BaseViewHolder {

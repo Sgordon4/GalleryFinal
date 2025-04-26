@@ -8,14 +8,9 @@ import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.google.gson.JsonObject;
-
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 
 public class GifViewHolder extends BaseViewHolder {
 	public View child;

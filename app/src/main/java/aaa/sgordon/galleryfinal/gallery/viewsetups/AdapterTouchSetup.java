@@ -26,7 +26,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
 import aaa.sgordon.galleryfinal.gallery.touch.ItemReorderCallback;
@@ -43,7 +43,6 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.texteditor.RTEditorFragment;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
-import aaa.sgordon.galleryfinal.viewpager.VPViewModel;
 import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 
 public class AdapterTouchSetup {
@@ -254,8 +253,6 @@ public class AdapterTouchSetup {
 	private static void launchViewPager(DirFragment dirFragment, BaseViewHolder holder) {
 		int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
 		//int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
-		System.out.println("Launching vp at pos "+pos);
-
 
 		//Fade out the grid when exiting
 		dirFragment.setExitTransition(new MaterialFadeThrough());
@@ -290,8 +287,6 @@ public class AdapterTouchSetup {
 			});
 		});
 
-
-		System.out.println(fragment);
 
 		View media = holder.itemView.findViewById(R.id.media);
 		dirFragment.getParentFragmentManager().beginTransaction()

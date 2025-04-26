@@ -33,8 +33,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import aaa.sgordon.galleryfinal.gallery.DirItem;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.DirItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
@@ -473,6 +473,7 @@ public class DirUtilities {
 
 
 
+	//TODO Copy Directories
 	public static boolean copyFiles(@NonNull List<ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException, IOException {
 		if(toCopy.isEmpty()) {
@@ -481,7 +482,6 @@ public class DirUtilities {
 		}
 
 		//If the destination is a link, we need the target dir or target parent
-		//TODO If the destination is a divider, move the files to under the divider
 		UUID destinationDirUID = LinkCache.getInstance().getLinkDir(destinationUID);
 
 		//TODO Links can be moved inside themselves atm
@@ -495,7 +495,6 @@ public class DirUtilities {
 			try {
 				UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
 				newFiles.add(new DirItem(newFileUID, item.isDir, item.isLink, "Copy of "+item.getPrettyName()));
-				System.out.println("CopyID: "+newFileUID+" from: "+item.fileUID);
 			}
 			catch (FileNotFoundException e) {
 				//Skip this file
@@ -552,6 +551,65 @@ public class DirUtilities {
 		}
 
 		return true;
+	}
+
+
+
+	@Nullable
+	private static UUID copyDirectory(@NonNull UUID dirUID) {
+		return copyDirectoryRecursive(dirUID, new HashSet<>());
+	}
+
+	//Ayo this thing sucks. We can't copy files we cant reach, so we're kinda fucked.
+	//I'm just not going to use this
+	@Nullable
+	private static UUID copyDirectoryRecursive(@NonNull UUID dirUID, @NonNull Set<UUID> visited) {
+		if(!visited.add(dirUID)) return null;
+
+		HybridAPI hAPI = HybridAPI.getInstance();
+		try {
+			UUID newDirUID = hAPI.copyFile(dirUID, hAPI.getCurrentAccount());
+
+			List<DirItem> dirListToCopy = readDir(dirUID);
+
+			List<DirItem> newList = new ArrayList<>();
+			for(DirItem item : dirListToCopy) {
+				if(item.isDir) {
+					UUID newSubDirUID = copyDirectoryRecursive(item.fileUID, new HashSet<>(visited));
+					if(newSubDirUID != null)
+						newList.add(new DirItem(newSubDirUID, item.isDir, item.isLink, item.name));
+				}
+				else {
+					try {
+						UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
+						newList.add(new DirItem(newFileUID, item.isDir, item.isLink, item.name));
+					}
+					catch (FileNotFoundException | ConnectException ignored) {}
+				}
+			}
+
+
+			try {
+				hAPI.lockLocal(newDirUID);
+				HFile newDirProps = hAPI.getFileProps(newDirUID);
+
+				//Write the list back to the directory
+				List<String> newLines = newList.stream().map(DirItem::toString)
+						.collect(Collectors.toList());
+				byte[] newContent = String.join("\n", newLines).getBytes();
+				hAPI.writeFile(newDirUID, newContent, newDirProps.checksum);
+			} catch (FileNotFoundException | ConnectException e) {
+				return null;
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hAPI.unlockLocal(newDirUID);
+			}
+
+			return newDirUID;
+		} catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
+			return null;
+		}
 	}
 
 

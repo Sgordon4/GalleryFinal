@@ -1,5 +1,6 @@
 package aaa.sgordon.galleryfinal.viewpager;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,9 +22,6 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.transition.MaterialContainerTransform;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,10 +29,8 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragViewpagerBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
-import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
-import aaa.sgordon.galleryfinal.gallery.cooking.VPMenuItemHelper;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 //https://github.com/android/animation-samples/tree/main/GridToPager
@@ -82,6 +78,7 @@ public class ViewPagerFragment extends Fragment {
 
 		MaterialContainerTransform transform = new MaterialContainerTransform();
 		transform.setDuration(300);
+		transform.setScrimColor(Color.TRANSPARENT);
 		transform.setDrawingViewId(R.id.fragment_container);
 		transform.setFitMode(MaterialContainerTransform.FIT_MODE_HEIGHT); // or FIT_MODE_WIDTH
 		transform.setFadeMode(MaterialContainerTransform.FADE_MODE_CROSS);
@@ -115,7 +112,7 @@ public class ViewPagerFragment extends Fragment {
 				sharedElementEnterTransition.addTransition(new ChangeImageTransform());
 				sharedElementEnterTransition.addTransition(new ChangeTransform());	//Culprit
 				sharedElementEnterTransition.addTransition(new ChangeBounds());
-				sharedElementEnterTransition.setDuration(300);
+				sharedElementEnterTransition.setDuration(200);
 				setSharedElementEnterTransition(sharedElementEnterTransition);
 			}
 		});

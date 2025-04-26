@@ -1,4 +1,4 @@
-package aaa.sgordon.galleryfinal.gallery.cooking;
+package aaa.sgordon.galleryfinal.viewpager;
 
 import android.content.Context;
 import android.content.Intent;
@@ -16,13 +16,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.NotDirectoryException;
-import java.time.Instant;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.gallery.components.zoning.ZoningModal;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
@@ -157,6 +154,6 @@ public class VPMenuItemHelper {
 
 	public void onBackup() {
 		ListItem toBackup = callback.getCurrentItem();
-		ZoningModal.launch(parentFragment, List.of(toBackup.fileUID));
+		ZoningModal.launch(parentFragment, List.of(toBackup));
 	}
 }

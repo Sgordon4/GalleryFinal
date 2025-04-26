@@ -166,7 +166,6 @@ public class HybridAPI {
 
 	//Returns the FileUID of the new file
 	public UUID createFile(@NonNull UUID accountUID, boolean isDir, boolean isLink) throws IOException {
-		//Note: Locking for this file doesn't really matter, since nothing can know about it yet
 		UUID fileUID = UUID.randomUUID();
 		LFile newFile = new LFile(fileUID, accountUID);
 
@@ -176,6 +175,7 @@ public class HybridAPI {
 		//Create blank file contents (will do nothing if they already exist)
 		localRepo.writeContents(LFile.defaultChecksum, "".getBytes());
 
+		//Note: Locking for this file doesn't really matter, since nothing can know about it yet
 		try {
 			lockLocal(fileUID);
 			//Put the properties themselves
@@ -198,6 +198,11 @@ public class HybridAPI {
 		//Set zoning information.
 		HZone newZoningInfo = new HZone(fileUID, true, false);
 		Sync.getInstance().zoningDAO.put(newZoningInfo);
+
+		//Dirs and Links should always be zoned to Device & Cloud
+		if(newFile.isdir || newFile.islink)
+			putZoning(newFile.fileuid, true, true);
+
 
 		return newFile.fileuid;
 	}
@@ -234,9 +239,14 @@ public class HybridAPI {
 		localRepo.putJournalEntry(journal);
 
 		//Set zoning information.
-		//Zoning information should not match the copied file, the larger application should take handle movements.
+		//Zoning information should not match the copied file, the larger application should handle zoning movements.
 		HZone newZoningInfo = new HZone(fileUID, true, false);
 		Sync.getInstance().zoningDAO.put(newZoningInfo);
+
+		//Exception for Dirs and Links, which should always be zoned to Device & Cloud
+		if(newFile.isdir || newFile.islink)
+			putZoning(newFile.fileuid, true, true);
+
 
 		return newFile.fileuid;
 	}

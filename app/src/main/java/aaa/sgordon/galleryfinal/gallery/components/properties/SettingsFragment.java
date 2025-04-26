@@ -25,15 +25,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
-import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 //Note: The hidden preference will not be respected by links, who need to be hidden as well
 public class SettingsFragment extends Fragment {

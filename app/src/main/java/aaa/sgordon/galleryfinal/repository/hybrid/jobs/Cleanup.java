@@ -1,5 +1,7 @@
 package aaa.sgordon.galleryfinal.repository.hybrid.jobs;
 
+import android.util.Log;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,9 +21,9 @@ public class Cleanup {
 		//This could be done with a single sql query, but I have them split for now
 		List<LContent> orphanedContent = contentDAO.getOrphans();
 
-		System.out.println("Cleaning up orphaned content:");
+		Log.v(TAG, "Cleaning up orphaned content:");
 		for (LContent content : orphanedContent)
-			System.out.println(content.checksum);
+			Log.v(TAG, content.checksum);
 
 		for (LContent content : orphanedContent)
 			contentDAO.delete(content);
@@ -45,9 +47,9 @@ public class Cleanup {
 		for (LJournal journal : filesWithChanges)
 			filesChangedSinceLastSync.add(journal.fileuid);
 
-		System.out.println("Cleaning up synced files:");
+		Log.v(TAG, "Cleaning up synced files:");
 		for (LFile file : tempFiles)
-			System.out.println(file.fileuid);
+			Log.v(TAG, file.fileuid.toString());
 
 		//If a temporary file has had no changes since the last sync, delete it
 		for (LFile file : tempFiles)

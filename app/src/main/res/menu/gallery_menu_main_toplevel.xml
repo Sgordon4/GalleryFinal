@@ -19,9 +19,9 @@
 		android:checkable="true"/>
 
 	<item
-		android:id="@+id/settings"
-		android:title="Settings"
-		android:icon="@drawable/icon_settings"
+		android:id="@+id/account"
+		android:title="Account"
+		android:icon="@drawable/ic_account_circle"
 		app:showAsAction="ifRoom"
 		android:checkable="true"/>
 </menu>

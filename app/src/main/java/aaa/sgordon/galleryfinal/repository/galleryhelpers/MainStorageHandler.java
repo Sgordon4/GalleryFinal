@@ -41,7 +41,6 @@ public class MainStorageHandler {
 
 
 	public static void onStorageLocationPicked(Context context, ActivityResult result) {
-		System.out.println("Saving");
 		if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
 			Uri treeUri = result.getData().getData();
 			ContentResolver contentResolver = context.getContentResolver();

@@ -1,27 +1,20 @@
 package aaa.sgordon.galleryfinal.gallery.components.movecopy;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.google.gson.JsonObject;
-
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.FilterController;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.repository.gallery.FileExplorer;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 
 public class MCViewModel extends ViewModel {

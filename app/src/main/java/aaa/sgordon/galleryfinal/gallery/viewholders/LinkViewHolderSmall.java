@@ -7,16 +7,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.gson.JsonObject;
-
 import org.apache.commons.io.FilenameUtils;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
-
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 
 public class LinkViewHolderSmall extends BaseViewHolder {
 	public View child;

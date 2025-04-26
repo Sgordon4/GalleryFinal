@@ -24,6 +24,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.gson.JsonObject;
 
@@ -36,11 +37,11 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirNewitemBinding;
-import aaa.sgordon.galleryfinal.gallery.DirItem;
-import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.DirItem;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
@@ -48,28 +49,18 @@ import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class NewItemModal extends DialogFragment {
 	protected FragDirNewitemBinding binding;
-	protected final Fragment parentFragment;
-	protected final ListItem startDir;
-
-	protected String itemName = "";
-	protected String selectedDropdownItem = "Directory";
-	protected Integer color = Color.TRANSPARENT;
-
-	protected boolean isInternalLinkSelected = true;
-	protected InternalTarget internalTarget = null;
-	protected String internalTargetName = "";
-	protected String externalTarget = "";
+	protected NewItemViewModel viewModel;
 
 	protected ArrayAdapter<CharSequence> dropdownAdapter;
 
 
+	protected ListItem tempStartDirDoNotUse;
+	protected ListItem tempStartItemDoNotUse;		//These two are used in EditItemModal
+	protected JsonObject tempStartAttrDoNotUse;		//It's a bit hacky, but whatever
 	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startDir) {
-		NewItemModal dialog = new NewItemModal(parentFragment, startDir);
-		dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
-	}
-	protected NewItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startDir) {
-		this.parentFragment = parentFragment;
-		this.startDir = startDir;
+		NewItemModal dialog = new NewItemModal();
+		dialog.tempStartDirDoNotUse = startDir;
+		dialog.show(parentFragment.getChildFragmentManager(), "new_item");
 	}
 
 
@@ -78,6 +69,11 @@ public class NewItemModal extends DialogFragment {
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		binding = FragDirNewitemBinding.inflate(getLayoutInflater());
 		View view = binding.getRoot();
+
+		viewModel = new ViewModelProvider(this,
+				new NewItemViewModel.Factory(tempStartDirDoNotUse, tempStartItemDoNotUse, tempStartAttrDoNotUse))
+				.get(NewItemViewModel.class);
+
 
 		dropdownAdapter = ArrayAdapter.createFromResource(requireContext(),
 				R.array.new_items_array, android.R.layout.simple_spinner_item);
@@ -112,7 +108,7 @@ public class NewItemModal extends DialogFragment {
 
 				String selectedType = binding.dropdown.getSelectedItem().toString();
 
-				if(selectedType.equals("Link") && binding.linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
+				if(selectedType.equals("Link") && binding.linkType.getCheckedRadioButtonId() == R.id.internal_link && viewModel.internalTarget == null) {
 					Toast.makeText(requireContext(), "Please select a link target!", Toast.LENGTH_SHORT).show();
 					return;
 				}
@@ -155,7 +151,7 @@ public class NewItemModal extends DialogFragment {
 		//---------------------------------------------------------
 		// Name
 
-		binding.name.setText(itemName);
+		binding.name.setText(viewModel.itemName);
 		binding.name.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -163,7 +159,7 @@ public class NewItemModal extends DialogFragment {
 			public void afterTextChanged(Editable s) {}
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				itemName = s.toString();
+				viewModel.itemName = s.toString();
 			}
 		});
 
@@ -179,7 +175,7 @@ public class NewItemModal extends DialogFragment {
 		//Set the background color of the button to the current color
 		GradientDrawable drawable = new GradientDrawable();
 		drawable.setShape(GradientDrawable.RECTANGLE);
-		drawable.setColor(color);
+		drawable.setColor(viewModel.color);
 		drawable.setStroke(4, defaultBorder);
 		binding.colorPickerButton.setBackground(drawable);
 
@@ -187,22 +183,22 @@ public class NewItemModal extends DialogFragment {
 		//Deselect the slider's currently selected item
 		binding.colorSlider.setSelection(-1);
 		binding.colorSlider.setListener((position, newColor) -> {
-			color =  newColor | 0xFF000000;		//Set alpha to 100%
+			viewModel.color =  newColor | 0xFF000000;		//Set alpha to 100%
 
 			//Change the color picker button's background color
 			GradientDrawable background = (GradientDrawable) binding.colorPickerButton.getBackground();
-			background.setColor(color);
+			background.setColor(viewModel.color);
 			binding.colorPickerButton.setBackground(background);
 		});
 
 
 		binding.colorPickerButton.setOnClickListener(v -> {
-			ColorPickerModal.launch(parentFragment, color, newColor -> {
-				color =  newColor | 0xFF000000;		//Set alpha to 100%
+			ColorPickerModal.launch(requireParentFragment(), viewModel.color, newColor -> {
+				viewModel.color =  newColor | 0xFF000000;		//Set alpha to 100%
 
 				//Change the color picker button's background color
 				GradientDrawable background = (GradientDrawable) binding.colorPickerButton.getBackground();
-				background.setColor(color);
+				background.setColor(viewModel.color);
 				binding.colorPickerButton.setBackground(background);
 
 				//Unselect the slider's currently selected item
@@ -226,9 +222,9 @@ public class NewItemModal extends DialogFragment {
 			public void onNothingSelected(AdapterView<?> parent) {
 			}
 		});
-		binding.dropdown.setSelection( dropdownAdapter.getPosition(selectedDropdownItem) );
+		binding.dropdown.setSelection( dropdownAdapter.getPosition(viewModel.selectedDropdownItem) );
 
-		if(selectedDropdownItem.equals("Link"))
+		if(viewModel.selectedDropdownItem.equals("Link"))
 			binding.linkInfo.setVisibility(View.VISIBLE);
 		else
 			binding.linkInfo.setVisibility(View.GONE);
@@ -238,17 +234,17 @@ public class NewItemModal extends DialogFragment {
 
 		binding.linkType.setOnCheckedChangeListener((group, checkedId) -> {
 			if(checkedId == R.id.internal_link) {
-				isInternalLinkSelected = true;
+				viewModel.isInternalLinkSelected = true;
 				binding.linkInternal.setVisibility(View.VISIBLE);
 				binding.linkExternal.setVisibility(View.GONE);
 			}
 			else {
-				isInternalLinkSelected = false;
+				viewModel.isInternalLinkSelected = false;
 				binding.linkInternal.setVisibility(View.GONE);
 				binding.linkExternal.setVisibility(View.VISIBLE);
 			}
 		});
-		if(isInternalLinkSelected)
+		if(viewModel.isInternalLinkSelected)
 			binding.linkType.check(R.id.internal_link);
 		else
 			binding.linkType.check(R.id.external_link);
@@ -256,30 +252,30 @@ public class NewItemModal extends DialogFragment {
 		//---------------------------------------------------------
 		// Internal Link
 
-		binding.targetInternal.setText(internalTargetName);
+		binding.targetInternal.setText(viewModel.internalTargetName);
 
 		ImageButton browse = view.findViewById(R.id.browse);
 		browse.setOnClickListener(v -> {
-			LinkSelectFragment fragment = LinkSelectFragment.newInstance(startDir);
+			LinkSelectFragment fragment = LinkSelectFragment.newInstance(viewModel.startDir);
 			fragment.setLinkSelectCallback(target -> {
-				internalTarget = new InternalTarget(target.fileUID, target.parentUID);
-				internalTargetName = target.getPrettyName();
+				viewModel.internalTarget = new InternalTarget(target.fileUID, target.parentUID);
+				viewModel.internalTargetName = target.getPrettyName();
 
 				binding.targetInternal.setText(target.getPrettyName());
 			});
 
-			parentFragment.getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
+			requireParentFragment().getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
 				@Override
 				public void onBackStackChanged() {
 					//If back stack is empty, child fragment is gone
-					if (parentFragment.getChildFragmentManager().getBackStackEntryCount() == 0) {
+					if (requireParentFragment().getChildFragmentManager().getBackStackEntryCount() == 0) {
 						if (getDialog() != null)
 							getDialog().show();
-						parentFragment.getChildFragmentManager().removeOnBackStackChangedListener(this);
+						requireParentFragment().getChildFragmentManager().removeOnBackStackChangedListener(this);
 					}
 				}
 			});
-			parentFragment.getChildFragmentManager().beginTransaction()
+			requireParentFragment().getChildFragmentManager().beginTransaction()
 					.replace(R.id.dir_child_container, fragment, LinkSelectFragment.class.getSimpleName())
 					.addToBackStack(null)
 					.commit();
@@ -290,7 +286,7 @@ public class NewItemModal extends DialogFragment {
 		//---------------------------------------------------------
 		// External Link
 
-		binding.targetExternal.setText(externalTarget);
+		binding.targetExternal.setText(viewModel.externalTarget);
 		binding.targetExternal.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -298,7 +294,7 @@ public class NewItemModal extends DialogFragment {
 			public void afterTextChanged(Editable s) {}
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				externalTarget = s.toString();
+				viewModel.externalTarget = s.toString();
 			}
 		});
 
@@ -337,9 +333,9 @@ public class NewItemModal extends DialogFragment {
 				hAPI.lockLocal(newFileUID);
 
 				//Add color to the new file's properties
-				if(color != null) {
+				if(viewModel.color != null) {
 					JsonObject attributes = new JsonObject();
-					attributes.addProperty("color", color);
+					attributes.addProperty("color", viewModel.color);
 					hAPI.setAttributes(newFileUID, attributes, HFile.defaultAttrHash);
 				}
 
@@ -347,9 +343,9 @@ public class NewItemModal extends DialogFragment {
 				if(isLink) {
 					LinkTarget linkTarget;
 					if(binding.linkType.getCheckedRadioButtonId() == R.id.internal_link)
-						linkTarget = internalTarget;
+						linkTarget = viewModel.internalTarget;
 					else
-						linkTarget = new ExternalTarget(Uri.parse(externalTarget));
+						linkTarget = new ExternalTarget(Uri.parse(viewModel.externalTarget));
 
 					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
 				}
@@ -371,7 +367,7 @@ public class NewItemModal extends DialogFragment {
 
 
 			//Add the new file to the top of the current directory
-			UUID dirUID = startDir.fileUID;
+			UUID dirUID = viewModel.startDir.fileUID;
 			try {
 				hAPI.lockLocal(dirUID);
 				HFile dirProps = hAPI.getFileProps(dirUID);

@@ -4,7 +4,6 @@ import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,8 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.DirFragment;
-import aaa.sgordon.galleryfinal.gallery.DirItem;
+import aaa.sgordon.galleryfinal.repository.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.components.properties.ColorPickerModal;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -122,9 +120,7 @@ public class MCNewItemModal extends DialogFragment {
 
 
 		builder.setPositiveButton(android.R.string.ok, null);
-		builder.setNegativeButton("Cancel", (dialog2, which) -> {
-			System.out.println("Cancel clicked");
-		});
+		builder.setNegativeButton("Cancel", null);
 
 		AlertDialog dialog = builder.create();
 		dialog.setCanceledOnTouchOutside(false);
@@ -133,7 +129,6 @@ public class MCNewItemModal extends DialogFragment {
 		dialog.setOnShowListener(dialogInterface -> {
 			Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
 			button.setOnClickListener(v -> {
-				System.out.println("OK Clicked");
 				if(name.getText().toString().isEmpty()) {
 					Toast.makeText(requireContext(), "Name cannot be empty!", Toast.LENGTH_SHORT).show();
 					return;

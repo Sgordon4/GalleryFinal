@@ -19,9 +19,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.DirItem;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
-import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.DirItem;
+import aaa.sgordon.galleryfinal.repository.gallery.link.ExternalTarget;
+import aaa.sgordon.galleryfinal.repository.gallery.link.InternalTarget;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
@@ -371,7 +371,7 @@ public class DirSampleData {
 			//Grab the current contents
 			System.out.println("Locking for fake import");
 			hAPI.lockLocal(dirUID);
-			List<aaa.sgordon.galleryfinal.gallery.DirItem> dirList = DirUtilities.readDir(dirUID);
+			List<DirItem> dirList = DirUtilities.readDir(dirUID);
 			String checksum = hAPI.getFileProps(dirUID).checksum;
 
 

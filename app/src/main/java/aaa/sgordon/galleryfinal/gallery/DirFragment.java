@@ -27,7 +27,6 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.leinardi.android.speeddial.SpeedDialView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +44,7 @@ import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.AdapterTouchSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.FilterSetup;
 import aaa.sgordon.galleryfinal.gallery.viewsetups.ReorderSetup;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.jobs.Cleanup;
@@ -88,6 +88,14 @@ public class DirFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		binding = FragDirBinding.inflate(inflater, container, false);
+
+		//If we're at the top level
+		if(dirViewModel.listItem.parentUID == null) {
+			MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
+			toolbar.getMenu().clear();
+			toolbar.inflateMenu(R.menu.gallery_menu_main_toplevel);
+		}
+
 		return binding.getRoot();
 	}
 
@@ -141,10 +149,8 @@ public class DirFragment extends Fragment {
 
 		if(savedInstanceState != null) {
 			Parcelable rvState = savedInstanceState.getParcelable("rvState");
-			if(rvState != null) {
-				System.out.println("Parcel found: "+rvState);
+			if(rvState != null)
 				recyclerView.getLayoutManager().onRestoreInstanceState(rvState);
-			}
 		}
 
 
@@ -498,14 +504,11 @@ public class DirFragment extends Fragment {
 	@Override
 	public void onDestroyView() {
 		super.onDestroyView();
-		System.out.println("Directory destroying ");
 		binding = null;
 	}
 
 	@Override
 	public void onSaveInstanceState(@NonNull Bundle outState) {
-		System.out.println("Directory Saving: ");
-
 		//If binding is null, extremely likely this frag is in the backstack and was destroyed (and saved) earlier
 		if(binding != null) {
 			Parcelable listState = binding.recyclerview.getLayoutManager().onSaveInstanceState();
