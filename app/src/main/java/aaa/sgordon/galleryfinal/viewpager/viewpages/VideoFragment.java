@@ -278,7 +278,6 @@ public class VideoFragment extends Fragment {
 				zoomPanHandler.setMediaDimensions((int) videoWidth, (int) videoHeight);
 
 				//Tell DragPage the correct media height as well
-				System.out.println("Video media ready: "+actualHeight);
 				dragPage.onMediaReady(actualHeight);
 			}
 		});
