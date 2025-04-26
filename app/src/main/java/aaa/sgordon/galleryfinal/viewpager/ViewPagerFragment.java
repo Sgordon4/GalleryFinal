@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.SharedElementCallback;
@@ -32,6 +33,8 @@ import aaa.sgordon.galleryfinal.databinding.FragViewpagerBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
+import aaa.sgordon.galleryfinal.gallery.cooking.VPMenuItemHelper;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 //https://github.com/android/animation-samples/tree/main/GridToPager
@@ -42,6 +45,7 @@ public class ViewPagerFragment extends Fragment {
 	private VPViewModel viewModel;
 
 	private ViewPagerAdapter adapter;
+	public VPMenuItemHelper menuItemHelper;
 
 
 	private MutableLiveData<List<ListItem>> tempDoNotUse;
@@ -67,6 +71,14 @@ public class ViewPagerFragment extends Fragment {
 				new VPViewModel.Factory(tempDoNotUse, tempCBDoNotUse))
 				.get(VPViewModel.class);
 
+		DirFragment dirFragment = (DirFragment) getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
+		menuItemHelper = new VPMenuItemHelper(dirFragment, dirFragment.dirViewModel.listItem, requireContext(), new VPMenuItemHelper.VPMenuItemHelperCallback() {
+			@Override
+			public ListItem getCurrentItem() {
+				return adapter.list.get(viewModel.currPos);
+			}
+		});
+
 
 		MaterialContainerTransform transform = new MaterialContainerTransform();
 		transform.setDuration(300);
@@ -85,6 +97,7 @@ public class ViewPagerFragment extends Fragment {
 			@Override
 			public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
 				if(names.isEmpty()) return;
+				if(adapter.list.isEmpty()) return;
 
 				//Get the currently displayed ViewPage and the media view inside of it
 				long id = adapter.getItemId(viewModel.currPos);
@@ -119,6 +132,18 @@ public class ViewPagerFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
+		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+			@Override
+			public void handleOnBackPressed() {
+				//If a modal is open, close it rather than leaving
+				Fragment mcFrag = getChildFragmentManager().findFragmentByTag(MoveCopyFragment.class.getSimpleName());
+				if(mcFrag != null)
+					getChildFragmentManager().popBackStack();
+				else
+					getParentFragmentManager().popBackStack();
+			}
+		});
+
 		adapter = new ViewPagerAdapter(this);
 		binding.viewpager.setAdapter(adapter);
 		binding.viewpager.setOffscreenPageLimit(1);
@@ -141,8 +166,9 @@ public class ViewPagerFragment extends Fragment {
 				.filter(item -> Utilities.isFileMedia( item.getPrettyName() )).collect(Collectors.toList());
 
 		//If there are no media items, leave
-		if(newList.isEmpty())
+		if(mediaOnly.isEmpty())
 			getParentFragmentManager().popBackStack();
+
 
 		adapter.setList(mediaOnly);
 
@@ -159,9 +185,14 @@ public class ViewPagerFragment extends Fragment {
 
 	@Override
 	public void onStop() {
-		//Pass back the current item
-		ListItem currItem = adapter.list.get(binding.viewpager.getCurrentItem());
-		viewModel.callback.onClose(currItem);
+		if(!adapter.list.isEmpty()) {
+			//Pass back the current item
+			ListItem currItem = adapter.list.get(binding.viewpager.getCurrentItem());
+			viewModel.callback.onClose(currItem);
+		}
+		else
+			viewModel.callback.onClose(null);
+
 
 		super.onStop();
 	}

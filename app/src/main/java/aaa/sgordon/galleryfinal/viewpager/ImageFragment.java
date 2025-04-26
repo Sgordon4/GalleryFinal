@@ -46,6 +46,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.gallery.cooking.MenuItemHelper;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
@@ -77,8 +78,6 @@ public class ImageFragment extends Fragment {
 		viewModel = new ViewModelProvider(this,
 				new ViewPageViewModel.Factory(tempItemDoNotUse))
 				.get(ViewPageViewModel.class);
-
-		setupCarousel();
 	}
 
 
@@ -98,6 +97,7 @@ public class ImageFragment extends Fragment {
 		});
 
 
+		setupCarousel();
 		//setBottomSheetInfo();
 
 		return binding.getRoot();
@@ -440,8 +440,39 @@ public class ImageFragment extends Fragment {
 
 
 	private void setupCarousel() {
-		DirFragment dirFragment = (DirFragment) getParentFragment().getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
-		MenuItemHelper helper = new MenuItemHelper();
-		//helper.onCreate(dirFragment);
+		ViewPagerFragment parent = (ViewPagerFragment) requireParentFragment();
+		View share = binding.viewB.findViewById(R.id.share);
+		View move = binding.viewB.findViewById(R.id.move);
+		View copy = binding.viewB.findViewById(R.id.copy);
+		View export = binding.viewB.findViewById(R.id.export);
+		View trash = binding.viewB.findViewById(R.id.trash);
+		View backup = binding.viewB.findViewById(R.id.backup);
+
+		share.setOnClickListener(v -> {
+
+		});
+		move.setOnClickListener(v -> {
+			MoveCopyFragment frag = parent.menuItemHelper.buildMoveCopy(true);
+			parent.getChildFragmentManager().beginTransaction()
+					.replace(R.id.viewpager_options_container, frag, MoveCopyFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
+		});
+		copy.setOnClickListener(v -> {
+			MoveCopyFragment frag = parent.menuItemHelper.buildMoveCopy(false);
+			parent.getChildFragmentManager().beginTransaction()
+					.replace(R.id.viewpager_options_container, frag, MoveCopyFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
+		});
+		export.setOnClickListener(v -> {
+			parent.menuItemHelper.onExport();
+		});
+		trash.setOnClickListener(v -> {
+			parent.menuItemHelper.onTrash();
+		});
+		backup.setOnClickListener(v -> {
+			parent.menuItemHelper.onBackup();
+		});
 	}
 }

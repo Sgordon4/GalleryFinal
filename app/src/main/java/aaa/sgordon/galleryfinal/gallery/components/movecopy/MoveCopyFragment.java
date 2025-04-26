@@ -19,8 +19,6 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.apache.commons.io.FilenameUtils;
-
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;

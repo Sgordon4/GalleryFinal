@@ -24,23 +24,15 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
-import aaa.sgordon.galleryfinal.gallery.components.zoning.ZoningModal;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
-public class VPMenuItemHelper {
-	public final Fragment parentFragment;
-	public final ListItem startDir;
-	public final Context context;
+public class VPMenuItemHelperOld {
+	public ActivityResultLauncher<Intent> exportPickerLauncher;
 	private final VPMenuItemHelperCallback callback;
 
-	public ActivityResultLauncher<Intent> exportPickerLauncher;
-
-	public VPMenuItemHelper(@NonNull Fragment fragment, @NonNull ListItem startDir, @NonNull Context context, @NonNull VPMenuItemHelperCallback callback) {
-		this.parentFragment = fragment;
-		this.startDir = startDir;
-		this.context = context;
+	public VPMenuItemHelperOld(@NonNull VPMenuItemHelperCallback callback) {
 		this.callback = callback;
 	}
 
@@ -48,10 +40,10 @@ public class VPMenuItemHelper {
 		ListItem getCurrentItem();
 	}
 
-	public void onCreate() {
-		exportPickerLauncher = parentFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			ExportStorageHandler.onStorageLocationPicked(parentFragment.requireActivity(), result);
-			onExport();
+	public void onCreate(Fragment fragment) {
+		exportPickerLauncher = fragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			ExportStorageHandler.onStorageLocationPicked(fragment.requireActivity(), result);
+			onExport(List.of(callback.getCurrentItem()), fragment.requireContext());
 		});
 	}
 
@@ -88,12 +80,44 @@ public class VPMenuItemHelper {
 
 
 
-	public MoveCopyFragment buildMoveCopy(boolean isMove) {
-		List<ListItem> toMove = List.of(callback.getCurrentItem());
 
+
+	public static void onTrash(@NonNull List<ListItem> toTrash, @NonNull Context context, @NonNull Consumer<Boolean> callback) {
+		int numSelected = toTrash.size();
+
+		//Launch a confirmation dialog first
+		AlertDialog.Builder builder = new AlertDialog.Builder(context);
+		builder.setTitle("Move to Trash");
+		builder.setMessage("Are you sure you want to move "+numSelected+" item"+(numSelected==1?"":"s")+" to trash?");
+
+		builder.setPositiveButton("Yes", (dialogInterface, which) -> {
+			//Update each item's name with a 'trashed' suffix
+			String suffix = ".trashed_"+ Instant.now().getEpochSecond();
+			List<ListItem> renamed = toTrash.stream()
+					.map(item -> new ListItem.Builder(item).setRawName(item.getRawName() + suffix).build())
+					.collect(Collectors.toList());
+
+			//And 'trash' them
+			new Thread(() -> {
+				DirUtilities.renameFiles(renamed);
+			}).start();
+
+			callback.accept(true);
+		});
+		builder.setNegativeButton("No", (dialogInterface, which) -> callback.accept(false));
+
+		AlertDialog dialog = builder.create();
+		dialog.show();
+	}
+
+
+
+	public static MoveCopyFragment buildMoveCopy(@NonNull List<ListItem> toMove, @NonNull ListItem startDir, boolean isMove, @NonNull Context context) {
 		MoveCopyFragment fragment = MoveCopyFragment.newInstance(startDir, isMove);
 		fragment.setMoveCopyCallback((destinationUID, nextItem) -> {
 			new Thread(() -> {
+				System.out.println("Moving to "+destinationUID+" after "+nextItem);
+
 				try {
 					if(isMove)
 						DirUtilities.moveFiles(toMove, destinationUID, nextItem);
@@ -116,13 +140,13 @@ public class VPMenuItemHelper {
 
 
 
-	public void onExport() {
-		List<ListItem> toExport = List.of(callback.getCurrentItem());
+	public static void onExport(@NonNull List<ListItem> toExport, @NonNull Context context) {
+		int numSelected = toExport.size();
 
 		//Launch a confirmation dialog first
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("Export");
-		builder.setMessage("Are you sure you want to export this item?");
+		builder.setMessage("Are you sure you want to export "+numSelected+" item"+(numSelected==1?"":"s")+"?");
 
 		builder.setPositiveButton("Yes", (dialogInterface, which) -> {
 			//Export all items
@@ -132,31 +156,5 @@ public class VPMenuItemHelper {
 
 		AlertDialog dialog = builder.create();
 		dialog.show();
-	}
-
-
-
-	public void onTrash() {
-		ListItem toTrash = callback.getCurrentItem();
-
-		//Launch a confirmation dialog first
-		AlertDialog.Builder builder = new AlertDialog.Builder(context);
-		builder.setTitle("Move to Trash");
-		builder.setMessage("Are you sure you want to move this item to trash?");
-
-		builder.setPositiveButton("Yes", (dialogInterface, which) -> {
-			toTrash.setTrashed(true);
-		});
-		builder.setNegativeButton("No", null);
-
-		AlertDialog dialog = builder.create();
-		dialog.show();
-	}
-
-
-
-	public void onBackup() {
-		ListItem toBackup = callback.getCurrentItem();
-		ZoningModal.launch(parentFragment, List.of(toBackup.fileUID));
 	}
 }
