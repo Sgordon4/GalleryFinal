@@ -202,6 +202,35 @@ public class LinkCache {
 	}
 
 
+	@Nullable
+	public Pair<UUID, UUID> getTrueDirAndParent(UUID maybeDirUID, UUID maybeParentUID) {
+		//We are trying to find the true directory/parent combo using what we were given
+		UUID fileUID, parentUID;
+
+		try {
+			//If the previous item is a link...
+			if (isLink(maybeDirUID)) {
+				//The fileUID and parentUID are both in the link target
+				InternalTarget target = (InternalTarget) getFinalTarget(maybeDirUID);
+				return new Pair<>(target.fileUID, target.parentUID);
+			}
+
+			//If prevItem was not a link, we need to find its parent
+			fileUID = maybeDirUID;
+
+			//If the super previous item is a link, get the actual parent dir
+			if (maybeParentUID != null && isLink(maybeParentUID))
+				parentUID = getLinkDir(maybeParentUID);
+			else
+				parentUID = maybeParentUID;
+
+			return new Pair<>(fileUID, parentUID);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+
 	//---------------------------------------------------------------------------------------------
 
 

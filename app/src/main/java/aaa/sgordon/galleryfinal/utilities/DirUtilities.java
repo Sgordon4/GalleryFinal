@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.DirCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.ExportStorageHandler;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
@@ -104,6 +105,19 @@ public class DirUtilities {
 	}
 	 */
 
+
+	@Nullable
+	public static String getFileNameFromDir(UUID fileUID, UUID parentDirUID) {
+		try {
+			return DirCache.getInstance().getDirContents(parentDirUID).stream()
+					.filter(item -> item.fileUID.equals(fileUID))
+					.map(item -> item.name)
+					.findFirst()
+					.orElse(null);
+		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
+			return null;
+		}
+	}
 
 
 	public static void renameFile(@NonNull UUID fileUID, @NonNull UUID dirUID, @NonNull String newName)

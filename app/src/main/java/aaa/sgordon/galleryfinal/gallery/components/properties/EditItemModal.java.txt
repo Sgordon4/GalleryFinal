@@ -10,12 +10,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,35 +45,37 @@ import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
-public class NewItemModal extends DialogFragment {
-	protected final Fragment parentFragment;
-	protected final ListItem startDir;
+public class EditItemModal extends DialogFragment {
+	private final Fragment parentFragment;
+	private final ListItem startItem;
+	private final JsonObject startAttr;
+	private final ListItem startDir;
 
-	protected static final Integer defaultColor = Color.GRAY;
-	protected Integer color;
-	protected ListItem internalTarget;
+	private static final Integer defaultColor = Color.GRAY;
+	private Integer color;
+	private ListItem internalTarget;
 
-	protected ArrayAdapter<CharSequence> dropdownAdapter;
-	protected EditText name;
-	protected Spinner dropdown;
-	protected ViewGroup linkInfo;
-	protected RadioGroup linkType;
-	protected ViewGroup linkInternal;
-	protected TextView targetInternal;
-	protected ViewGroup linkExternal;
-	protected EditText targetExternal;
-	protected ViewGroup colorSection;
-	protected ColorSlider colorSlider;
-	protected View colorPickerButton;
+	private EditText name;
+	private ViewGroup linkInfo;
+	private RadioGroup linkType;
+	private ViewGroup linkInternal;
+	private TextView targetInternal;
+	private ViewGroup linkExternal;
+	private EditText targetExternal;
+	private ViewGroup colorSection;
+	private ColorSlider colorSlider;
+	private View colorPickerButton;
 
 
 
-	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startDir) {
-		NewItemModal dialog = new NewItemModal(parentFragment, startDir);
+	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull JsonObject startAttr, @NonNull ListItem startDir) {
+		EditItemModal dialog = new EditItemModal(parentFragment, startItem, startAttr, startDir);
 		dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
 	}
-	protected NewItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startDir) {
+	private EditItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull JsonObject startAttr, @NonNull ListItem startDir) {
 		this.parentFragment = parentFragment;
+		this.startItem = startItem;
+		this.startAttr = startAttr;
 		this.startDir = startDir;
 		color = defaultColor;
 	}
@@ -86,7 +86,7 @@ public class NewItemModal extends DialogFragment {
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
 		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.frag_dir_newitem, null);
+		View view = inflater.inflate(R.layout.frag_dir_edititem, null);
 		builder.setView(view);
 
 
@@ -94,7 +94,6 @@ public class NewItemModal extends DialogFragment {
 
 
 		name = view.findViewById(R.id.name);
-		dropdown = view.findViewById(R.id.dropdown);
 		linkInfo = view.findViewById(R.id.link_info);
 		linkType = view.findViewById(R.id.link_type);
 		linkInternal = view.findViewById(R.id.link_internal);
@@ -106,38 +105,19 @@ public class NewItemModal extends DialogFragment {
 		colorPickerButton = view.findViewById(R.id.color_picker_button);
 
 
-
 		//---------------------------------------------------------
 
-
-		dropdownAdapter = ArrayAdapter.createFromResource(requireContext(),
-				R.array.new_items_array, android.R.layout.simple_spinner_item);
-		dropdownAdapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item);
-		dropdown.setAdapter(dropdownAdapter);
+		if(startItem.isMedia())
+			colorSection.setVisibility(View.GONE);
 
 
-		dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				String dropdownItem = parent.getItemAtPosition(position).toString();
-				System.out.println("Selected");
-				if(dropdownItem.equals("Link"))
-					linkInfo.setVisibility(View.VISIBLE);
-				else
-					linkInfo.setVisibility(View.GONE);
-			}
-			@Override
-			public void onNothingSelected(AdapterView<?> parent) {
-			}
-		});
-		if(dropdown.getSelectedItem() != null && dropdown.getSelectedItem().toString().equals("Link"))
-			linkInfo.setVisibility(View.VISIBLE);
+		if(startAttr.has("color"))
+			color = startAttr.get("color").getAsInt();
 		else
-			linkInfo.setVisibility(View.GONE);
+			color = defaultColor;
 
 
 		//---------------------------------------------------------
-
 
 		linkType.setOnCheckedChangeListener((group, checkedId) -> {
 			if(checkedId == R.id.internal_link) {
@@ -149,7 +129,16 @@ public class NewItemModal extends DialogFragment {
 				linkExternal.setVisibility(View.VISIBLE);
 			}
 		});
-		linkType.check(R.id.internal_link);
+
+
+		if(startItem.isLink) {
+			linkInfo.setVisibility(View.VISIBLE);
+
+			if(startItem.type.equals(ListItem.Type.LINKEXTERNAL))
+				linkType.check(R.id.external_link);
+			else
+				linkType.check(R.id.internal_link);
+		}
 
 
 		//---------------------------------------------------------
@@ -180,7 +169,6 @@ public class NewItemModal extends DialogFragment {
 					.addToBackStack(null)
 					.commit();
 		});
-
 
 
 
@@ -248,7 +236,11 @@ public class NewItemModal extends DialogFragment {
 					return;
 				}
 
-				String selectedType = dropdown.getSelectedItem().toString();
+				String selectedType;
+				if(startItem.isDir) selectedType = "Directory";
+				else if(startItem.isLink) selectedType = "Link";
+				else if(startItem.type.equals(ListItem.Type.DIVIDER)) selectedType = "Divider";
+				else selectedType = "Notes";
 
 				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
 					Toast.makeText(requireContext(), "Please select a link target!", Toast.LENGTH_SHORT).show();
@@ -272,7 +264,7 @@ public class NewItemModal extends DialogFragment {
 				}
 
 
-				onConfirm();
+				createFile();
 				dismiss();
 			});
 		});
@@ -283,7 +275,7 @@ public class NewItemModal extends DialogFragment {
 
 
 
-	protected void onConfirm() {
+	private void createFile() {
 		String dropdownItem = dropdown.getSelectedItem().toString();
 
 		boolean isDir = dropdownItem.equals("Directory");
@@ -291,8 +283,8 @@ public class NewItemModal extends DialogFragment {
 
 		//Add a file extension based on the dropdown choice
 		String fileName = name.getText().toString();
-		if(dropdownItem.equals("Notes"))
-			fileName += ".rtf";
+		if(dropdownItem.equals("Text"))
+			fileName += ".txt";
 		else if(dropdownItem.equals("Divider"))
 			fileName += ".div";
 
@@ -340,7 +332,6 @@ public class NewItemModal extends DialogFragment {
 
 
 			//Add the new file to the top of the current directory
-			UUID dirUID = startDir.fileUID;
 			try {
 				hAPI.lockLocal(dirUID);
 				HFile dirProps = hAPI.getFileProps(dirUID);

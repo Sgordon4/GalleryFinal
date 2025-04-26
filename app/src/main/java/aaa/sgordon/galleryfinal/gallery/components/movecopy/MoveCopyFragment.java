@@ -42,6 +42,7 @@ import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class MoveCopyFragment extends Fragment {
 	protected static final String TAG = "Gal.MC";
@@ -388,7 +389,7 @@ public class MoveCopyFragment extends Fragment {
 
 	private void changeDirectory(UUID newFileUID, UUID newParentUID, Path newPathFromRoot) {
 		Thread change = new Thread(() -> {
-			Pair<UUID, UUID> trueDirAndParent = getTrueDirAndParent(newFileUID, newParentUID);
+			Pair<UUID, UUID> trueDirAndParent = LinkCache.getInstance().getTrueDirAndParent(newFileUID, newParentUID);
 			if(trueDirAndParent == null) {
 				Toast.makeText(getContext(), "Could not reach directory!", Toast.LENGTH_SHORT).show();
 				return;
@@ -426,7 +427,7 @@ public class MoveCopyFragment extends Fragment {
 		if(parentDirUID == null)
 			binding.toolbar.post(() -> binding.toolbar.setTitle("Root"));
 		else {
-			String fileName = getFileNameFromDir(fileUID, parentDirUID);
+			String fileName = DirUtilities.getFileNameFromDir(fileUID, parentDirUID);
 			binding.toolbar.post(() ->
 					binding.toolbar.setTitle((fileName == null) ? "Unknown" : fileName));
 		}
@@ -463,7 +464,7 @@ public class MoveCopyFragment extends Fragment {
 
 			String name;
 			if (previousCrumb == null) name = "Root";
-			else name = getFileNameFromDir(currentCrumb, previousCrumb);
+			else name = DirUtilities.getFileNameFromDir(currentCrumb, previousCrumb);
 
 			int index = i;
 			UUID finalPreviousCrumb = previousCrumb;
@@ -491,50 +492,6 @@ public class MoveCopyFragment extends Fragment {
 					}
 				});
 			});
-		}
-	}
-
-
-
-	@Nullable
-	protected String getFileNameFromDir(UUID fileUID, UUID parentDirUID) {
-		try {
-			return DirCache.getInstance().getDirContents(parentDirUID).stream()
-					.filter(item -> item.fileUID.equals(fileUID))
-					.map(item -> item.name)
-					.findFirst()
-					.orElse(null);
-		} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-			return null;
-		}
-	}
-
-	@Nullable
-	private Pair<UUID, UUID> getTrueDirAndParent(UUID maybeDirUID, UUID maybeParentUID) {
-		//We are trying to find the true directory/parent combo using what we were given
-		LinkCache linkCache = LinkCache.getInstance();
-		UUID fileUID, parentUID;
-
-		try {
-			//If the previous item is a link...
-			if (linkCache.isLink(maybeDirUID)) {
-				//The fileUID and parentUID are both in the link target
-				InternalTarget target = (InternalTarget) linkCache.getFinalTarget(maybeDirUID);
-				return new Pair<>(target.fileUID, target.parentUID);
-			}
-
-			//If prevItem was not a link, we need to find its parent
-			fileUID = maybeDirUID;
-
-			//If the super previous item is a link, get the actual parent dir
-			if (maybeParentUID != null && linkCache.isLink(maybeParentUID))
-				parentUID = linkCache.getLinkDir(maybeParentUID);
-			else
-				parentUID = maybeParentUID;
-
-			return new Pair<>(fileUID, parentUID);
-		} catch (Exception e) {
-			return null;
 		}
 	}
 }

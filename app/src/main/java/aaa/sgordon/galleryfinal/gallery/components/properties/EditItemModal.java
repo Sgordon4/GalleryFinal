@@ -1,50 +1,25 @@
 package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.app.Dialog;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Looper;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
+import android.util.Pair;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.RadioGroup;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
-import com.github.naz013.colorslider.ColorSlider;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.ConnectException;
-import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
-import aaa.sgordon.galleryfinal.gallery.DirFragment;
-import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
-import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
+import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
@@ -53,331 +28,144 @@ import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
-import aaa.sgordon.galleryfinal.utilities.Utilities;
 
-public class EditItemModal extends DialogFragment {
-	private final Fragment parentFragment;
-	private final ListItem dirItem;
-	private final UUID dirUID;
+public class EditItemModal extends NewItemModal {
+	protected final ListItem startItem;
+	protected final JsonObject startAttr;
+	protected final LinkTarget linkTarget;
+	protected final String targetName;
 
-	private static final Integer defaultColor = Color.GRAY;
-	private Integer color;
-	private ListItem internalTarget;
+	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull ListItem startDir) {
+		AttrCache.getInstance().getAttrAsync(startItem.fileUID, new AttrCache.AttrCallback() {
+			@Override
+			public void onAttrReady(@NonNull JsonObject attr) {
+				LinkTarget target = null;
+				String targetName = null;
+				if(startItem.isLink) {
+					try {
+						LinkCache linkCache = LinkCache.getInstance();
+						target = linkCache.getLinkTarget(startItem.fileUID);
 
-	private EditText name;
-	private ViewGroup linkInfo;
-	private RadioGroup linkType;
-	private ViewGroup linkInternal;
-	private TextView targetInternal;
-	private ViewGroup linkExternal;
-	private EditText targetExternal;
-	private ColorSlider colorSlider;
-	private View colorPickerButton;
+						//If we have an internal target, get the target's name
+						if(target instanceof InternalTarget) {
+							InternalTarget inTarget = (InternalTarget) target;
+							Pair<UUID, UUID> trueDirAndParent = linkCache.getTrueDirAndParent(inTarget.fileUID, inTarget.parentUID);
+							if(trueDirAndParent != null)
+								targetName = DirUtilities.getFileNameFromDir(trueDirAndParent.first, trueDirAndParent.second);
+						}
+					}
+					catch (ContentsNotFoundException | FileNotFoundException | ConnectException ignored) {}
+				}
 
-
-
-	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startItem) {
-		EditItemModal dialog = new EditItemModal(parentFragment, startItem);
-		dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
+				EditItemModal dialog = new EditItemModal(parentFragment, startItem, attr, target, targetName, startDir);
+				dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
+			}
+			@Override
+			public void onConnectException() {
+				Toast.makeText(parentFragment.requireContext(), "Could not connect to server!", Toast.LENGTH_SHORT).show();
+			}
+			@Override
+			public void onFileNotFoundException() {
+				Toast.makeText(parentFragment.requireContext(), "File not found!", Toast.LENGTH_SHORT).show();
+			}
+		});
 	}
-	private EditItemModal(@NonNull Fragment parentFragment, @NonNull ListItem dirItem) {
-		this.parentFragment = parentFragment;
-		this.dirItem = dirItem;
-		this.dirUID = dirItem.fileUID;
-		color = defaultColor;
-	}
+	protected EditItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull JsonObject startAttr,
+							@Nullable LinkTarget linkTarget, @Nullable String targetName, @NonNull ListItem startDir) {
+		super(parentFragment, startDir);
+		this.startItem = startItem;
+		this.startAttr = startAttr;
+		this.linkTarget = linkTarget;
+		this.targetName = targetName;
 
+		if(linkTarget instanceof ExternalTarget)
+	}
 
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.frag_dir_edititem, null);
-		builder.setView(view);
+		Dialog dialog = super.onCreateDialog(savedInstanceState);
 
+		dialog.setTitle("Edit Item");
+		dropdown.setVisibility(View.GONE);
 
-		builder.setTitle("New Item");
+		//On first run
+		if(savedInstanceState == null) {
+			name.setText(startItem.getPrettyName());
 
+			if(startItem.isMedia())
+				colorSection.setVisibility(View.GONE);
 
-		name = view.findViewById(R.id.name);
-		linkInfo = view.findViewById(R.id.link_info);
-		linkType = view.findViewById(R.id.link_type);
-		linkInternal = view.findViewById(R.id.link_internal);
-		targetInternal = view.findViewById(R.id.target_internal);
-		linkExternal = view.findViewById(R.id.link_external);
-		targetExternal = view.findViewById(R.id.target_external);
-		colorSlider = view.findViewById(R.id.color_slider);
-		colorPickerButton = view.findViewById(R.id.color_picker_button);
+			if(startAttr.has("color"))
+				color = startAttr.get("color").getAsInt();
+			else
+				color = defaultColor;
 
-
-
-		//---------------------------------------------------------
-
-
-		if()
-
-
-		dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				String dropdownItem = parent.getItemAtPosition(position).toString();
-				if(dropdownItem.equals("Link"))
-					linkInfo.setVisibility(View.VISIBLE);
-				else
-					linkInfo.setVisibility(View.GONE);
+			if(startItem.isDir) {
+				dropdown.setSelection(dropdownAdapter.getPosition("Directory"));
 			}
-			@Override
-			public void onNothingSelected(AdapterView<?> parent) {
+			else if(startItem.isLink) {
+				dropdown.setSelection(dropdownAdapter.getPosition("Link"));
+				linkInfo.setVisibility(View.VISIBLE);
+
+				if(startItem.type.equals(ListItem.Type.LINKEXTERNAL)) {
+					linkType.check(R.id.external_link);
+					new Thread(() -> {
+						try {
+							LinkTarget target = LinkCache.getInstance().getLinkTarget(startItem.fileUID);
+							targetExternal.setText(target.toString());
+						}
+						catch (ContentsNotFoundException | FileNotFoundException | ConnectException ignored) {}
+					});
+				}
 			}
-		});
-
-		if(dropdown.getSelectedItem() != null && dropdown.getSelectedItem().toString().equals("Link"))
-			linkInfo.setVisibility(View.VISIBLE);
-		else
-			linkInfo.setVisibility(View.GONE);
-
-
-		//---------------------------------------------------------
-
-
-		linkType.setOnCheckedChangeListener((group, checkedId) -> {
-			if(checkedId == R.id.internal_link) {
-				linkInternal.setVisibility(View.VISIBLE);
-				linkExternal.setVisibility(View.GONE);
+			else if(startItem.type.equals(ListItem.Type.DIVIDER)) {
+				dropdown.setSelection(dropdownAdapter.getPosition("Divider"));
 			}
 			else {
-				linkInternal.setVisibility(View.GONE);
-				linkExternal.setVisibility(View.VISIBLE);
+				dropdown.setSelection(dropdownAdapter.getPosition("Notes"));
 			}
-		});
-		linkType.check(R.id.internal_link);
-
-
-		//---------------------------------------------------------
-
-		ImageButton browse = view.findViewById(R.id.browse);
-		browse.setOnClickListener(v -> {
-			LinkSelectFragment fragment = LinkSelectFragment.newInstance(dirItem);
-			fragment.setLinkSelectCallback(target -> {
-				internalTarget = target;
-				targetInternal.setText(target.getPrettyName());
-			});
-
-			parentFragment.getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
-				@Override
-				public void onBackStackChanged() {
-					System.out.println("BackStack size = "+parentFragment.getChildFragmentManager().getBackStackEntryCount());
-					//If back stack is empty, child fragment is gone
-					if (parentFragment.getChildFragmentManager().getBackStackEntryCount() == 0) {
-						if (getDialog() != null)
-							getDialog().show();
-						parentFragment.getChildFragmentManager().removeOnBackStackChangedListener(this);
-					}
-				}
-			});
-			getDialog().hide();
-			parentFragment.getChildFragmentManager().beginTransaction()
-					.replace(R.id.dir_child_container, fragment, LinkSelectFragment.class.getSimpleName())
-					.addToBackStack(null)
-					.commit();
-		});
-		/*
-		browse.setOnClickListener(view1 ->
-			LinkTargetModal.launch(fragment, dirUID, target -> {
-				internalTarget = target;
-				targetInternal.setText(target.getPrettyName());
-			})
-		);
-		 */
-
-
-
-
-		//Get the default card background color from the theme
-		int defaultBorder = Color.GRAY;
-		TypedValue typedValue = new TypedValue();
-		if (requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface , typedValue, true))
-			defaultBorder = typedValue.data;
-
-
-		//Set the background color of the button to the current color
-		GradientDrawable drawable = new GradientDrawable();
-		drawable.setShape(GradientDrawable.RECTANGLE);
-		drawable.setColor(color);
-		drawable.setStroke(4, defaultBorder);
-		colorPickerButton.setBackground(drawable);
-
-
-		colorSlider.setSelection(-1);
-		colorSlider.setListener((position, newColor) -> {
-			color =  newColor | 0xFF000000;		//Set alpha to 100%
-
-			//Change the color picker button's background color
-			GradientDrawable background = (GradientDrawable) colorPickerButton.getBackground();
-			background.setColor(color);
-			colorPickerButton.setBackground(background);
-		});
-
-
-		colorPickerButton.setOnClickListener(v -> {
-			ColorPickerModal.launch(parentFragment, color, newColor -> {
-				color =  newColor | 0xFF000000;		//Set alpha to 100%
-
-				//Change the color picker button's background color
-				GradientDrawable background = (GradientDrawable) colorPickerButton.getBackground();
-				background.setColor(color);
-				colorPickerButton.setBackground(background);
-
-				//Unselect the slider's currently selected item
-				colorSlider.setSelection(-1);
-			});
-		});
-
-
-
-		builder.setPositiveButton(android.R.string.ok, null);
-		builder.setNegativeButton("Cancel", (dialog2, which) -> {
-			System.out.println("Cancel clicked");
-		});
-
-		AlertDialog dialog = builder.create();
-		dialog.setCanceledOnTouchOutside(false);
-
-		//Need to define the positive button in this way since we don't want the dialog to be auto-dismissed on OK
-		dialog.setOnShowListener(dialogInterface -> {
-			Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-			button.setOnClickListener(v -> {
-				System.out.println("OK Clicked");
-				if(name.getText().toString().isEmpty()) {
-					Toast.makeText(requireContext(), "Name cannot be empty!", Toast.LENGTH_SHORT).show();
-					return;
-				}
-
-				String selectedType = dropdown.getSelectedItem().toString();
-
-				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
-					Toast.makeText(requireContext(), "Please select a link target!", Toast.LENGTH_SHORT).show();
-					return;
-				}
-
-				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.external_link) {
-					if(targetExternal.getText().toString().isEmpty()) {
-						Toast.makeText(requireContext(), "Please enter a target URL!", Toast.LENGTH_SHORT).show();
-						return;
-					}
-
-					//Make sure the Url is valid
-					try {
-						Uri.parse(targetExternal.getText().toString());
-					}
-					catch (IllegalArgumentException e) {
-						Toast.makeText(requireContext(), "Please enter a valid URL!", Toast.LENGTH_SHORT).show();
-						return;
-					}
-				}
-
-
-				createFile();
-				dismiss();
-			});
-		});
-
+		}
 
 		return dialog;
 	}
 
 
-
-	private void createFile() {
-		String dropdownItem = dropdown.getSelectedItem().toString();
-
-		boolean isDir = dropdownItem.equals("Directory");
-		boolean isLink = dropdownItem.equals("Link");
-
-		//Add a file extension based on the dropdown choice
-		String fileName = name.getText().toString();
-		if(dropdownItem.equals("Text"))
-			fileName += ".txt";
-		else if(dropdownItem.equals("Divider"))
-			fileName += ".div";
+	@Override
+	protected void onConfirm() {
+		String newName = name.getText().toString();
+		String oldName = startItem.getPrettyName();
+		if(!newName.equals(oldName))
+			startItem.rename(newName);
 
 
-		final String fFileName = fileName;
-		Thread thread = new Thread(() -> {
+		Thread writeAttr = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
-
-			//Create a new file
-			UUID newFileUID;
 			try {
-				newFileUID = hAPI.createFile(hAPI.getCurrentAccount(), isDir, isLink);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+				hAPI.lockLocal(startItem.fileUID);
+				HFile fileProps = hAPI.getFileProps(startItem.fileUID);
+
+				if(color != null)
+					fileProps.userattr.addProperty("color", color);
+				else
+					fileProps.userattr.remove("color");
+
+				hAPI.setAttributes(startItem.fileUID, fileProps.userattr, fileProps.attrhash);
 			}
-
-			try {
-				hAPI.lockLocal(newFileUID);
-
-				//Add color to the new file's properties
-				if(color != null) {
-					JsonObject attributes = new JsonObject();
-					attributes.addProperty("color", color);
-					hAPI.setAttributes(newFileUID, attributes, HFile.defaultAttrHash);
-				}
-
-				//Write the link target to the new file
-				if(isLink) {
-					LinkTarget linkTarget;
-					if(linkType.getCheckedRadioButtonId() == R.id.internal_link)
-						linkTarget = new InternalTarget(internalTarget.parentUID, internalTarget.fileUID);
-					else
-						linkTarget = new ExternalTarget(Uri.parse(targetExternal.getText().toString()));
-
-					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
-				}
+			catch (FileNotFoundException e) {
+				Looper.prepare();
+				Toast.makeText(requireContext(), "File not found!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
 			}
-			catch (FileNotFoundException | ConnectException e) {
-				throw new RuntimeException(e);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			} finally {
-				hAPI.unlockLocal(newFileUID);
+			catch (ConnectException e) {
+				Looper.prepare();
+				Toast.makeText(requireContext(), "Unable to connect to server!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
 			}
-
-
-			//Add the new file to the top of the current directory
-			try {
-				hAPI.lockLocal(dirUID);
-				HFile dirProps = hAPI.getFileProps(dirUID);
-
-				//Get the current directory contents in a list, and add our new file to the top
-				List<DirItem> dirList = DirUtilities.readDir(dirUID);
-				dirList.add(0, new DirItem(newFileUID, isDir, isLink, fFileName));
-
-				//Write the updated contents back to the directory
-				List<String> dirLines = dirList.stream().map(DirItem::toString)
-						.collect(Collectors.toList());
-				byte[] newContent = String.join("\n", dirLines).getBytes();
-				hAPI.writeFile(dirUID, newContent, dirProps.checksum);
-			}
-			catch (FileNotFoundException | ConnectException | ContentsNotFoundException e) {
-				Toast.makeText(requireContext(), "Could not create file, please try again.", Toast.LENGTH_SHORT).show();
-
-				//If we can't find the directory for whatever reason, delete the file we just created
-				try {
-					hAPI.lockLocal(newFileUID);
-					hAPI.deleteFile(newFileUID);
-				} catch (FileNotFoundException ex) {
-					//Job done
-				} finally {
-					hAPI.unlockLocal(newFileUID);
-				}
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			} finally {
-				hAPI.unlockLocal(dirUID);
+			finally {
+				hAPI.unlockLocal(startItem.fileUID);
 			}
 		});
-		thread.start();
+		writeAttr.start();
 	}
 }

@@ -124,8 +124,6 @@ public class EditItemModalOld extends DialogFragment {
 
 
 
-
-
 		//Set the background color of the button to the current color
 		GradientDrawable drawable = new GradientDrawable();
 		drawable.setShape(GradientDrawable.RECTANGLE);
@@ -161,13 +159,6 @@ public class EditItemModalOld extends DialogFragment {
 
 
 
-
-
-
-
-
-
-
 		builder.setPositiveButton("OK", (dialog, which) -> {
 			System.out.println("OK Clicked");
 			commitProps();
@@ -183,10 +174,7 @@ public class EditItemModalOld extends DialogFragment {
 	}
 
 
-	@Override
-	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-		super.onViewCreated(view, savedInstanceState);
-	}
+	//---------------------------------------------------------------------------------------------
 
 	private void commitProps() {
 		//Grab the current properties, setting them to null if they are default

@@ -124,7 +124,12 @@ public class MenuItemHelper {
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.edit) {
-			return EditItemModal.launchHelper(dirFragment, selectionController, adapter.list);
+			List<ListItem> selected = getSelected();
+			if(selected.isEmpty()) return true;
+
+			ListItem selectedItem = selected.get(0);
+			EditItemModal.launch(dirFragment, selectedItem, dirFragment.dirViewModel.listItem);
+			return true;
 		}
 		else if(menuItem.getItemId() == R.id.tag) {
 			TagFullscreen.launch(dirFragment);

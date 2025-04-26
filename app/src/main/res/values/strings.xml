@@ -3,7 +3,7 @@
 
     <string-array name="new_items_array">
         <item>Directory</item>
-        <item>Text</item>
+        <item>Notes</item>
         <item>Divider</item>
         <item>Link</item>
     </string-array>

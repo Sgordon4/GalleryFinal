@@ -72,6 +72,13 @@ public class ListItem {
 
 	//-----------------------------------------------
 
+	public boolean isMedia() {
+		String prettyExtension = FilenameUtils.getExtension(getPrettyName());
+		return prettyExtension.equals("jpg") || prettyExtension.equals("jpeg") || prettyExtension.equals("png") ||
+				prettyExtension.equals("gif") || prettyExtension.equals("mp4") || prettyExtension.equals("mov");
+	}
+
+
 	public boolean isTrashed() {
 		return FilenameUtils.getExtension(name).startsWith("trashed_");
 	}
@@ -92,7 +99,7 @@ public class ListItem {
 		if(trashed) name += ".trashed_"+Instant.now().getEpochSecond();
 		else name = FilenameUtils.removeExtension(name);
 
-		rename(name);
+		writeName(name);
 	}
 	public void setHidden(boolean hidden) {
 		if(parentUID == null) return;
@@ -104,7 +111,7 @@ public class ListItem {
 		if(!hidden) name = name.substring(1);
 		else name = "."+name;
 
-		rename(name);
+		writeName(name);
 	}
 	public void setCollapsed(boolean collapsed) {
 		if(parentUID == null) return;
@@ -116,11 +123,23 @@ public class ListItem {
 		if(!collapsed) name = name.substring(1);
 		else name = "."+name;
 
-		rename(name);
+		writeName(name);
 	}
 
 
-	private void rename(String newName) {
+	public void rename(String newPrettyName) {
+		if(parentUID == null) return;
+
+		if(isHidden()) newPrettyName = "."+newPrettyName;
+		if(isCollapsed()) newPrettyName = "."+newPrettyName;
+		if(isTrashed()) newPrettyName = newPrettyName + FilenameUtils.getExtension(getRawName());
+
+		writeName(newPrettyName);
+	}
+
+
+
+	private void writeName(String newName) {
 		if(parentUID == null) return;
 
 		Thread renameThread = new Thread(() -> {
