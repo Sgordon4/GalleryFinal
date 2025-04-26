@@ -3,7 +3,6 @@ package aaa.sgordon.galleryfinal.repository.gallery.components.link;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.util.UUID;
 
@@ -13,7 +12,7 @@ public class InternalTarget implements LinkTarget {
 	@NonNull
 	public final UUID fileUID;
 
-	public InternalTarget(@NonNull UUID parentUID, @NonNull UUID fileUID) {
+	public InternalTarget(@NonNull UUID fileUID, @NonNull UUID parentUID) {
 		this.parentUID = parentUID;
 		this.fileUID = fileUID;
 	}

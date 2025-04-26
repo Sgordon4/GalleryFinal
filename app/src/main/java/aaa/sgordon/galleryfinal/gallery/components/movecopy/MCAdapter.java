@@ -26,6 +26,7 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 	public List<ListItem> list;
 	private final ListItem newItemPlaceholder;
+	private final ListItem nothingHerePlaceholder;
 	public boolean showCreateNewDir;
 
 	public MCAdapter(@NonNull MCAdapterCallbacks callbacks, @NonNull MoveCopyFragment fragment, boolean showCreateNewDir) {
@@ -36,6 +37,9 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 		newItemPlaceholder = new ListItem(UUID.randomUUID(), null, false, false,
 				"Create a New Directory", Paths.get(""), ListItem.Type.UNREACHABLE);
+		nothingHerePlaceholder = new ListItem(UUID.randomUUID(), null, false, false,
+				"There's Nothing Here...", Paths.get(""), ListItem.Type.LINKCYCLE);
+
 	}
 
 
@@ -52,8 +56,9 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 		if(showCreateNewDir) {
 			list.add(0, newItemPlaceholder);
 		}
-		else {
-			//TODO Add a "nothing here" item
+		//Add a Nothing Here item
+		else if(list.isEmpty()) {
+			list.add(0, nothingHerePlaceholder);
 		}
 
 		//When changing dirs, we want the full dataset to reset, even if there are common items
@@ -95,8 +100,10 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				return 2;
 			case LINKDIVIDER:
 				return 3;
-			case UNREACHABLE:		//This will only be our placeholder item
+			case UNREACHABLE:		//This will only be our "Create Directory" item
 				return 4;
+			case LINKCYCLE:			//This will only be our "Nothing Here" item
+				return 5;
 			default:
 				return -1;
 		}
@@ -119,6 +126,8 @@ public class MCAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 			case 3: holder = new DividerViewHolder(inflater.inflate(R.layout.dir_mc_vh_divider, parent, false));
 				break;
 			case 4: holder = new NewDirViewHolder(inflater.inflate(R.layout.dir_mc_vh_newitem, parent, false), fragment, fragment.viewModel.currDirUID);
+				break;
+			case 5: holder = new NothingViewHolder(inflater.inflate(R.layout.dir_mc_vh_nothing_here, parent, false));
 				break;
 			case -1:
 			default: throw new RuntimeException("Unknown view type in Move/Copy adapter!");

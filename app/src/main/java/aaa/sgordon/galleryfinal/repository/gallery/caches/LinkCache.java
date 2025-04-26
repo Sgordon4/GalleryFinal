@@ -259,7 +259,7 @@ public class LinkCache {
 					UUID dirUID = UUID.fromString(uuidParts[1]);
 					UUID fileUID = UUID.fromString(uuidParts[2]);
 
-					return new InternalTarget(dirUID, fileUID);
+					return new InternalTarget(fileUID, dirUID);
 				}
 				//Otherwise this points to somewhere on the internet
 				else {

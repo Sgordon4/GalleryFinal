@@ -23,7 +23,6 @@ import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.MainStorageHandler;
-import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
@@ -344,7 +343,7 @@ public class DirSampleData {
 
 		try {
 			hapi.lockLocal(fileUID);
-			InternalTarget targetInternal = new InternalTarget(targetParentUID, targetUID);
+			InternalTarget targetInternal = new InternalTarget(targetUID, targetParentUID);
 			hapi.writeFile(fileUID, targetInternal.toString().getBytes(), HFile.defaultChecksum);
 		}
 		catch (FileNotFoundException | ConnectException e) { throw new RuntimeException(e); }

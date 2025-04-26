@@ -1,6 +1,7 @@
 package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.app.Dialog;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Pair;
@@ -14,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.UUID;
 
@@ -32,32 +34,12 @@ import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 public class EditItemModal extends NewItemModal {
 	protected final ListItem startItem;
 	protected final JsonObject startAttr;
-	protected final LinkTarget linkTarget;
-	protected final String targetName;
 
 	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull ListItem startDir) {
 		AttrCache.getInstance().getAttrAsync(startItem.fileUID, new AttrCache.AttrCallback() {
 			@Override
 			public void onAttrReady(@NonNull JsonObject attr) {
-				LinkTarget target = null;
-				String targetName = null;
-				if(startItem.isLink) {
-					try {
-						LinkCache linkCache = LinkCache.getInstance();
-						target = linkCache.getLinkTarget(startItem.fileUID);
-
-						//If we have an internal target, get the target's name
-						if(target instanceof InternalTarget) {
-							InternalTarget inTarget = (InternalTarget) target;
-							Pair<UUID, UUID> trueDirAndParent = linkCache.getTrueDirAndParent(inTarget.fileUID, inTarget.parentUID);
-							if(trueDirAndParent != null)
-								targetName = DirUtilities.getFileNameFromDir(trueDirAndParent.first, trueDirAndParent.second);
-						}
-					}
-					catch (ContentsNotFoundException | FileNotFoundException | ConnectException ignored) {}
-				}
-
-				EditItemModal dialog = new EditItemModal(parentFragment, startItem, attr, target, targetName, startDir);
+				EditItemModal dialog = new EditItemModal(parentFragment, startItem, attr, startDir);
 				dialog.show(parentFragment.getChildFragmentManager(), "edit_item");
 			}
 			@Override
@@ -70,76 +52,107 @@ public class EditItemModal extends NewItemModal {
 			}
 		});
 	}
-	protected EditItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull JsonObject startAttr,
-							@Nullable LinkTarget linkTarget, @Nullable String targetName, @NonNull ListItem startDir) {
+	protected EditItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startItem, @NonNull JsonObject startAttr, @NonNull ListItem startDir) {
 		super(parentFragment, startDir);
 		this.startItem = startItem;
 		this.startAttr = startAttr;
-		this.linkTarget = linkTarget;
-		this.targetName = targetName;
-
-		if(linkTarget instanceof ExternalTarget)
 	}
 
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+		//Get the dialog from NewItemModal
 		Dialog dialog = super.onCreateDialog(savedInstanceState);
 
+		//Change the title
 		dialog.setTitle("Edit Item");
-		dropdown.setVisibility(View.GONE);
-
-		//On first run
-		if(savedInstanceState == null) {
-			name.setText(startItem.getPrettyName());
-
-			if(startItem.isMedia())
-				colorSection.setVisibility(View.GONE);
-
-			if(startAttr.has("color"))
-				color = startAttr.get("color").getAsInt();
-			else
-				color = defaultColor;
-
-			if(startItem.isDir) {
-				dropdown.setSelection(dropdownAdapter.getPosition("Directory"));
-			}
-			else if(startItem.isLink) {
-				dropdown.setSelection(dropdownAdapter.getPosition("Link"));
-				linkInfo.setVisibility(View.VISIBLE);
-
-				if(startItem.type.equals(ListItem.Type.LINKEXTERNAL)) {
-					linkType.check(R.id.external_link);
-					new Thread(() -> {
-						try {
-							LinkTarget target = LinkCache.getInstance().getLinkTarget(startItem.fileUID);
-							targetExternal.setText(target.toString());
-						}
-						catch (ContentsNotFoundException | FileNotFoundException | ConnectException ignored) {}
-					});
-				}
-			}
-			else if(startItem.type.equals(ListItem.Type.DIVIDER)) {
-				dropdown.setSelection(dropdownAdapter.getPosition("Divider"));
-			}
-			else {
-				dropdown.setSelection(dropdownAdapter.getPosition("Notes"));
-			}
-		}
 
 		return dialog;
 	}
 
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		if(savedInstanceState == null) {
+			//---------------------------------------------------------
+			// Name
+
+			this.itemName = startItem.getPrettyName();
+
+			//---------------------------------------------------------
+			// Color
+
+			if(startAttr.has("color"))
+				color = startAttr.get("color").getAsInt();
+
+			if(startItem.isMedia())
+				binding.colorSection.setVisibility(View.GONE);
+
+			//---------------------------------------------------------
+			// Dropdown
+
+			if(startItem.isDir) {
+				this.selectedDropdownItem = "Directory";
+			}
+			else if(startItem.isLink) {
+				this.selectedDropdownItem = "Link";
+				this.isInternalLinkSelected = !startItem.type.equals(ListItem.Type.LINKEXTERNAL);
+			}
+			else if(startItem.type.equals(ListItem.Type.DIVIDER)) {
+				this.selectedDropdownItem = "Divider";
+			}
+			else {
+				this.selectedDropdownItem = "Notes";
+			}
+
+			//---------------------------------------------------------
+			// Link Selection
+
+			if(startItem.isLink) {
+				Thread fetchLinkInfo = new Thread(() -> {
+					try {
+						LinkCache linkCache = LinkCache.getInstance();
+						LinkTarget target = linkCache.getLinkTarget(startItem.fileUID);
+
+						if(target instanceof InternalTarget) {
+							InternalTarget inTarget = (InternalTarget) target;
+							this.internalTarget = inTarget;
+
+							Pair<UUID, UUID> trueDirAndParent = linkCache.getTrueDirAndParent(inTarget.fileUID, inTarget.parentUID);
+							this.internalTargetName = (trueDirAndParent != null) ?
+									DirUtilities.getFileNameFromDir(trueDirAndParent.first, trueDirAndParent.second) :
+									"Unknown Item";
+
+							binding.targetInternal.post(() -> binding.targetInternal.setText(this.internalTargetName));
+						}
+						else if(target instanceof ExternalTarget) {
+							this.externalTarget = target.toUri().toString();
+							binding.targetExternal.post(() -> binding.targetExternal.setText(this.externalTarget));
+						}
+					}
+					catch (ContentsNotFoundException | FileNotFoundException | ConnectException ignored) {}
+				});
+				fetchLinkInfo.start();
+			}
+		}
+
+
+		//Run NewItemModal's setup code
+		super.onViewCreated(view, savedInstanceState);
+
+
+		//Don't allow type change for an existing item
+		binding.dropdown.setVisibility(View.GONE);
+	}
 
 	@Override
 	protected void onConfirm() {
-		String newName = name.getText().toString();
+		String newName = binding.name.getText().toString();
 		String oldName = startItem.getPrettyName();
 		if(!newName.equals(oldName))
 			startItem.rename(newName);
 
 
-		Thread writeAttr = new Thread(() -> {
+		Thread writeChanges = new Thread(() -> {
 			HybridAPI hAPI = HybridAPI.getInstance();
 			try {
 				hAPI.lockLocal(startItem.fileUID);
@@ -149,8 +162,19 @@ public class EditItemModal extends NewItemModal {
 					fileProps.userattr.addProperty("color", color);
 				else
 					fileProps.userattr.remove("color");
-
 				hAPI.setAttributes(startItem.fileUID, fileProps.userattr, fileProps.attrhash);
+
+
+				//Write the link target to the new file
+				if(startItem.isLink) {
+					LinkTarget linkTarget;
+					if(binding.linkType.getCheckedRadioButtonId() == R.id.internal_link)
+						linkTarget = internalTarget;
+					else
+						linkTarget = new ExternalTarget(Uri.parse(externalTarget));
+
+					hAPI.writeFile(startItem.fileUID, linkTarget.toString().getBytes(), fileProps.checksum);
+				}
 			}
 			catch (FileNotFoundException e) {
 				Looper.prepare();
@@ -161,11 +185,12 @@ public class EditItemModal extends NewItemModal {
 				Looper.prepare();
 				Toast.makeText(requireContext(), "Unable to connect to server!", Toast.LENGTH_SHORT).show();
 				Looper.loop();
-			}
-			finally {
+			} catch (IOException e) {
+				//Ignore idgaf
+			} finally {
 				hAPI.unlockLocal(startItem.fileUID);
 			}
 		});
-		writeAttr.start();
+		writeChanges.start();
 	}
 }

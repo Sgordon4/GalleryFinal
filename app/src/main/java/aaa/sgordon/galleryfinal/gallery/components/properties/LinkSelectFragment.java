@@ -15,6 +15,7 @@ import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.InternalTarget;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.LinkTarget;
+import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class LinkSelectFragment extends MoveCopyFragment {
 
@@ -84,7 +85,7 @@ public class LinkSelectFragment extends MoveCopyFragment {
 				if(!(linkTarget instanceof InternalTarget)) return;
 
 				InternalTarget target = (InternalTarget) linkTarget;
-				String targetName = getFileNameFromDir(target.fileUID, target.parentUID);
+				String targetName = DirUtilities.getFileNameFromDir(target.fileUID, target.parentUID);
 				if(targetName == null) return;
 
 				selectedItem = new ListItem(target.fileUID, target.parentUID, false, false,
@@ -97,7 +98,7 @@ public class LinkSelectFragment extends MoveCopyFragment {
 		else if(viewModel.currPathFromRoot.getNameCount() > 1) {
 			UUID dirUID = viewModel.currDirUID;
 			UUID parentUID = viewModel.currParentUID;
-			String fileName = getFileNameFromDir(dirUID, parentUID);
+			String fileName = DirUtilities.getFileNameFromDir(dirUID, parentUID);
 			if(fileName == null) return;
 
 			ListItem selectedItem = new ListItem(dirUID, parentUID, true, false,

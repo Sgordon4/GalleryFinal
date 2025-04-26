@@ -5,6 +5,9 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,11 +15,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.RadioGroup;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,7 +25,6 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.github.naz013.colorslider.ColorSlider;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
@@ -37,6 +35,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.databinding.FragDirNewitemBinding;
 import aaa.sgordon.galleryfinal.gallery.DirItem;
 import aaa.sgordon.galleryfinal.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.components.link.ExternalTarget;
@@ -48,26 +47,20 @@ import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class NewItemModal extends DialogFragment {
+	protected FragDirNewitemBinding binding;
 	protected final Fragment parentFragment;
 	protected final ListItem startDir;
 
-	protected static final Integer defaultColor = Color.GRAY;
-	protected Integer color;
-	protected ListItem internalTarget;
+	protected String itemName = "";
+	protected String selectedDropdownItem = "Directory";
+	protected Integer color = Color.TRANSPARENT;
+
+	protected boolean isInternalLinkSelected = true;
+	protected InternalTarget internalTarget = null;
+	protected String internalTargetName = "";
+	protected String externalTarget = "";
 
 	protected ArrayAdapter<CharSequence> dropdownAdapter;
-	protected EditText name;
-	protected Spinner dropdown;
-	protected ViewGroup linkInfo;
-	protected RadioGroup linkType;
-	protected ViewGroup linkInternal;
-	protected TextView targetInternal;
-	protected ViewGroup linkExternal;
-	protected EditText targetExternal;
-	protected ViewGroup colorSection;
-	protected ColorSlider colorSlider;
-	protected View colorPickerButton;
-
 
 
 	public static void launch(@NonNull Fragment parentFragment, @NonNull ListItem startDir) {
@@ -77,159 +70,29 @@ public class NewItemModal extends DialogFragment {
 	protected NewItemModal(@NonNull Fragment parentFragment, @NonNull ListItem startDir) {
 		this.parentFragment = parentFragment;
 		this.startDir = startDir;
-		color = defaultColor;
 	}
 
 
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.frag_dir_newitem, null);
-		builder.setView(view);
-
-
-		builder.setTitle("New Item");
-
-
-		name = view.findViewById(R.id.name);
-		dropdown = view.findViewById(R.id.dropdown);
-		linkInfo = view.findViewById(R.id.link_info);
-		linkType = view.findViewById(R.id.link_type);
-		linkInternal = view.findViewById(R.id.link_internal);
-		targetInternal = view.findViewById(R.id.target_internal);
-		linkExternal = view.findViewById(R.id.link_external);
-		targetExternal = view.findViewById(R.id.target_external);
-		colorSection = view.findViewById(R.id.color_section);
-		colorSlider = view.findViewById(R.id.color_slider);
-		colorPickerButton = view.findViewById(R.id.color_picker_button);
-
-
-
-		//---------------------------------------------------------
-
+		binding = FragDirNewitemBinding.inflate(getLayoutInflater());
+		View view = binding.getRoot();
 
 		dropdownAdapter = ArrayAdapter.createFromResource(requireContext(),
 				R.array.new_items_array, android.R.layout.simple_spinner_item);
 		dropdownAdapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item);
-		dropdown.setAdapter(dropdownAdapter);
+		binding.dropdown.setAdapter(dropdownAdapter);
 
 
-		dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-			@Override
-			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-				String dropdownItem = parent.getItemAtPosition(position).toString();
-				System.out.println("Selected");
-				if(dropdownItem.equals("Link"))
-					linkInfo.setVisibility(View.VISIBLE);
-				else
-					linkInfo.setVisibility(View.GONE);
-			}
-			@Override
-			public void onNothingSelected(AdapterView<?> parent) {
-			}
-		});
-		if(dropdown.getSelectedItem() != null && dropdown.getSelectedItem().toString().equals("Link"))
-			linkInfo.setVisibility(View.VISIBLE);
-		else
-			linkInfo.setVisibility(View.GONE);
-
-
-		//---------------------------------------------------------
-
-
-		linkType.setOnCheckedChangeListener((group, checkedId) -> {
-			if(checkedId == R.id.internal_link) {
-				linkInternal.setVisibility(View.VISIBLE);
-				linkExternal.setVisibility(View.GONE);
-			}
-			else {
-				linkInternal.setVisibility(View.GONE);
-				linkExternal.setVisibility(View.VISIBLE);
-			}
-		});
-		linkType.check(R.id.internal_link);
-
-
-		//---------------------------------------------------------
-
-		ImageButton browse = view.findViewById(R.id.browse);
-		browse.setOnClickListener(v -> {
-			LinkSelectFragment fragment = LinkSelectFragment.newInstance(startDir);
-			fragment.setLinkSelectCallback(target -> {
-				internalTarget = target;
-				targetInternal.setText(target.getPrettyName());
-			});
-
-			parentFragment.getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
-				@Override
-				public void onBackStackChanged() {
-					System.out.println("BackStack size = "+parentFragment.getChildFragmentManager().getBackStackEntryCount());
-					//If back stack is empty, child fragment is gone
-					if (parentFragment.getChildFragmentManager().getBackStackEntryCount() == 0) {
-						if (getDialog() != null)
-							getDialog().show();
-						parentFragment.getChildFragmentManager().removeOnBackStackChangedListener(this);
-					}
-				}
-			});
-			getDialog().hide();
-			parentFragment.getChildFragmentManager().beginTransaction()
-					.replace(R.id.dir_child_container, fragment, LinkSelectFragment.class.getSimpleName())
-					.addToBackStack(null)
-					.commit();
-		});
-
-
-
-
-		//Get the default card background color from the theme
-		int defaultBorder = Color.GRAY;
-		TypedValue typedValue = new TypedValue();
-		if (requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface , typedValue, true))
-			defaultBorder = typedValue.data;
-
-
-		//Set the background color of the button to the current color
-		GradientDrawable drawable = new GradientDrawable();
-		drawable.setShape(GradientDrawable.RECTANGLE);
-		drawable.setColor(color);
-		drawable.setStroke(4, defaultBorder);
-		colorPickerButton.setBackground(drawable);
-
-
-		colorSlider.setSelection(-1);
-		colorSlider.setListener((position, newColor) -> {
-			color =  newColor | 0xFF000000;		//Set alpha to 100%
-
-			//Change the color picker button's background color
-			GradientDrawable background = (GradientDrawable) colorPickerButton.getBackground();
-			background.setColor(color);
-			colorPickerButton.setBackground(background);
-		});
-
-
-		colorPickerButton.setOnClickListener(v -> {
-			ColorPickerModal.launch(parentFragment, color, newColor -> {
-				color =  newColor | 0xFF000000;		//Set alpha to 100%
-
-				//Change the color picker button's background color
-				GradientDrawable background = (GradientDrawable) colorPickerButton.getBackground();
-				background.setColor(color);
-				colorPickerButton.setBackground(background);
-
-				//Unselect the slider's currently selected item
-				colorSlider.setSelection(-1);
-			});
-		});
-
+		AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+		builder.setView(view);
+		builder.setTitle("New Item");
 
 
 		builder.setPositiveButton(android.R.string.ok, null);
-		builder.setNegativeButton("Cancel", (dialog2, which) -> {
-			System.out.println("Cancel clicked");
-		});
+		builder.setNegativeButton("Cancel", null);
+
 
 		AlertDialog dialog = builder.create();
 		dialog.setCanceledOnTouchOutside(false);
@@ -238,32 +101,31 @@ public class NewItemModal extends DialogFragment {
 		dialog.setOnShowListener(dialogInterface -> {
 			Button button = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
 			button.setOnClickListener(v -> {
-				System.out.println("OK Clicked");
-				if(name.getText().toString().isEmpty()) {
+				if(binding.name.getText().toString().isEmpty()) {
 					Toast.makeText(requireContext(), "Name cannot be empty!", Toast.LENGTH_SHORT).show();
 					return;
 				}
-				if(name.getText().toString().startsWith(".")) {
+				if(binding.name.getText().toString().startsWith(".")) {
 					Toast.makeText(requireContext(), "Name cannot start with \".\"!", Toast.LENGTH_SHORT).show();
 					return;
 				}
 
-				String selectedType = dropdown.getSelectedItem().toString();
+				String selectedType = binding.dropdown.getSelectedItem().toString();
 
-				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
+				if(selectedType.equals("Link") && binding.linkType.getCheckedRadioButtonId() == R.id.internal_link && internalTarget == null) {
 					Toast.makeText(requireContext(), "Please select a link target!", Toast.LENGTH_SHORT).show();
 					return;
 				}
 
-				if(selectedType.equals("Link") && linkType.getCheckedRadioButtonId() == R.id.external_link) {
-					if(targetExternal.getText().toString().isEmpty()) {
+				if(selectedType.equals("Link") && binding.linkType.getCheckedRadioButtonId() == R.id.external_link) {
+					if(binding.targetExternal.getText().toString().isEmpty()) {
 						Toast.makeText(requireContext(), "Please enter a target URL!", Toast.LENGTH_SHORT).show();
 						return;
 					}
 
 					//Make sure the Url is valid
 					try {
-						Uri.parse(targetExternal.getText().toString());
+						Uri.parse(binding.targetExternal.getText().toString());
 					}
 					catch (IllegalArgumentException e) {
 						Toast.makeText(requireContext(), "Please enter a valid URL!", Toast.LENGTH_SHORT).show();
@@ -281,16 +143,178 @@ public class NewItemModal extends DialogFragment {
 		return dialog;
 	}
 
+	@Nullable
+	@Override
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		//Need to return this here or onViewCreated won't be called
+		return binding.getRoot();
+	}
+
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		//---------------------------------------------------------
+		// Name
+
+		binding.name.setText(itemName);
+		binding.name.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				itemName = s.toString();
+			}
+		});
+
+		//---------------------------------------------------------
+		// Color
+
+		//Get the default card background color from the theme
+		int defaultBorder = Color.GRAY;
+		TypedValue typedValue = new TypedValue();
+		if (requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface , typedValue, true))
+			defaultBorder = typedValue.data;
+
+		//Set the background color of the button to the current color
+		GradientDrawable drawable = new GradientDrawable();
+		drawable.setShape(GradientDrawable.RECTANGLE);
+		drawable.setColor(color);
+		drawable.setStroke(4, defaultBorder);
+		binding.colorPickerButton.setBackground(drawable);
+
+
+		//Deselect the slider's currently selected item
+		binding.colorSlider.setSelection(-1);
+		binding.colorSlider.setListener((position, newColor) -> {
+			color =  newColor | 0xFF000000;		//Set alpha to 100%
+
+			//Change the color picker button's background color
+			GradientDrawable background = (GradientDrawable) binding.colorPickerButton.getBackground();
+			background.setColor(color);
+			binding.colorPickerButton.setBackground(background);
+		});
+
+
+		binding.colorPickerButton.setOnClickListener(v -> {
+			ColorPickerModal.launch(parentFragment, color, newColor -> {
+				color =  newColor | 0xFF000000;		//Set alpha to 100%
+
+				//Change the color picker button's background color
+				GradientDrawable background = (GradientDrawable) binding.colorPickerButton.getBackground();
+				background.setColor(color);
+				binding.colorPickerButton.setBackground(background);
+
+				//Unselect the slider's currently selected item
+				binding.colorSlider.setSelection(-1);
+			});
+		});
+
+		//---------------------------------------------------------
+		// Dropdown
+
+		binding.dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+				String dropdownItem = parent.getItemAtPosition(position).toString();
+				if(dropdownItem.equals("Link"))
+					binding.linkInfo.setVisibility(View.VISIBLE);
+				else
+					binding.linkInfo.setVisibility(View.GONE);
+			}
+			@Override
+			public void onNothingSelected(AdapterView<?> parent) {
+			}
+		});
+		binding.dropdown.setSelection( dropdownAdapter.getPosition(selectedDropdownItem) );
+
+		if(selectedDropdownItem.equals("Link"))
+			binding.linkInfo.setVisibility(View.VISIBLE);
+		else
+			binding.linkInfo.setVisibility(View.GONE);
+
+		//---------------------------------------------------------
+		// Link Selection
+
+		binding.linkType.setOnCheckedChangeListener((group, checkedId) -> {
+			if(checkedId == R.id.internal_link) {
+				isInternalLinkSelected = true;
+				binding.linkInternal.setVisibility(View.VISIBLE);
+				binding.linkExternal.setVisibility(View.GONE);
+			}
+			else {
+				isInternalLinkSelected = false;
+				binding.linkInternal.setVisibility(View.GONE);
+				binding.linkExternal.setVisibility(View.VISIBLE);
+			}
+		});
+		if(isInternalLinkSelected)
+			binding.linkType.check(R.id.internal_link);
+		else
+			binding.linkType.check(R.id.external_link);
+
+		//---------------------------------------------------------
+		// Internal Link
+
+		binding.targetInternal.setText(internalTargetName);
+
+		ImageButton browse = view.findViewById(R.id.browse);
+		browse.setOnClickListener(v -> {
+			LinkSelectFragment fragment = LinkSelectFragment.newInstance(startDir);
+			fragment.setLinkSelectCallback(target -> {
+				internalTarget = new InternalTarget(target.fileUID, target.parentUID);
+				internalTargetName = target.getPrettyName();
+
+				binding.targetInternal.setText(target.getPrettyName());
+			});
+
+			parentFragment.getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
+				@Override
+				public void onBackStackChanged() {
+					//If back stack is empty, child fragment is gone
+					if (parentFragment.getChildFragmentManager().getBackStackEntryCount() == 0) {
+						if (getDialog() != null)
+							getDialog().show();
+						parentFragment.getChildFragmentManager().removeOnBackStackChangedListener(this);
+					}
+				}
+			});
+			parentFragment.getChildFragmentManager().beginTransaction()
+					.replace(R.id.dir_child_container, fragment, LinkSelectFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
+
+			requireDialog().hide();
+		});
+
+		//---------------------------------------------------------
+		// External Link
+
+		binding.targetExternal.setText(externalTarget);
+		binding.targetExternal.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+			@Override
+			public void afterTextChanged(Editable s) {}
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				externalTarget = s.toString();
+			}
+		});
+
+		//---------------------------------------------------------
+	}
+
 
 
 	protected void onConfirm() {
-		String dropdownItem = dropdown.getSelectedItem().toString();
+		String dropdownItem = binding.dropdown.getSelectedItem().toString();
 
 		boolean isDir = dropdownItem.equals("Directory");
 		boolean isLink = dropdownItem.equals("Link");
 
 		//Add a file extension based on the dropdown choice
-		String fileName = name.getText().toString();
+		String fileName = binding.name.getText().toString();
 		if(dropdownItem.equals("Notes"))
 			fileName += ".rtf";
 		else if(dropdownItem.equals("Divider"))
@@ -322,18 +346,25 @@ public class NewItemModal extends DialogFragment {
 				//Write the link target to the new file
 				if(isLink) {
 					LinkTarget linkTarget;
-					if(linkType.getCheckedRadioButtonId() == R.id.internal_link)
-						linkTarget = new InternalTarget(internalTarget.parentUID, internalTarget.fileUID);
+					if(binding.linkType.getCheckedRadioButtonId() == R.id.internal_link)
+						linkTarget = internalTarget;
 					else
-						linkTarget = new ExternalTarget(Uri.parse(targetExternal.getText().toString()));
+						linkTarget = new ExternalTarget(Uri.parse(externalTarget));
 
 					hAPI.writeFile(newFileUID, linkTarget.toString().getBytes(), HFile.defaultChecksum);
 				}
 			}
-			catch (FileNotFoundException | ConnectException e) {
-				throw new RuntimeException(e);
+			catch (FileNotFoundException e) {
+				Looper.prepare();
+				Toast.makeText(requireContext(), "File not found!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
+			}
+			catch (ConnectException e) {
+				Looper.prepare();
+				Toast.makeText(requireContext(), "Unable to connect to server!", Toast.LENGTH_SHORT).show();
+				Looper.loop();
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				//Ignore idgaf
 			} finally {
 				hAPI.unlockLocal(newFileUID);
 			}
@@ -368,7 +399,7 @@ public class NewItemModal extends DialogFragment {
 					hAPI.unlockLocal(newFileUID);
 				}
 			} catch (IOException e) {
-				throw new RuntimeException(e);
+				//Ignore idgaf
 			} finally {
 				hAPI.unlockLocal(dirUID);
 			}

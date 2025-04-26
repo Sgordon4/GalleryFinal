@@ -333,9 +333,9 @@ public class DirFragment extends Fragment {
 				for(int i = 0; i < adapterList.size(); i++) {
 					ListItem item = adapterList.get(i);
 
-					//If the file has an attribute update, notify the adapter
-					if(item.fileUID.equals(uuid))
-						adapter.notifyItemChanged(i);
+					//If the file or the file's parent (item inside a link) updated...
+					if(uuid.equals(item.fileUID) || uuid.equals(item.parentUID))
+						adapter.notifyItemChanged(i);	//Tell the adapter to redraw the item
 				}
 			});
 		};
