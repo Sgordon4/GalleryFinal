@@ -442,6 +442,6 @@ public class ImageFragment extends Fragment {
 	private void setupCarousel() {
 		DirFragment dirFragment = (DirFragment) getParentFragment().getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
 		MenuItemHelper helper = new MenuItemHelper();
-		helper.onCreate(dirFragment);
+		//helper.onCreate(dirFragment);
 	}
 }
