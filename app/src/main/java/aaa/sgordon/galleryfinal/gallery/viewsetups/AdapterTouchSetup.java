@@ -227,15 +227,15 @@ public class AdapterTouchSetup {
 			}
 			@Override
 			public void onConnectException() {
-				Looper.prepare();
-				Toast.makeText(dirFragment.requireContext(), "The file is not accessible from this device!", Toast.LENGTH_SHORT).show();
-				Looper.loop();
+				new Handler(Looper.getMainLooper()).post(() -> {
+					Toast.makeText(dirFragment.requireContext(), "The file is not accessible from this device!", Toast.LENGTH_SHORT).show();
+				});
 			}
 			@Override
 			public void onFileNotFoundException() {
-				Looper.prepare();
-				Toast.makeText(dirFragment.requireContext(), "Could not connect to the server!", Toast.LENGTH_SHORT).show();
-				Looper.loop();
+				new Handler(Looper.getMainLooper()).post(() -> {
+					Toast.makeText(dirFragment.requireContext(), "Could not connect to the server!", Toast.LENGTH_SHORT).show();
+				});
 			}
 		});
 	}

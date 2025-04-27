@@ -446,7 +446,7 @@ public class ImageFragment extends Fragment {
 		View backup = binding.viewB.findViewById(R.id.backup);
 
 		share.setOnClickListener(v -> {
-
+			parent.menuItemHelper.onShare();
 		});
 		move.setOnClickListener(v -> {
 			MoveCopyFragment frag = parent.menuItemHelper.buildMoveCopy(true);

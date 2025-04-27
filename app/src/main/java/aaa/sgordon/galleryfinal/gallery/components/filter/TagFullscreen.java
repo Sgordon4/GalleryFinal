@@ -3,6 +3,8 @@ package aaa.sgordon.galleryfinal.gallery.components.filter;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -241,8 +243,9 @@ public class TagFullscreen extends DialogFragment {
 				//Just skip this file if it doesn't exist
 			} catch (ConnectException e) {
 				//Just skip this file if we can't reach it
-				//Looper.prepare();
-				//Toast.makeText(getContext(), "Connection error: Could not update tags for a file!", Toast.LENGTH_SHORT).show();
+				//new Handler(Looper.getMainLooper()).post(() -> {
+				//	Toast.makeText(getContext(), "Connection error: Could not update tags for a file!", Toast.LENGTH_SHORT).show();
+				//});
 			} finally {
 				hAPI.unlockLocal(fileUID);
 			}

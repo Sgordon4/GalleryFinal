@@ -42,11 +42,13 @@ import java.util.Locale;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.VpViewpageBinding;
+import aaa.sgordon.galleryfinal.gallery.components.movecopy.MoveCopyFragment;
 import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.gallery.caches.LinkCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.database.HZone;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
 import aaa.sgordon.galleryfinal.viewpager.components.DragPage;
 import aaa.sgordon.galleryfinal.viewpager.components.ZoomPanHandler;
 
@@ -108,6 +110,7 @@ public class VideoFragment extends Fragment {
 		});
 
 
+		setupCarousel();
 		//setBottomSheetInfo();
 
 		return binding.getRoot();
@@ -455,5 +458,43 @@ public class VideoFragment extends Fragment {
 				}
 			}
 		}
+	}
+
+
+	private void setupCarousel() {
+		ViewPagerFragment parent = (ViewPagerFragment) requireParentFragment();
+		View share = binding.viewB.findViewById(R.id.share);
+		View move = binding.viewB.findViewById(R.id.move);
+		View copy = binding.viewB.findViewById(R.id.copy);
+		View export = binding.viewB.findViewById(R.id.export);
+		View trash = binding.viewB.findViewById(R.id.trash);
+		View backup = binding.viewB.findViewById(R.id.backup);
+
+		share.setOnClickListener(v -> {
+			parent.menuItemHelper.onShare();
+		});
+		move.setOnClickListener(v -> {
+			MoveCopyFragment frag = parent.menuItemHelper.buildMoveCopy(true);
+			parent.getChildFragmentManager().beginTransaction()
+					.replace(R.id.viewpager_options_container, frag, MoveCopyFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
+		});
+		copy.setOnClickListener(v -> {
+			MoveCopyFragment frag = parent.menuItemHelper.buildMoveCopy(false);
+			parent.getChildFragmentManager().beginTransaction()
+					.replace(R.id.viewpager_options_container, frag, MoveCopyFragment.class.getSimpleName())
+					.addToBackStack(null)
+					.commit();
+		});
+		export.setOnClickListener(v -> {
+			parent.menuItemHelper.onExport();
+		});
+		trash.setOnClickListener(v -> {
+			parent.menuItemHelper.onTrash();
+		});
+		backup.setOnClickListener(v -> {
+			parent.menuItemHelper.onBackup();
+		});
 	}
 }

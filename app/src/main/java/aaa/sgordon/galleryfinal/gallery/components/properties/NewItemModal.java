@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -351,14 +352,14 @@ public class NewItemModal extends DialogFragment {
 				}
 			}
 			catch (FileNotFoundException e) {
-				Looper.prepare();
-				Toast.makeText(requireContext(), "File not found!", Toast.LENGTH_SHORT).show();
-				Looper.loop();
+				new Handler(Looper.getMainLooper()).post(() -> {
+					Toast.makeText(requireContext(), "File not found!", Toast.LENGTH_SHORT).show();
+				});
 			}
 			catch (ConnectException e) {
-				Looper.prepare();
-				Toast.makeText(requireContext(), "Unable to connect to server!", Toast.LENGTH_SHORT).show();
-				Looper.loop();
+				new Handler(Looper.getMainLooper()).post(() -> {
+					Toast.makeText(requireContext(), "Unable to connect to server!", Toast.LENGTH_SHORT).show();
+				});
 			} catch (IOException e) {
 				//Ignore idgaf
 			} finally {

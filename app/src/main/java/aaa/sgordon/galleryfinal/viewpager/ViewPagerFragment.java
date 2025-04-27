@@ -68,12 +68,8 @@ public class ViewPagerFragment extends Fragment {
 				.get(VPViewModel.class);
 
 		DirFragment dirFragment = (DirFragment) getParentFragmentManager().findFragmentByTag(DirFragment.class.getSimpleName());
-		menuItemHelper = new VPMenuItemHelper(dirFragment, dirFragment.dirViewModel.listItem, requireContext(), new VPMenuItemHelper.VPMenuItemHelperCallback() {
-			@Override
-			public ListItem getCurrentItem() {
-				return adapter.list.get(viewModel.currPos);
-			}
-		});
+		menuItemHelper = new VPMenuItemHelper(this, dirFragment.dirViewModel.listItem, requireContext(), () -> adapter.list.get(viewModel.currPos));
+		menuItemHelper.onCreate();
 
 
 		MaterialContainerTransform transform = new MaterialContainerTransform();

@@ -386,9 +386,9 @@ public class MoveCopyFragment extends Fragment {
 			try {
 				viewModel.changeDirectories(trueDirAndParent.first);
 			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
-				Looper.prepare();
-				Toast.makeText(getContext(), "Could not reach directory!", Toast.LENGTH_SHORT).show();
-				Looper.loop();
+				new Handler(Looper.getMainLooper()).post(() -> {
+					Toast.makeText(getContext(), "Could not reach directory!", Toast.LENGTH_SHORT).show();
+				});
 				return;
 			}
 			selectionController.deselectAll();

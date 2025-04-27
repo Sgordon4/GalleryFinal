@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.utilities;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.util.Pair;
@@ -684,9 +685,10 @@ public class DirUtilities {
 				}
 			} catch (ContentsNotFoundException | FileNotFoundException | ConnectException e) {
 				toExport.remove(i);
-				Looper.prepare();
-				//TODO Maybe make different toasts for each error type. Except contents, that one means it's just broke.
-				Toast.makeText(context, "A file was unable to be exported!", Toast.LENGTH_SHORT).show();
+				new Handler(Looper.getMainLooper()).post(() -> {
+					//TODO Maybe make different toasts for each error type. Except contents, that one means it's just broke.
+					Toast.makeText(context, "A file was unable to be exported!", Toast.LENGTH_SHORT).show();
+				});
 			}
 		}
 
@@ -695,8 +697,9 @@ public class DirUtilities {
 		//Finally, delete all files that were successfully exported
 		List<ListItem> failedItems = deleteFiles(toExport);
 		if(!failedItems.isEmpty()) {
-			Looper.prepare();
-			Toast.makeText(context, "Some items failed to be removed!", Toast.LENGTH_SHORT).show();
+			new Handler(Looper.getMainLooper()).post(() -> {
+				Toast.makeText(context, "Some items failed to be removed!", Toast.LENGTH_SHORT).show();
+			});
 		}
 
 
