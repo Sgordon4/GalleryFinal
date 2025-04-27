@@ -114,6 +114,13 @@ public class RTEditorFragment extends Fragment {
 			rtEditText.setTextColor(textColor);
 		}
 
+		//Get the hint text color from the theme
+		requireContext().getTheme().resolveAttribute(android.R.attr.textColorHint, typedValue, true);
+		try (TypedArray arr = requireContext().obtainStyledAttributes(typedValue.data, new int[] { android.R.attr.textColorHint })){
+			int textColor = arr.getColor(0, Color.GRAY);
+			rtEditText.setHintTextColor(textColor);
+		}
+
 		//Add the editor to the ScrollView
 		binding.scrollContent.addView(rtEditText, 0);
 

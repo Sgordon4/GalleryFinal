@@ -53,12 +53,12 @@
                 android:layout_gravity="bottom"
                 android:paddingTop="2dp"
                 android:paddingBottom="2dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
 
                 android:background="?attr/colorSurfaceContainer"
                 android:text="Unknown Dir"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:textSize="16sp"
                 android:ellipsize="end"
                 android:maxLines="1" />

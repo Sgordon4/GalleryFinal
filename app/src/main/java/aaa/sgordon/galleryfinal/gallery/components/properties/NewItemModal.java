@@ -2,6 +2,7 @@ package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.app.Dialog;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -168,10 +169,10 @@ public class NewItemModal extends DialogFragment {
 		// Color
 
 		//Get the default card background color from the theme
-		int defaultBorder = Color.GRAY;
-		TypedValue typedValue = new TypedValue();
-		if (requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorOnSurface , typedValue, true))
-			defaultBorder = typedValue.data;
+		int defaultBorder = Color.BLACK;
+		//TypedValue typedValue = new TypedValue();
+		//if (requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurface , typedValue, true))
+		//	defaultBorder = typedValue.data;
 
 		//Set the background color of the button to the current color
 		GradientDrawable drawable = new GradientDrawable();
@@ -195,7 +196,8 @@ public class NewItemModal extends DialogFragment {
 
 		binding.colorPickerButton.setOnClickListener(v -> {
 			ColorPickerModal.launch(requireParentFragment(), viewModel.color, newColor -> {
-				viewModel.color =  newColor | 0xFF000000;		//Set alpha to 100%
+				//viewModel.color = newColor | 0xFF000000;		//Set alpha to 100%
+				viewModel.color = newColor;						//ColorPicker is now allowed to set alpha when selecting transparent
 
 				//Change the color picker button's background color
 				GradientDrawable background = (GradientDrawable) binding.colorPickerButton.getBackground();
@@ -206,6 +208,10 @@ public class NewItemModal extends DialogFragment {
 				binding.colorSlider.setSelection(-1);
 			});
 		});
+
+
+		Drawable checkerboard = AlphaCheckerboard.createCheckerboardDrawable(20, Color.LTGRAY, Color.WHITE);
+		binding.alphaCheckerboard.setBackground(checkerboard);
 
 		//---------------------------------------------------------
 		// Dropdown

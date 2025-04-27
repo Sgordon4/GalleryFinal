@@ -19,17 +19,45 @@
         android:orientation="horizontal"
         style="?android:attr/buttonBarStyle">
 
+        <FrameLayout
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:layout_gravity="center">
+
+            <ImageView
+                android:id="@+id/alpha_checkerboard"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/border_standard"/>
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/icon_trash"
+                app:tint="@color/black"
+                android:scaleX="0.8"
+                android:scaleY="0.8"
+                android:importantForAccessibility="no" />
+
+        </FrameLayout>
+
         <EditText
             android:id="@+id/color_hex"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_gravity="center"
-            android:layout_margin="8dp"
+            android:layout_marginStart="4dp"
             android:inputType="textNoSuggestions"
             android:digits="0123456789ABCDEFabcdef"
             android:maxLines="1"
-            android:maxLength="6"
+            android:maxLength="8"
             android:importantForAutofill="no"
             android:drawableStart="@drawable/icon_hash"
             android:hint="Hex color..."/>
@@ -40,16 +68,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_margin="8dp"
             style="?android:attr/buttonBarButtonStyle" />
 
         <Button
             android:id="@+id/confirm"
-            android:text="Confirm"
+            android:text="OK"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_margin="8dp"
+            android:layout_marginEnd="8dp"
             style="?android:attr/buttonBarButtonStyle"/>
 
     </LinearLayout>

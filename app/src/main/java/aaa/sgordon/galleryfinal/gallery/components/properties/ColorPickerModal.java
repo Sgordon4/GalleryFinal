@@ -2,11 +2,14 @@ package aaa.sgordon.galleryfinal.gallery.components.properties;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -20,11 +23,11 @@ import androidx.lifecycle.ViewModelProvider;
 import com.jaredrummler.android.colorpicker.ColorPickerView;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.databinding.FragDirEditColorpickerBinding;
 
 public class ColorPickerModal extends DialogFragment {
+	private FragDirEditColorpickerBinding binding;
 	private ColorPickerViewModel viewModel;
-	private ColorPickerView colorPicker;
-	private EditText colorHex;
 	private TextWatcher textWatcher;
 
 
@@ -45,9 +48,12 @@ public class ColorPickerModal extends DialogFragment {
 	}
 
 
+
 	@NonNull
 	@Override
 	public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+		binding = FragDirEditColorpickerBinding.inflate(getLayoutInflater());
+		View view = binding.getRoot();
 
 		Bundle args = requireArguments();
 		int color = args.getInt("color");
@@ -58,73 +64,85 @@ public class ColorPickerModal extends DialogFragment {
 
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-		builder.setView(R.layout.frag_dir_edit_colorpicker);
-		builder.setTitle("Custom Color");
-
-		LayoutInflater inflater = getLayoutInflater();
-		View view = inflater.inflate(R.layout.frag_dir_edit_colorpicker, null);
 		builder.setView(view);
-
-		colorPicker = view.findViewById(R.id.color_picker);
-		colorHex = view.findViewById(R.id.color_hex);
-
-
-		colorPicker.setColor(color);
-		colorPicker.setOnColorChangedListener(newColor -> {
-			viewModel.color = newColor | 0xFF000000;		//Set alpha to 100%
-			manuallySetColorHex(newColor);
-		});
-
-
-		textWatcher = new TextWatcher() {
-			@Override
-			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-			}
-
-			@Override
-			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-				int cursorPosition = colorHex.getSelectionStart();
-				colorHex.removeTextChangedListener(this);
-				colorHex.setText(charSequence.toString().toUpperCase());
-				colorHex.setSelection(cursorPosition);
-				colorHex.addTextChangedListener(this);
-
-				if(charSequence.length() == 6) {
-					int hex = Integer.parseInt(charSequence.toString(), 16);
-					colorPicker.setColor(hex, false);
-					viewModel.color = hex | 0xFF000000;		//Set alpha to 100%
-				}
-			}
-
-			@Override
-			public void afterTextChanged(Editable editable) {
-
-			}
-		};
-		colorHex.addTextChangedListener(textWatcher);
-		manuallySetColorHex(color);
-
-
-
-
-		Button confirm = view.findViewById(R.id.confirm);
-		confirm.setOnClickListener(v -> {
-			viewModel.callback.onColorChanged(color);
-			dismiss();
-		});
-
-		Button cancel = view.findViewById(R.id.cancel);
-		cancel.setOnClickListener(v -> dismiss());
-
+		builder.setTitle("Custom Color");
 
 		AlertDialog dialog = builder.create();
 		dialog.setCanceledOnTouchOutside(false);
 		return dialog;
 	}
 
+
+
+	@Nullable
+	@Override
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		return binding.getRoot();
+	}
+
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		ColorPickerView colorPicker = binding.colorPicker;
+		EditText colorHex = binding.colorHex;
+
+
+		colorPicker.setColor(viewModel.color);
+		colorPicker.setOnColorChangedListener(newColor -> {
+			viewModel.color = newColor | 0xFF000000;		//Set alpha to 100%
+			manuallySetColorHex(viewModel.color);
+		});
+
+
+		Drawable checkerboard = AlphaCheckerboard.createCheckerboardDrawable(20, Color.LTGRAY, Color.WHITE);
+		binding.alphaCheckerboard.setBackground(checkerboard);
+		binding.alphaCheckerboard.setOnClickListener(v -> {
+			viewModel.color = Color.TRANSPARENT;
+			manuallySetColorHex(viewModel.color);
+		});
+
+
+		textWatcher = new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+			@Override
+			public void afterTextChanged(Editable editable) {}
+			@Override
+			public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+				String text = charSequence.toString().toUpperCase();
+
+				if(text.length() == 8) {
+					int hex = (int) Long.parseLong(text, 16);
+					viewModel.color = hex | 0xFF000000;		//Set alpha to 100%
+					colorPicker.setColor(viewModel.color, false);
+					text = String.format("%08X", viewModel.color);
+				}
+
+				int cursorPosition = colorHex.getSelectionStart();
+				colorHex.removeTextChangedListener(this);
+				colorHex.setText(text);
+				colorHex.setSelection(cursorPosition);
+				colorHex.addTextChangedListener(this);
+			}
+		};
+		colorHex.addTextChangedListener(textWatcher);
+		manuallySetColorHex(viewModel.color);
+
+
+		Button confirm = view.findViewById(R.id.confirm);
+		confirm.setOnClickListener(v -> {
+			viewModel.callback.onColorChanged(viewModel.color);
+			dismiss();
+		});
+
+		Button cancel = view.findViewById(R.id.cancel);
+		cancel.setOnClickListener(v -> dismiss());
+	}
+
+
 	private void manuallySetColorHex(int color) {
-		String hex = String.format("%06X", (0xFFFFFF & color));
+		//String hex = String.format("%06X", (0xFFFFFF & color));
+		String hex = String.format("%08X", color);
+		EditText colorHex = binding.colorHex;
 
 		int cursorPosition = colorHex.getSelectionStart();
 		colorHex.removeTextChangedListener(textWatcher);
