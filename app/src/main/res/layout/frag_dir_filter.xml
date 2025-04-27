@@ -60,11 +60,15 @@
             android:layout_height="match_parent"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_gravity="end"
             android:src="@drawable/ic_chevron_down"
             android:background="?android:selectableItemBackgroundBorderless"
-            android:contentDescription="Expand search" />
+            android:contentDescription="Expand search"
+            android:visibility="gone"/>
+        <!-- TODO Add a search expansion modal, like tagging -->
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="0dp"/>
 
     </LinearLayout>
 

@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.google.gson.JsonObject;
@@ -33,11 +34,14 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -70,7 +74,10 @@ import aaa.sgordon.galleryfinal.utilities.MyApplication;
 public class MenuItemHelper {
 	private DirFragment dirFragment;
 	private ActivityResultLauncher<Intent> filePickerLauncher;
+
+	private ActivityResultLauncher<String> cameraPermissionLauncher;
 	private ActivityResultLauncher<Intent> takePhotoLauncher;
+
 	private ActivityResultLauncher<Intent> shareLauncher;
 	private ActivityResultLauncher<Intent> exportPickerLauncher;
 
@@ -94,11 +101,17 @@ public class MenuItemHelper {
 			}
 		});
 
+
+		cameraPermissionLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+			if(isGranted)
+				onTakePhoto();
+		});
 		takePhotoLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-			System.out.println("Result is at "+result);
-			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-				System.out.println("Data: "+result.getData());
-			}
+			if (result.getResultCode() == Activity.RESULT_OK)
+				onPhotoTaken();
+			else
+				cleanupCameraFiles();
+
 		});
 
 		shareLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -180,10 +193,7 @@ public class MenuItemHelper {
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.export) {
-			if(!ExportStorageHandler.isStorageAccessible(dirFragment.requireContext()))
-				ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), exportPickerLauncher);
-			else
-				onExport();
+			onExport();
 			return true;
 		}
 		else if(menuItem.getItemId() == R.id.trash) {
@@ -220,11 +230,64 @@ public class MenuItemHelper {
 			return true;
 		}
 		else if(actionItem.getId() == R.id.take_photo) {
-			Toast.makeText(dirFragment.requireContext(), "No worky :)", Toast.LENGTH_SHORT).show();
+			cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA);
+			//Toast.makeText(dirFragment.requireContext(), "No worky :)", Toast.LENGTH_SHORT).show();
 			return true;
 		}
 
 		return false;
+	}
+
+
+	private void onTakePhoto() {
+		File cameraFile = Paths.get(dirFragment.requireContext().getCacheDir().getPath(), "camera", "image.jpeg").toFile();
+		try {
+			cameraFile.getParentFile().mkdirs();
+			cameraFile.createNewFile();
+
+			Uri photoUri = FileProvider.getUriForFile(
+					dirFragment.requireContext(),
+					"sgordon.gallery.camera",
+					cameraFile);
+
+			Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+			cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+			cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+			takePhotoLauncher.launch(cameraIntent);
+		}
+		catch (IOException ignored) {}
+	}
+
+	private void onPhotoTaken() {
+		File cameraFile = Paths.get(dirFragment.requireContext().getCacheDir().getPath(), "camera", "image.jpeg").toFile();
+		if(!cameraFile.exists()) return;
+
+		String timeStamp = new SimpleDateFormat("MMM dd, yyyy - hh:mm a", Locale.US).format(new Date());
+		String imageFileName = timeStamp + ".jpeg";
+		File renamed = cameraFile.toPath().getParent().resolve(imageFileName).toFile();
+		cameraFile.renameTo(renamed);
+
+		Uri photoUri = FileProvider.getUriForFile(
+				dirFragment.requireContext(),
+				"sgordon.gallery.camera",
+				renamed);
+
+		List<Uri> uris = new ArrayList<>();
+		uris.add(photoUri);
+		Map<Uri, DocumentFile> fileInfo = ImportHelper.getFileInfoForUris(dirFragment.requireContext(), List.of(photoUri));
+		Thread importThread = new Thread(() -> {
+			ImportHelper.importFiles(dirFragment.requireContext(), dirFragment.dirViewModel.listItem.fileUID,
+					uris, fileInfo);
+
+			Handler handler = new Handler(Looper.getMainLooper());
+			handler.post(this::cleanupCameraFiles);
+		});
+		importThread.start();
+	}
+
+	private void cleanupCameraFiles() {
+		File cameraDir = Paths.get(dirFragment.requireContext().getCacheDir().getPath(), "camera").toFile();
+		deleteRecursive(cameraDir);
 	}
 
 
@@ -321,6 +384,11 @@ public class MenuItemHelper {
 
 
 	private void onExport() {
+		if(!ExportStorageHandler.isStorageAccessible(dirFragment.requireContext())) {
+			ExportStorageHandler.showPickStorageDialog(dirFragment.requireActivity(), exportPickerLauncher);
+			return;
+		}
+
 		int numSelected = selectionController.getNumSelected();
 
 		//Launch a confirmation dialog first

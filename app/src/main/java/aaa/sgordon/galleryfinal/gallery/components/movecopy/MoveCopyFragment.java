@@ -12,9 +12,11 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -82,6 +84,7 @@ public class MoveCopyFragment extends Fragment {
 				new MCViewModel.Factory(tempItemDoNotUse, isMove))
 				.get(MCViewModel.class);
 
+
 		if(savedInstanceState == null) {
 			try {
 				viewModel.changeDirectories(tempItemDoNotUse.fileUID);
@@ -102,6 +105,24 @@ public class MoveCopyFragment extends Fragment {
 	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 
+		requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+			@Override
+			public void handleOnBackPressed() {
+				//If there are no more parents, dismiss the fragment
+				if(viewModel.currPathFromRoot.getNameCount() <= 1)
+					getParentFragmentManager().popBackStack();
+
+					//Navigate to the previous directory
+				else {
+					Path parentPathFromRoot = viewModel.currPathFromRoot.getParent();
+					UUID prevItem = UUID.fromString(parentPathFromRoot.getFileName().toString());
+					UUID superPrevItem = (parentPathFromRoot.getParent() != null) ?
+							UUID.fromString(parentPathFromRoot.getParent().getFileName().toString()) : null;
+
+					changeDirectory(prevItem, superPrevItem, parentPathFromRoot);
+				}
+			}
+		});
 		binding.toolbar.setNavigationOnClickListener(v -> {
 			//If there are no more parents, dismiss the fragment
 			if(viewModel.currPathFromRoot.getNameCount() <= 1)
