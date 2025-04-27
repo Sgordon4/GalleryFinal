@@ -473,7 +473,6 @@ public class DirUtilities {
 
 
 
-	//TODO Copy Directories
 	public static boolean copyFiles(@NonNull List<ListItem> toCopy, @NonNull UUID destinationUID, @Nullable UUID nextItem)
 			throws FileNotFoundException, ContentsNotFoundException, ConnectException, IOException {
 		if(toCopy.isEmpty()) {
@@ -493,8 +492,15 @@ public class DirUtilities {
 		List<DirItem> newFiles = new ArrayList<>();
 		for(ListItem item : toCopy) {
 			try {
-				UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
-				newFiles.add(new DirItem(newFileUID, item.isDir, item.isLink, "Copy of "+item.getPrettyName()));
+				if(item.isDir) {
+					//Make a new empty directory instead of copying directory contents
+					UUID newDirUID = hAPI.createFile(hAPI.getCurrentAccount(), true, false);
+					newFiles.add(new DirItem(newDirUID, item.isDir, item.isLink, "Copy of "+item.getPrettyName()));
+				}
+				else {
+					UUID newFileUID = hAPI.copyFile(item.fileUID, hAPI.getCurrentAccount());
+					newFiles.add(new DirItem(newFileUID, item.isDir, item.isLink, "Copy of "+item.getPrettyName()));
+				}
 			}
 			catch (FileNotFoundException e) {
 				//Skip this file

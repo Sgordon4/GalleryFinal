@@ -1,10 +1,14 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
@@ -49,7 +53,9 @@ import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class MenuItemHelper {
 	private DirFragment dirFragment;
-	public ActivityResultLauncher<Intent> filePickerLauncher;
+	private ActivityResultLauncher<Intent> filePickerLauncher;
+	private ActivityResultLauncher<Intent> takePhotoLauncher;
+	private ActivityResultLauncher<Intent> shareLauncher;
 	private ActivityResultLauncher<Intent> exportPickerLauncher;
 
 	//TODO Move SelectionController definition to onCreate in DirFragment
@@ -69,6 +75,20 @@ public class MenuItemHelper {
 					ImportHelper.importFiles(dirFragment.requireContext(), dirFragment.dirViewModel.listItem.fileUID, uris, fileInfo);
 				});
 				importThread.start();
+			}
+		});
+
+		takePhotoLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			System.out.println("Result is at "+result);
+			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+				System.out.println("Data: "+result.getData());
+			}
+		});
+
+		takePhotoLauncher = dirFragment.registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+			System.out.println("Share result is at "+result);
+			if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+				System.out.println("Data: "+result.getData());
 			}
 		});
 
@@ -343,7 +363,12 @@ public class MenuItemHelper {
 
 
 	private void onShare() {
+		Intent sendIntent = new Intent(Intent.ACTION_SEND);
+		sendIntent.setType("*/*");
 
+		Intent chooser = Intent.createChooser(sendIntent, null);
+
+		dirFragment.startActivity(chooser);
 	}
 
 
