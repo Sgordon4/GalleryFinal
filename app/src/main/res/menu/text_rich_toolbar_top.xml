@@ -6,5 +6,4 @@
 
     <item android:id="@+id/action_bullet" android:icon="@drawable/ic_format_list_bulleted" android:title="Bulleted" app:showAsAction="always"/>
     <item android:id="@+id/action_number" android:icon="@drawable/ic_format_list_numbered" android:title="Numbered" app:showAsAction="always"/>
-
 </menu>

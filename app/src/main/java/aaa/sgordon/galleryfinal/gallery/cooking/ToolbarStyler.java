@@ -1,7 +1,6 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
 import android.graphics.drawable.Drawable;
-import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -10,33 +9,22 @@ import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
-import aaa.sgordon.galleryfinal.gallery.DirFragmentArgs;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
 
 public class ToolbarStyler {
-	private DirFragment dirFragment;
-	private SelectionController selectionController;
-
 	private MaterialToolbar toolbar;
 	private MaterialToolbar selectionToolbar;
 
 
 	public void onViewCreated(DirFragment dirFragment, SelectionController selectionController) {
-		this.dirFragment = dirFragment;
-		this.selectionController = selectionController;
-
 		FragDirBinding binding = dirFragment.binding;
 
 		toolbar = binding.galleryAppbar.toolbar;
 		selectionToolbar = binding.galleryAppbar.selectionToolbar;
-
 
 
 		toolbar.setNavigationOnClickListener(view4 -> dirFragment.getParentFragmentManager().popBackStack());
@@ -47,6 +35,12 @@ public class ToolbarStyler {
 		if(dirFragment.getParentFragmentManager().getBackStackEntryCount() <= 1)
 			toolbar.setNavigationIcon(null);
 
+		//If we're at the top level
+		if(dirFragment.dirViewModel.listItem.parentUID == null) {
+			MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
+			toolbar.getMenu().clear();
+			toolbar.inflateMenu(R.menu.gallery_menu_main_toplevel);
+		}
 
 		//Must set title after configuration
 		String directoryName = dirFragment.dirViewModel.listItem.getPrettyName();

@@ -231,7 +231,11 @@ public class MenuItemHelper {
 		}
 		else if(actionItem.getId() == R.id.take_photo) {
 			cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA);
+
+			//MUAHAHAHA NOW IT *IS* WORKY
+			//This is a new era: April 27, 2025 - 03:20 AM
 			//Toast.makeText(dirFragment.requireContext(), "No worky :)", Toast.LENGTH_SHORT).show();
+
 			return true;
 		}
 

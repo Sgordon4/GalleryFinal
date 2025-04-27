@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.SharedElementCallback;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.ItemTouchHelper;
 
 import com.google.android.material.transition.MaterialFadeThrough;
@@ -26,6 +27,7 @@ import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
+import aaa.sgordon.galleryfinal.gallery.viewholders.PlainTextViewHolder;
 import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.components.password.PasswordModal;
 import aaa.sgordon.galleryfinal.gallery.touch.DragSelectCallback;
@@ -41,6 +43,7 @@ import aaa.sgordon.galleryfinal.repository.gallery.caches.AttrCache;
 import aaa.sgordon.galleryfinal.repository.hybrid.ContentsNotFoundException;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
+import aaa.sgordon.galleryfinal.texteditor.PTEditorFragment;
 import aaa.sgordon.galleryfinal.texteditor.RTEditorFragment;
 import aaa.sgordon.galleryfinal.utilities.Utilities;
 import aaa.sgordon.galleryfinal.viewpager.ViewPagerFragment;
@@ -95,7 +98,10 @@ public class AdapterTouchSetup {
 						launchViewPager(dirFragment, holder);
 					}
 					else if(holder instanceof RichTextViewHolder) {
-						launchRichTextEditor(dirFragment, holder);
+						launchTextEditor(dirFragment, holder, true);
+					}
+					else if(holder instanceof PlainTextViewHolder) {
+						launchTextEditor(dirFragment, holder, false);
 					}
 
 					return true;
@@ -165,7 +171,7 @@ public class AdapterTouchSetup {
 
 
 
-	private static void launchRichTextEditor(DirFragment dirFragment, BaseViewHolder holder) {
+	private static void launchTextEditor(DirFragment dirFragment, BaseViewHolder holder, boolean isRichText) {
 		dirFragment.setExitTransition(null);
 		dirFragment.setExitSharedElementCallback(null);
 
@@ -185,7 +191,12 @@ public class AdapterTouchSetup {
 
 				Handler handler = new Handler(Looper.getMainLooper());
 				handler.post(() -> {
-					RTEditorFragment fragment = RTEditorFragment.initialize(content, listItem.getRawName(), parentUID, fileProps);
+					Fragment fragment;
+					if(isRichText)
+						fragment = RTEditorFragment.initialize(content, listItem.getRawName(), parentUID, fileProps);
+					else
+						fragment = PTEditorFragment.initialize(content, listItem.getRawName(), parentUID, fileProps);
+
 					dirFragment.getParentFragmentManager().beginTransaction()
 							.replace(R.id.fragment_container, fragment, DirFragment.class.getSimpleName())
 							.addToBackStack(null)

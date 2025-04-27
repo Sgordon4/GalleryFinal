@@ -250,7 +250,7 @@ public class DragHelper {
 		//Fling logic
 		switch (event.getActionMasked()) {
 			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL:
+			//case MotionEvent.ACTION_CANCEL:	//Don't fling on cancel
 				velocityTracker.addMovement(event);
 
 				velocityTracker.computeCurrentVelocity(1000);

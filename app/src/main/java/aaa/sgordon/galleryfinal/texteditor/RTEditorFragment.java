@@ -45,19 +45,20 @@ import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
 //TODO Add a character limit
 public class RTEditorFragment extends Fragment {
-	private TextRichBinding binding;
-	private RTViewModel viewModel;
+	protected TextRichBinding binding;
+	protected RTViewModel viewModel;
 
-	private RTManager rtManager;
-	private RTEditText rtEditText;
-	private int textSizePx;
+	protected RTManager rtManager;
+	protected RTEditText rtEditText;
+	protected int textSizePx;
+	protected RTFormat editorFormat = RTFormat.HTML;
 
-	private MaterialToolbar toolbarTop;
-	private LinearLayout toolbarBottom1;
-	private LinearLayout toolbarBottom2;
+	protected MaterialToolbar toolbarTop;
+	protected LinearLayout toolbarBottom1;
+	protected LinearLayout toolbarBottom2;
 
 
-	private HFile tempDoNotUse;
+	protected HFile tempDoNotUse;
 	public static RTEditorFragment initialize(@NonNull String content, @NonNull String name, @NonNull UUID parentUID, @NonNull HFile fileProps) {
 		RTEditorFragment fragment = new RTEditorFragment();
 
@@ -131,7 +132,8 @@ public class RTEditorFragment extends Fragment {
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				viewModel.content = rtEditText.getText(RTFormat.HTML);
+				System.out.println("Format is "+editorFormat);
+				viewModel.content = rtEditText.getText(editorFormat);
 				viewModel.persistContents();
 			}
 		});

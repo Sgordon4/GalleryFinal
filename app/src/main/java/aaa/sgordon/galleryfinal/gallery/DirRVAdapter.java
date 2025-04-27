@@ -25,7 +25,7 @@ import aaa.sgordon.galleryfinal.gallery.viewholders.LinkEndViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.LinkViewHolderSmall;
 import aaa.sgordon.galleryfinal.gallery.viewholders.RichTextViewHolder;
-import aaa.sgordon.galleryfinal.gallery.viewholders.TextViewHolder;
+import aaa.sgordon.galleryfinal.gallery.viewholders.PlainTextViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.UnknownViewHolder;
 import aaa.sgordon.galleryfinal.gallery.viewholders.VideoViewHolder;
 import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
@@ -223,9 +223,9 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				break;
 
 
-			case 8: holder = new TextViewHolder(inflater.inflate(R.layout.dir_vh_text, parent, false));
+			case 8: holder = new PlainTextViewHolder(inflater.inflate(R.layout.dir_vh_text_plain, parent, false));
 				break;
-			case 9: holder = new RichTextViewHolder(inflater.inflate(R.layout.dir_vh_rich_text, parent, false));
+			case 9: holder = new RichTextViewHolder(inflater.inflate(R.layout.dir_vh_text_rich, parent, false));
 				break;
 
 

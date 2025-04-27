@@ -88,14 +88,6 @@ public class DirFragment extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		binding = FragDirBinding.inflate(inflater, container, false);
-
-		//If we're at the top level
-		if(dirViewModel.listItem.parentUID == null) {
-			MaterialToolbar toolbar = binding.galleryAppbar.toolbar;
-			toolbar.getMenu().clear();
-			toolbar.inflateMenu(R.menu.gallery_menu_main_toplevel);
-		}
-
 		return binding.getRoot();
 	}
 
