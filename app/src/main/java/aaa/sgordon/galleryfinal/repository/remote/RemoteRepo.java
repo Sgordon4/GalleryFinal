@@ -46,7 +46,8 @@ import okhttp3.Response;
 
 public class RemoteRepo {
 	private static final String TAG = "Hyb.Rem";
-	private static final String baseServerUrl = "http://10.0.2.2:3306";
+	private static final String baseServerUrl = "https://sgallery.ddns.net";
+	//private static final String baseServerUrl = "http://10.0.2.2:3306";
 	//private static final String baseServerUrl = "http://localhost:3306";
 
 	private UUID deviceUID;

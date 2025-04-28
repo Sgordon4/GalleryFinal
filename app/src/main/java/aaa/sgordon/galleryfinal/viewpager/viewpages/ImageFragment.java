@@ -7,6 +7,8 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextPaint;
 import android.text.TextWatcher;
@@ -115,17 +117,19 @@ public class ImageFragment extends Fragment {
 			public void onFileNotFoundException() {}
 			@Override
 			public void onDataReady(HFile fileProps, HZone zoning) {
-				setBottomSheetInfo();
+				Handler handler = new Handler(Looper.getMainLooper());
+				handler.post(() -> {
+					setBottomSheetInfo();
+
+					if(viewModel.fileProps.filesize < SIZE_THRESHOLD)
+						usePhotoView();
+					else
+						useSubsamplingScaleImageView();
+				});
 			}
 		});
 
 		setupTitle();
-
-
-		if(viewModel.fileProps.filesize < SIZE_THRESHOLD)
-			usePhotoView();
-		else
-			useSubsamplingScaleImageView();
 	}
 
 
