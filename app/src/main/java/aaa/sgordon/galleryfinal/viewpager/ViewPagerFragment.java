@@ -138,8 +138,6 @@ public class ViewPagerFragment extends Fragment {
 		});
 
 		adapter = new ViewPagerAdapter(this);
-		binding.viewpager.setAdapter(adapter);
-		binding.viewpager.setOffscreenPageLimit(1);
 
 		viewModel.list.observe(getViewLifecycleOwner(), this::updateList);
 
@@ -164,6 +162,12 @@ public class ViewPagerFragment extends Fragment {
 
 
 		adapter.setList(mediaOnly);
+
+		//Make sure we set the adapter to the viewpager AFTER the list is set to the adapter
+		if(binding.viewpager.getAdapter() == null) {
+			binding.viewpager.setAdapter(adapter);
+			binding.viewpager.setOffscreenPageLimit(1);
+		}
 
 		if(viewModel.currPos == -1) {
 			Bundle args = requireArguments();

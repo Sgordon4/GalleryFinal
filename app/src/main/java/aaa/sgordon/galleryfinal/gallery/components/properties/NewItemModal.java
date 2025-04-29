@@ -170,17 +170,13 @@ public class NewItemModal extends DialogFragment {
 		//---------------------------------------------------------
 		// Color
 
-		//Get the default card background color from the theme
-		int defaultBorder = Color.BLACK;
-		//TypedValue typedValue = new TypedValue();
-		//if (requireContext().getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurface , typedValue, true))
-		//	defaultBorder = typedValue.data;
+		Drawable checkerboard = AlphaCheckerboard.createCheckerboardDrawable(20, Color.LTGRAY, Color.WHITE);
+		binding.alphaCheckerboard.setBackground(checkerboard);
+
 
 		//Set the background color of the button to the current color
 		GradientDrawable drawable = new GradientDrawable();
-		drawable.setShape(GradientDrawable.RECTANGLE);
 		drawable.setColor(viewModel.color);
-		drawable.setStroke(4, defaultBorder);
 		binding.colorPickerButton.setBackground(drawable);
 
 
@@ -210,10 +206,6 @@ public class NewItemModal extends DialogFragment {
 				binding.colorSlider.setSelection(-1);
 			});
 		});
-
-
-		Drawable checkerboard = AlphaCheckerboard.createCheckerboardDrawable(20, Color.LTGRAY, Color.WHITE);
-		binding.alphaCheckerboard.setBackground(checkerboard);
 
 		//---------------------------------------------------------
 		// Dropdown

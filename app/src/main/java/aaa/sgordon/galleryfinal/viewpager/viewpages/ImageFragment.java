@@ -117,8 +117,7 @@ public class ImageFragment extends Fragment {
 			public void onFileNotFoundException() {}
 			@Override
 			public void onDataReady(HFile fileProps, HZone zoning) {
-				Handler handler = new Handler(Looper.getMainLooper());
-				handler.post(() -> {
+				binding.getRoot().post(() -> {
 					setBottomSheetInfo();
 
 					if(viewModel.fileProps.filesize < SIZE_THRESHOLD)

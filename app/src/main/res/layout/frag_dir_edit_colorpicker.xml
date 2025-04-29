@@ -32,17 +32,25 @@
                 android:importantForAccessibility="no" />
 
             <View
+                android:id="@+id/current_color"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="Custom color"
+                android:background="@color/transparent" />
+
+            <View
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/border_standard"/>
 
             <ImageView
+                android:id="@+id/trash_icon"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/icon_trash"
                 app:tint="@color/black"
-                android:scaleX="0.8"
-                android:scaleY="0.8"
+                android:scaleX="0.7"
+                android:scaleY="0.7"
                 android:importantForAccessibility="no" />
 
         </FrameLayout>

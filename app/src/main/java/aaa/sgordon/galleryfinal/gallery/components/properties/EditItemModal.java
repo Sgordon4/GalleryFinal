@@ -15,6 +15,8 @@ import androidx.fragment.app.Fragment;
 
 import com.google.gson.JsonObject;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -116,7 +118,7 @@ public class EditItemModal extends NewItemModal {
 
 							Pair<UUID, UUID> trueDirAndParent = linkCache.getTrueDirAndParent(inTarget.fileUID, inTarget.parentUID);
 							viewModel.internalTargetName = (trueDirAndParent != null) ?
-									DirUtilities.getFileNameFromDir(trueDirAndParent.first, trueDirAndParent.second) :
+									FilenameUtils.removeExtension( DirUtilities.getFileNameFromDir(trueDirAndParent.first, trueDirAndParent.second) ) :
 									"Unknown Item";
 
 							binding.targetInternal.post(() -> binding.targetInternal.setText(viewModel.internalTargetName));

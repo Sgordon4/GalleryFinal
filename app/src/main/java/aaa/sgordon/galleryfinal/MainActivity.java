@@ -107,6 +107,9 @@ public class MainActivity extends AppCompatActivity {
 			LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(this);
 			HybridAPI.initialize(db, storageDir);
 
+			HybridAPI hAPI = HybridAPI.getInstance();
+			hAPI.startSyncService(hAPI.getCurrentAccount());
+
 
 			//For funsies
 			viewModel = new ViewModelProvider(this).get(MainViewModel.class);
@@ -135,8 +138,9 @@ public class MainActivity extends AppCompatActivity {
 		try {
 			//WARNING: While testing, this MUST be the first thing used related to HybridAPI,
 			// or an actual database will be created.
-			UUID rootDirectoryUID = DirSampleData.setupDatabase(this);
+			//UUID rootDirectoryUID = DirSampleData.setupDatabase(this);
 			//UUID rootDirectoryUID = DirSampleData.setupDatabaseSmall(this);
+			UUID rootDirectoryUID = DirSampleData.setupEmptyDatabase(this);
 
 			System.out.println("New database, rootDirUID: "+rootDirectoryUID);
 
@@ -156,11 +160,11 @@ public class MainActivity extends AppCompatActivity {
 	protected void onStart() {
 		super.onStart();
 
-		SharedPreferences prefs = getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
-		prefs.edit().putInt("lastSyncLocal", 50).apply();
+		//SharedPreferences prefs = getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
+		//prefs.edit().putInt("lastSyncLocal", 50).apply();
 
-		new Thread(() -> Glide.get(this).clearDiskCache()).start();
-		Glide.get(this).clearMemory();
+		//new Thread(() -> Glide.get(this).clearDiskCache()).start();
+		//Glide.get(this).clearMemory();
 	}
 
 	@Override

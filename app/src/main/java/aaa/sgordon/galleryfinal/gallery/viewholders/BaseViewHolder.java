@@ -106,6 +106,8 @@ public class BaseViewHolder extends RecyclerView.ViewHolder {
 				public void onAttrReady(@NonNull JsonObject attr) {
 					if(attr.has("color"))
 						colorView.post(() -> setIconColor(attr.get("color").getAsInt(), colorView));
+					else
+						colorView.post(() -> setIconColor(null, colorView));
 				}
 				@Override
 				public void onConnectException() {}
@@ -119,6 +121,8 @@ public class BaseViewHolder extends RecyclerView.ViewHolder {
 				public void onAttrReady(@NonNull JsonObject attr) {
 					if(attr.has("color"))
 						dividerView.post(() -> setDividerColor(attr.get("color").getAsInt(), dividerView));
+					else
+						dividerView.post(() -> setDividerColor(null, dividerView));
 				}
 				@Override
 				public void onConnectException() {}
@@ -132,6 +136,8 @@ public class BaseViewHolder extends RecyclerView.ViewHolder {
 				public void onAttrReady(@NonNull JsonObject attr) {
 					if(attr.has("color"))
 						borderView.post(() -> setBorderColor(attr.get("color").getAsInt(), borderView));
+					else
+						borderView.post(() -> setBorderColor(null, borderView));
 				}
 				@Override
 				public void onConnectException() {}

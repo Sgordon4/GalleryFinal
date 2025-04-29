@@ -58,6 +58,21 @@ public class Utilities {
 	}
 
 
+	public static int getContrastTextColor(int backgroundColor) {
+		if(backgroundColor == Color.TRANSPARENT)
+			return Color.BLACK;
+
+		double luminance = (
+				0.299 * Color.red(backgroundColor) +
+				0.587 * Color.green(backgroundColor) +
+				0.114 * Color.blue(backgroundColor))
+				/ 255;
+
+		//Use black for light backgrounds, white for dark backgrounds
+		return luminance > 0.5 ? Color.BLACK : Color.WHITE;
+	}
+
+
 	//Return the first 4 characters of a UUID
 	public static String g4ID(@NonNull UUID uuid) {
 		return uuid.toString().substring(0, 4);

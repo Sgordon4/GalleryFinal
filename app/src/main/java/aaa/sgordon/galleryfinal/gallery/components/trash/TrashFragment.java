@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import aaa.sgordon.galleryfinal.databinding.DirTrashBinding;
 import aaa.sgordon.galleryfinal.gallery.DirFragment;
 import aaa.sgordon.galleryfinal.gallery.DirRVAdapter;
+import aaa.sgordon.galleryfinal.gallery.DirectoryViewModel;
 import aaa.sgordon.galleryfinal.gallery.FilterController;
 import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.gallery.touch.SelectionController;
@@ -42,7 +43,7 @@ import aaa.sgordon.galleryfinal.utilities.DirUtilities;
 
 public class TrashFragment extends Fragment {
 	private DirTrashBinding binding;
-	private DirFragment dirFragment;
+	private DirectoryViewModel dirViewModel;
 	private TrashViewModel viewModel;
 
 	private MaterialToolbar toolbar;
@@ -61,11 +62,14 @@ public class TrashFragment extends Fragment {
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		dirFragment = (DirFragment) requireParentFragment();
+		dirViewModel = new ViewModelProvider(requireParentFragment())
+				.get(DirectoryViewModel.class);
 
 		viewModel = new ViewModelProvider(this,
-				new TrashViewModel.Factory(dirFragment.dirViewModel.listItem.fileUID))
+				new TrashViewModel.Factory(dirViewModel.listItem.fileUID))
 				.get(TrashViewModel.class);
+
+
 	}
 
 	@Override
@@ -195,7 +199,7 @@ public class TrashFragment extends Fragment {
 		selectionToolbar.setNavigationOnClickListener(v -> selectionController.stopSelecting());
 
 		//Deselect any items that were removed from the list
-		dirFragment.dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
+		dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
 			if(selectionController.isSelecting()) {
 				//Grab all UUIDs from the full list
 				Set<UUID> inAdapter = adapter.list.stream()
@@ -219,7 +223,7 @@ public class TrashFragment extends Fragment {
 
 
 		FilterController filterController = new FilterController(viewModel.filterRegistry);
-		dirFragment.dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), filterController::onListUpdated);
+		dirViewModel.getFileListLiveData().observe(getViewLifecycleOwner(), filterController::onListUpdated);
 
 		filterController.addExtraQueryFilter(listItem -> {
 			//Include only trashed items

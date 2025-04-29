@@ -37,7 +37,8 @@ public class DirSampleData {
 	private static final Uri externalUri_Gif_40KB = Uri.parse("https://sample-videos.com/gif/3.gif");
 	private static final String externalUri_Gif_40KB_Checksum= "0FF064BA36E4F493F6A1B3D9D29C8EEE1B719E39FC6768C5A6129534869C380B";
 
-	private static final Uri externalUri_MP4_1MB = Uri.parse("https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4");
+	//private static final Uri externalUri_MP4_1MB = Uri.parse("https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4");
+	private static final Uri externalUri_MP4_1MB = Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
 	private static final String externalUri_MP4_1MB_Checksum= "F25B31F155970C46300934BDA4A76CD2F581ACAB45C49762832FFDFDDBCF9FDD";
 
 
@@ -94,6 +95,26 @@ public class DirSampleData {
 
 
 		Log.i(TAG, "Finished setting up in-memory database!");
+
+		return root;
+	}
+
+
+
+
+	public static UUID setupEmptyDatabase(Context context) throws FileNotFoundException, IOException {
+		Log.i(TAG, "Setting up empty database...");
+		Uri storageDir = MainStorageHandler.getStorageTreeUri(context);
+		if(storageDir == null) throw new RuntimeException("Storage directory is null!");
+
+		//LocalDatabase db = Room.inMemoryDatabaseBuilder(context, LocalDatabase.class).build();
+		LocalDatabase db = new LocalDatabase.DBBuilder().newInstance(context);
+		HybridAPI.initialize(db, storageDir);
+		HybridAPI hapi = HybridAPI.getInstance();
+
+		//Create the root directory for the new account
+		UUID root = hapi.createFile(hapi.getCurrentAccount(), true, false);
+		writeDirList(root, new ArrayList<>());
 
 		return root;
 	}

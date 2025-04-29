@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -15,6 +16,7 @@ import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModel;
@@ -24,6 +26,7 @@ import com.jaredrummler.android.colorpicker.ColorPickerView;
 
 import aaa.sgordon.galleryfinal.R;
 import aaa.sgordon.galleryfinal.databinding.FragDirEditColorpickerBinding;
+import aaa.sgordon.galleryfinal.utilities.Utilities;
 
 public class ColorPickerModal extends DialogFragment {
 	private FragDirEditColorpickerBinding binding;
@@ -101,6 +104,7 @@ public class ColorPickerModal extends DialogFragment {
 		});
 
 
+
 		textWatcher = new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
@@ -143,6 +147,15 @@ public class ColorPickerModal extends DialogFragment {
 		//String hex = String.format("%06X", (0xFFFFFF & color));
 		String hex = String.format("%08X", color);
 		EditText colorHex = binding.colorHex;
+
+		//Set the background color of the button to the current color
+		GradientDrawable drawable = new GradientDrawable();
+		drawable.setColor(viewModel.color);
+		binding.currentColor.setBackground(drawable);
+
+		int contrast = Utilities.getContrastTextColor(viewModel.color);
+		DrawableCompat.setTint(binding.trashIcon.getDrawable(), contrast);
+
 
 		int cursorPosition = colorHex.getSelectionStart();
 		colorHex.removeTextChangedListener(textWatcher);

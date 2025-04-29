@@ -290,9 +290,7 @@ public class VideoFragment extends Fragment {
 				Uri uri = LinkCache.getInstance().getContentInfo(viewModel.fileUID).first;
 
 				textureView.post(() -> {
-					//MediaItem mediaItem = MediaItem.fromUri(uri);
-					MediaItem mediaItem = MediaItem.fromUri(Uri.parse("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"));
-					//MediaItem mediaItem = MediaItem.fromUri(Uri.parse("https://file-examples.com/storage/fef7a0384867fa86095088c/2017/04/file_example_MP4_480_1_5MG.mp4"));
+					MediaItem mediaItem = MediaItem.fromUri(uri);
 					player.setMediaItem(mediaItem);
 					player.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
 					player.prepare();
