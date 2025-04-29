@@ -135,6 +135,14 @@ public class DirFragment extends Fragment {
 		DirRVAdapter adapter = new DirRVAdapter();
 		recyclerView.setAdapter(adapter);
 
+		layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+			@Override
+			public int getSpanSize(int position) {
+				boolean isFullSpan = DirRVAdapter.isFullSpan(adapter.getItemViewType(position));
+				return isFullSpan ? layoutManager.getSpanCount() : 1;
+			}
+		});
+
 
 		//DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL);
 		//recyclerView.addItemDecoration(dividerItemDecoration);

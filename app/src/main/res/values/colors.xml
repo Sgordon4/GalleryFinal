@@ -6,8 +6,19 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
 
+    <color name="cerulean">#3D7CA4</color>
+    <color name="lapis_lazuli">#2C5A77</color>
 
+    <color name="harvest_gold">#F5AB00</color>
+    <color name="dark_goldenrod">#B88100</color>
+
+
+    <color name="moonstone">#53A2BE</color>
     <color name="goldenrod">#FFB800</color>
+    <color name="metallic_gold">#DEB841</color>
+
+
+    <color name="jet">#343434</color>
 
 
     <!--

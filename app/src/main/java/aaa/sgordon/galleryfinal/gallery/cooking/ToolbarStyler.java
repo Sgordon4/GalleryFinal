@@ -1,6 +1,8 @@
 package aaa.sgordon.galleryfinal.gallery.cooking;
 
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.util.TypedValue;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -48,9 +50,20 @@ public class ToolbarStyler {
 
 
 
+
+		//final int activeColor = ContextCompat.getColor(dirFragment.requireContext(), R.color.goldenrod);
+
+		//Get the icon color from the current theme
+		final int activeColor;
+		TypedValue typedValue = new TypedValue();
+		if (dirFragment.requireContext().getTheme().resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)) {
+			activeColor = typedValue.data;
+		} else {
+			activeColor = Color.YELLOW;
+		}
+
 		//The filter button itself unfortunately can't just use a selector since it's in a menu so it has to be special
 		FilterController.FilterRegistry fRegistry = dirFragment.dirViewModel.getFilterRegistry();
-		final int activeColor = ContextCompat.getColor(dirFragment.requireContext(), R.color.goldenrod);
 		fRegistry.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
 			boolean active = !query.isEmpty() || !fRegistry.activeTags.getValue().isEmpty();
 			MenuItem filterItem = selectionToolbar.getMenu().findItem(R.id.filter);

@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.inputmethod.EditorInfo;
@@ -82,8 +83,18 @@ public class FilterSetup {
 		});
 
 
+		//final int activeColor = ContextCompat.getColor(dirFragment.getContext(), R.color.goldenrod);
+
+		//Get the icon color from the current theme
+		final int activeColor;
+		TypedValue typedValue = new TypedValue();
+		if (dirFragment.requireContext().getTheme().resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)) {
+			activeColor = typedValue.data;
+		} else {
+			activeColor = Color.YELLOW;
+		}
+
 		//The filter button itself unfortunately can't just use a selector since it's in a menu so it has to be special
-		final int activeColor = ContextCompat.getColor(dirFragment.getContext(), R.color.goldenrod);
 		registry.activeQuery.observe(dirFragment.getViewLifecycleOwner(), query -> {
 			boolean active = !query.isEmpty() || !registry.activeTags.getValue().isEmpty();
 			MenuItem filterItem = toolbar.getMenu().findItem(R.id.filter);

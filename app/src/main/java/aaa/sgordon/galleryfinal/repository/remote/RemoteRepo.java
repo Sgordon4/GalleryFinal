@@ -26,6 +26,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import aaa.sgordon.galleryfinal.repository.galleryhelpers.SAFGoFuckYourself;
@@ -58,6 +61,10 @@ public class RemoteRepo {
 	public final ContentConnector contentConn;
 	public final JournalConnector journalConn;
 
+	private final ScheduledExecutorService scheduler;
+	private ScheduledFuture<?> noConnectionTimeout;
+	private boolean hasNoConnection = false;
+
 
 	public static RemoteRepo getInstance() {
 		return SingletonHelper.INSTANCE;
@@ -82,6 +89,8 @@ public class RemoteRepo {
 		fileConn = new FileConnector(baseServerUrl, client, deviceUID);
 		contentConn = new ContentConnector(baseServerUrl, client);
 		journalConn = new JournalConnector(baseServerUrl, client, deviceUID);
+
+		scheduler = Executors.newSingleThreadScheduledExecutor();
 	}
 
 	private boolean isOnMainThread() {
@@ -96,6 +105,22 @@ public class RemoteRepo {
 	}
 
 
+	private boolean isServerKnownUnreachable() {
+		return hasNoConnection;
+	}
+	private void onConnectException() {
+		hasNoConnection = true;
+		if(noConnectionTimeout != null && !noConnectionTimeout.isDone())
+			noConnectionTimeout.cancel(true);
+
+		noConnectionTimeout = scheduler.schedule(() -> hasNoConnection = false, 15, TimeUnit.SECONDS);
+	}
+	private void cancelNoConnectionTimeout() {
+		if(noConnectionTimeout != null && !noConnectionTimeout.isDone())
+			noConnectionTimeout.cancel(true);
+	}
+
+
 	//---------------------------------------------------------------------------------------------
 	// Account
 	//---------------------------------------------------------------------------------------------
@@ -104,12 +129,17 @@ public class RemoteRepo {
 		Log.i(TAG, String.format("REMOTE GET ACCOUNT PROPS called with accountUID='%s'", accountUID));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		JsonObject accountProps;
 		try {
 			accountProps = accountConn.getProps(accountUID);
 		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -124,11 +154,16 @@ public class RemoteRepo {
 		Log.i(TAG, String.format("REMOTE PUT ACCOUNT PROPS called with accountUID='%s'", accountProps.accountuid));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			accountConn.updateEntry(accountProps.toJson());
 		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -170,22 +205,38 @@ public class RemoteRepo {
 		Log.v(TAG, String.format("REMOTE GET FILE PROPS called with fileUID='%s'", fileUID));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			return fileConn.getProps(fileUID);
-		} catch (FileNotFoundException | ConnectException e) {
+		} catch (FileNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException();
 		}
 	}
 	public boolean doesFileExist(@NonNull UUID fileUID) throws ConnectException {
+		Log.v(TAG, String.format("REMOTE DOES FILE EXIST called with fileUID='%s'", fileUID));
+		if(isOnMainThread()) throw new NetworkOnMainThreadException();
+
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			getFileProps(fileUID);
 			return true;
 		} catch (FileNotFoundException e) {
 			return false;
+		} catch (ConnectException e) {
+			onConnectException();
+			throw e;
 		}
 	}
 
@@ -194,6 +245,9 @@ public class RemoteRepo {
 	public RFile createFile(@NonNull RFile fileProps) throws ContentsNotFoundException, FileAlreadyExistsException, ConnectException {
 		Log.i(TAG, String.format("REMOTE CREATE FILE PROPS called with fileUID='%s'", fileProps.fileuid));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
+
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
 
 		try {
 			//Check if the server is missing the file contents. If so, we shouldn't commit the file changes
@@ -204,9 +258,13 @@ public class RemoteRepo {
 		}
 		catch (ContentsNotFoundException e) {
 			throw new ContentsNotFoundException("Cannot create props, remote is missing file contents!");
-		} catch (FileAlreadyExistsException | ConnectException e) {
+		} catch (FileAlreadyExistsException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -219,6 +277,9 @@ public class RemoteRepo {
 		Log.i(TAG, String.format("REMOTE PUT FILE CONTENT PROPS called with fileUID='%s'", fileProps.fileuid));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			//Check if the server is missing the file contents. If so, we shouldn't commit the file changes
 			contentConn.getProps(fileProps.checksum);
@@ -228,9 +289,13 @@ public class RemoteRepo {
 		}
 		catch (ContentsNotFoundException e) {
 			throw new ContentsNotFoundException("Cannot update content props, remote is missing file contents!");
-		} catch (FileNotFoundException | ConnectException e) {
+		} catch (FileNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -243,12 +308,19 @@ public class RemoteRepo {
 		Log.i(TAG, String.format("REMOTE PUT FILE ATTRIBUTE PROPS called with fileUID='%s'", fileProps.fileuid));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			return fileConn.putAttributeProps(fileProps, prevAttrHash);
 		}
-		catch (FileNotFoundException | ConnectException e) {
+		catch (FileNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -261,12 +333,19 @@ public class RemoteRepo {
 		Log.i(TAG, String.format("REMOTE PUT FILE TIMESTAMP PROPS called with fileUID='%s'", fileProps.fileuid));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			return fileConn.putTimestamps(fileProps);
 		}
-		catch (FileNotFoundException | ConnectException e) {
+		catch (FileNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -279,11 +358,18 @@ public class RemoteRepo {
 		Log.i(TAG, String.format("REMOTE DELETE FILE called with fileUID='%s'", fileUID));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			fileConn.delete(fileUID, currentAccount);
-		} catch (FileNotFoundException | ConnectException e) {
+		} catch (FileNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -298,11 +384,20 @@ public class RemoteRepo {
 
 	public RContent getContentProps(@NonNull String name) throws ContentsNotFoundException, ConnectException {
 		Log.v(TAG, String.format("\nREMOTE GET CONTENT PROPS called with name='%s'", name));
+		if(isOnMainThread()) throw new NetworkOnMainThreadException();
+
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			return contentConn.getProps(name);
-		} catch (ContentsNotFoundException | ConnectException e) {
+		} catch (ContentsNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -314,15 +409,22 @@ public class RemoteRepo {
 		Log.v(TAG, String.format("\nREMOTE GET CONTENT URI called with name='"+name+"'"));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			//Throws a ContentsNotFound exception if the content properties don't exist
 			getContentProps(name);
 
 			//Now that we know the properties exist, return the content uri
 			return Uri.parse(contentConn.getDownloadUrl(name));
-		} catch (ContentsNotFoundException | ConnectException e) {
+		} catch (ContentsNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -341,6 +443,11 @@ public class RemoteRepo {
 	//WARNING: DOES NOT UPDATE FILE PROPERTIES
 	public RContent uploadData(@NonNull String name, @NonNull Uri source) throws FileNotFoundException, ConnectException {
 		Log.i(TAG, "\nREMOTE PUT CONTENTS called with source='"+source+"'");
+		if(isOnMainThread()) throw new NetworkOnMainThreadException();
+
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		Context context = MyApplication.getAppContext();
 
 		if (!SAFGoFuckYourself.fileExists(context, source)) throw new FileNotFoundException("Source file not found! Path: '"+source+"'");
@@ -402,8 +509,10 @@ public class RemoteRepo {
 			return contentConn.putProps(name, fileSize);
 
 		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -414,11 +523,20 @@ public class RemoteRepo {
 	//Note: This isn't intended to be used outside of testing
 	public void deleteContentProps(@NonNull String name) throws ContentsNotFoundException, ConnectException {
 		Log.v(TAG, String.format("\nREMOTE DELETE CONTENT PROPS called with name='%s'", name));
+		if(isOnMainThread()) throw new NetworkOnMainThreadException();
+
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			contentConn.deleteProps(name);
-		} catch (ContentsNotFoundException | ConnectException e) {
+		} catch (ContentsNotFoundException e) {
+			throw e;
+		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -435,11 +553,16 @@ public class RemoteRepo {
 		Log.v(TAG, String.format("REMOTE JOURNAL GET LATEST called with journalID='%s', accountUID='%s'", journalID, accountUID));
 		if (isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			return journalConn.getLatestChangesOnly(journalID, accountUID, fileUIDs);
 		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -452,11 +575,16 @@ public class RemoteRepo {
 		Log.v(TAG, String.format("REMOTE JOURNAL GET ALL called with journalID='%s', accountUID='%s'", journalID, accountUID));
 		if(isOnMainThread()) throw new NetworkOnMainThreadException();
 
+		if(isServerKnownUnreachable())
+			throw new ConnectException("Server is known to be unreachable.");
+
 		try {
 			return journalConn.getAllChanges(journalID, accountUID, fileUIDs);
 		} catch (ConnectException e) {
+			onConnectException();
 			throw e;
 		} catch (SocketTimeoutException | SocketException e) {
+			onConnectException();
 			throw new ConnectException();
 		} catch (IOException e) {
 			throw new RuntimeException(e);

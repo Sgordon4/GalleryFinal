@@ -62,14 +62,12 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 		ListItem item = list.get(position);
 		String fileExtension = FilenameUtils.getExtension( item.getPrettyName() );
 
-		switch (fileExtension) {
-			case "gif":
-				return GifFragment.initialize(item);
-			case "mp4":
-				return VideoFragment.initialize(item);
-			default:
-				return ImageFragment.initialize(item);
-		}
+		if(item.isGif())
+			return GifFragment.initialize(item);
+		else if(item.isVideo())
+			return VideoFragment.initialize(item);
+		else// if(item.isImage())
+			return ImageFragment.initialize(item);
 	}
 
 	@Override

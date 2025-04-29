@@ -30,6 +30,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.gson.JsonObject;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -266,9 +268,9 @@ public class NewItemModal extends DialogFragment {
 			LinkSelectFragment fragment = LinkSelectFragment.newInstance(viewModel.startDir);
 			fragment.setLinkSelectCallback(target -> {
 				viewModel.internalTarget = new InternalTarget(target.fileUID, target.parentUID);
-				viewModel.internalTargetName = target.getPrettyName();
+				viewModel.internalTargetName = FilenameUtils.removeExtension(target.getPrettyName());
 
-				binding.targetInternal.setText(target.getPrettyName());
+				binding.targetInternal.setText(viewModel.internalTargetName);
 			});
 
 			requireParentFragment().getChildFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {

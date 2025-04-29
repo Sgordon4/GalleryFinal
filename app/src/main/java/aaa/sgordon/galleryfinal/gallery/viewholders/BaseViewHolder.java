@@ -52,6 +52,8 @@ public class BaseViewHolder extends RecyclerView.ViewHolder {
 			if(color != null) {
 				colorView.setColorFilter(color, PorterDuff.Mode.SRC_IN);
 			} else {
+				colorView.setColorFilter(Color.TRANSPARENT, PorterDuff.Mode.SRC_IN);
+				/*
 				TypedValue typedValue = new TypedValue();
 
 				//Get the default icon color from the current theme
@@ -62,6 +64,7 @@ public class BaseViewHolder extends RecyclerView.ViewHolder {
 				} else {
 					colorView.setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
 				}
+				 */
 			}
 		}
 		public static void setDividerColor(@Nullable Integer color, @NonNull MaterialDivider divider) {

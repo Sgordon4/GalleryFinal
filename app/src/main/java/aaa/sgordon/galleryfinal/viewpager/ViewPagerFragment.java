@@ -156,7 +156,7 @@ public class ViewPagerFragment extends Fragment {
 	private void updateList(List<ListItem> newList) {
 		//The ViewPager should only display media items
 		List<ListItem> mediaOnly = newList.stream()
-				.filter(item -> Utilities.isFileMedia( item.getPrettyName() )).collect(Collectors.toList());
+				.filter(ListItem::isMedia).collect(Collectors.toList());
 
 		//If there are no media items, leave
 		if(mediaOnly.isEmpty())

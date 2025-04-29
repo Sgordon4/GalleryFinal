@@ -3,5 +3,9 @@
     <style name="Base.Theme.GalleryFinal" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/harvest_gold</item>
+        <item name="colorPrimaryVariant">@color/dark_goldenrod</item>
+        <item name="colorSecondary">@color/cerulean</item>
+        <item name="colorSecondaryVariant">@color/lapis_lazuli</item>
     </style>
 </resources>

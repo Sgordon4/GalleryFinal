@@ -3,11 +3,9 @@
     <style name="Base.Theme.GalleryFinal" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/harvest_gold</item>
+        <item name="colorPrimaryVariant">@color/dark_goldenrod</item>
+        <item name="colorSecondary">@color/cerulean</item>
+        <item name="colorSecondaryVariant">@color/lapis_lazuli</item>
     </style>
-
-    <style name="Theme.GalleryFinal" parent="Base.Theme.GalleryFinal" />
-
-    <style name="Theme.GalleryFinal.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="Theme.GeneralTesting.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

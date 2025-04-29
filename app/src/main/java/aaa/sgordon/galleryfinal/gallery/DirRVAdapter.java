@@ -141,7 +141,7 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 
 
 
-	private boolean isFullSpan(int viewType) {
+	public static boolean isFullSpan(int viewType) {
 		return viewType == 1 || viewType == 2 || viewType == 6 ||
 				viewType == 7;
 	}
@@ -171,6 +171,14 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				return 7;
 		}
 
+		if(item.isImage())
+			return 10;			//Image
+		else if(item.isGif())
+			return 11;			//Gif
+		else if(item.isVideo())
+			return 12;			//Video
+
+
 		//Get the filename extension
 		String extension = FilenameUtils.getExtension(item.getPrettyName());
 		switch (extension) {
@@ -178,13 +186,6 @@ public class DirRVAdapter extends RecyclerView.Adapter<BaseViewHolder> {
 				return 8;		//Text
 			case "rtf":
 				return 9;		//Rich Text
-			case "jpg":
-			case "jpeg":
-				return 10;		//Image
-			case "gif":
-				return 11;		//Gif
-			case "mp4":
-				return 12;		//Video
 		}
 
 		return -1;				//Unknown

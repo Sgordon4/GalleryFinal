@@ -37,6 +37,7 @@
             android:maxLines="1"
             android:drawableStart="@drawable/icon_search"
             android:drawablePadding="8dp"
+            android:layout_marginStart="6dp"
             android:paddingEnd="36dp"
             tools:ignore="RtlSymmetry"
             android:importantForAutofill="no"

@@ -12,7 +12,6 @@
         android:id="@+id/child"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingTop="1dp"
         android:paddingStart="1dp"
         android:paddingEnd="1dp"
         android:background="@drawable/border_gallery"

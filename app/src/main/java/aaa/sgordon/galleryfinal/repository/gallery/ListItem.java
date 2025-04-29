@@ -73,10 +73,22 @@ public class ListItem {
 	//-----------------------------------------------
 
 	public boolean isMedia() {
+		return isImage() || isGif() || isVideo();
+	}
+	public boolean isImage() {
 		String prettyExtension = FilenameUtils.getExtension(getPrettyName());
 		return prettyExtension.equals("jpg") || prettyExtension.equals("jpeg") || prettyExtension.equals("png") ||
-				prettyExtension.equals("gif") || prettyExtension.equals("mp4") || prettyExtension.equals("mov");
+				prettyExtension.equals("webp");
 	}
+	public boolean isGif() {
+		String prettyExtension = FilenameUtils.getExtension(getPrettyName());
+		return prettyExtension.equals("gif");
+	}
+	public boolean isVideo() {
+		String prettyExtension = FilenameUtils.getExtension(getPrettyName());
+		return prettyExtension.equals("mp4") || prettyExtension.equals("mov");
+	}
+
 
 
 	public boolean isTrashed() {

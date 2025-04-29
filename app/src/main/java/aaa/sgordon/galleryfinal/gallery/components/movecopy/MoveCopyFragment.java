@@ -21,6 +21,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
@@ -386,8 +388,10 @@ public class MoveCopyFragment extends Fragment {
 		String text;
 		if(selectedItem == null)
 			text = (viewModel.isMove) ? "Move Here" : "Copy Here";
-		else
-			text = (viewModel.isMove) ? "Move to " + selectedItem.getPrettyName() : "Copy to " + selectedItem.getPrettyName();
+		else {
+			String name = FilenameUtils.removeExtension(selectedItem.getPrettyName());
+			text = (viewModel.isMove) ? "Move to " + name: "Copy to " + name;
+		}
 
 		binding.confirm.post(() -> binding.confirm.setText(text));
 	}

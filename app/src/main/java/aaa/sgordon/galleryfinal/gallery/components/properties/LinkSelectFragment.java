@@ -7,6 +7,8 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -45,7 +47,7 @@ public class LinkSelectFragment extends MoveCopyFragment {
 		if(selectedItem == null)
 			text = "Link to This Directory";
 		else
-			text = "Link to "+selectedItem.getPrettyName();
+			text = "Link to "+ FilenameUtils.removeExtension(selectedItem.getPrettyName());
 
 		binding.confirm.post(() -> binding.confirm.setText(text));
 	}
