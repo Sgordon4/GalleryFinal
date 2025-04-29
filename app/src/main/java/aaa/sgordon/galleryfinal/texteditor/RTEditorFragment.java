@@ -125,10 +125,12 @@ public class RTEditorFragment extends Fragment {
 		binding.scrollContent.addView(rtEditText, 0);
 
 
-		//Register editor & set text
+		//Set text and THEN register editor, or else the first addition will be added to the undo stack
+		rtEditText.setText(viewModel.content);
 		rtManager.registerEditor(rtEditText, true);
-		rtEditText.setRichTextEditing(true, viewModel.content);
+		rtEditText.setRichTextEditing(true, viewModel.content);	//Required or it won't format, still adds to undo unfortunately
 		textSizePx = (int) rtEditText.getTextSize();
+
 
 
 		rtEditText.addTextChangedListener(new TextWatcher() {
@@ -139,7 +141,6 @@ public class RTEditorFragment extends Fragment {
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				System.out.println("Format is "+editorFormat);
 				viewModel.content = rtEditText.getText(editorFormat);
 				viewModel.persistContents();
 			}
@@ -227,6 +228,13 @@ public class RTEditorFragment extends Fragment {
 	}
 
 
+	private void persistOnEffect() {
+		//Setting an effect doesn't trigger the onTextChangedListener, so we need to call persist manually
+		viewModel.content = rtEditText.getText(editorFormat);
+		System.out.println("Persisting with format "+editorFormat);
+		System.out.println(viewModel.content);
+		viewModel.persistContents();
+	}
 
 	private final Set<Effect<?,?>> excludedFromClear = Set.of(Effects.BULLET, Effects.NUMBER, Effects.ALIGNMENT);
 	private void setupToolbars() {
@@ -261,6 +269,8 @@ public class RTEditorFragment extends Fragment {
 				else rtManager.onEffectSelected(Effects.NUMBER, true);
 			}
 
+			persistOnEffect();
+
 			return true;
 		});
 
@@ -278,6 +288,7 @@ public class RTEditorFragment extends Fragment {
 				effect.clearFormattingInSelection(rtEditText);
 			}
 			updateActiveButtons();
+			persistOnEffect();
 		});
 
 
@@ -289,6 +300,7 @@ public class RTEditorFragment extends Fragment {
 			if(isH1 && selectionSize != 0) Effects.FONTSIZE.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.FONTSIZE, textSizePx*2);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 		binding.actionHeading2.setOnClickListener(v -> {
 			List<Integer> fontSizes = Effects.FONTSIZE.valuesInSelection(rtEditText);
@@ -298,6 +310,7 @@ public class RTEditorFragment extends Fragment {
 			if(isH2 && selectionSize != 0) Effects.FONTSIZE.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.FONTSIZE, (int)(textSizePx*1.5));
 			updateActiveButtons();
+			persistOnEffect();
 		});
 
 
@@ -305,21 +318,25 @@ public class RTEditorFragment extends Fragment {
 			boolean isBold = Effects.BOLD.existsInSelection(rtEditText);
 			rtManager.onEffectSelected(Effects.BOLD, !isBold);
 			binding.actionBold.setSelected(!isBold);
+			persistOnEffect();
 		});
 		binding.actionItalic.setOnClickListener(v -> {
 			boolean isItalic = Effects.ITALIC.existsInSelection(rtEditText);
 			rtManager.onEffectSelected(Effects.ITALIC, !isItalic);
 			binding.actionItalic.setSelected(!isItalic);
+			persistOnEffect();
 		});
 		binding.actionUnderline.setOnClickListener(v -> {
 			boolean isUnderline = Effects.UNDERLINE.existsInSelection(rtEditText);
 			rtManager.onEffectSelected(Effects.UNDERLINE, !isUnderline);
 			binding.actionUnderline.setSelected(!isUnderline);
+			persistOnEffect();
 		});
 		binding.actionStrikethrough.setOnClickListener(v -> {
 			boolean isStrikethrough = Effects.STRIKETHROUGH.existsInSelection(rtEditText);
 			rtManager.onEffectSelected(Effects.STRIKETHROUGH, !isStrikethrough);
 			binding.actionStrikethrough.setSelected(!isStrikethrough);
+			persistOnEffect();
 		});
 
 
@@ -337,6 +354,7 @@ public class RTEditorFragment extends Fragment {
 			if(isLeft) Effects.ALIGNMENT.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.ALIGNMENT, Layout.Alignment.ALIGN_NORMAL);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 		binding.actionAlignCenter.setOnClickListener(v -> {
 			List<Layout.Alignment> styles = Effects.ALIGNMENT.valuesInSelection(rtEditText);
@@ -345,6 +363,7 @@ public class RTEditorFragment extends Fragment {
 			if(isCenter) Effects.ALIGNMENT.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.ALIGNMENT, Layout.Alignment.ALIGN_CENTER);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 		binding.actionAlignRight.setOnClickListener(v -> {
 			List<Layout.Alignment> styles = Effects.ALIGNMENT.valuesInSelection(rtEditText);
@@ -353,6 +372,7 @@ public class RTEditorFragment extends Fragment {
 			if(isRight) Effects.ALIGNMENT.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.ALIGNMENT, Layout.Alignment.ALIGN_OPPOSITE);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 
 
@@ -366,6 +386,7 @@ public class RTEditorFragment extends Fragment {
 			if(nextSize == textSizePx && selectionSize != 0) Effects.FONTSIZE.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.FONTSIZE, nextSize);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 		binding.actionFontDecrease.setOnClickListener(v -> {
 			List<Integer> fontSizes = Effects.FONTSIZE.valuesInSelection(rtEditText);
@@ -376,16 +397,19 @@ public class RTEditorFragment extends Fragment {
 			if(nextSize == textSizePx && selectionSize != 0) Effects.FONTSIZE.clearFormattingInSelection(rtEditText);
 			else rtManager.onEffectSelected(Effects.FONTSIZE, nextSize);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 		binding.actionSuperscript.setOnClickListener(v -> {
 			boolean isSuperscript = Effects.SUPERSCRIPT.existsInSelection(rtEditText);
 			rtManager.onEffectSelected(Effects.SUPERSCRIPT, !isSuperscript);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 		binding.actionSubscript.setOnClickListener(v -> {
 			boolean isSubscript = Effects.SUBSCRIPT.existsInSelection(rtEditText);
 			rtManager.onEffectSelected(Effects.SUBSCRIPT, !isSubscript);
 			updateActiveButtons();
+			persistOnEffect();
 		});
 
 

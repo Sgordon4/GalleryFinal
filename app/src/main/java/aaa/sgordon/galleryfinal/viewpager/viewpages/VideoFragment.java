@@ -298,7 +298,7 @@ public class VideoFragment extends Fragment {
 			} catch (FileNotFoundException | ContentsNotFoundException | ConnectException e) {
 				//TODO Load error uri
 			}
-			startPostponedEnterTransition();
+			requireParentFragment().startPostponedEnterTransition();
 		});
 		load.start();
 	}

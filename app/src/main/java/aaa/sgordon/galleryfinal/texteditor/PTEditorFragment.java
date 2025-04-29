@@ -39,5 +39,7 @@ public class PTEditorFragment extends RTEditorFragment {
 		//Remove the bullet/numbering options from the top toolbar
 		toolbarTop.getMenu().findItem(R.id.action_bullet).setVisible(false);
 		toolbarTop.getMenu().findItem(R.id.action_number).setVisible(false);
+
+		rtEditText.setRichTextEditing(false, false);
 	}
 }

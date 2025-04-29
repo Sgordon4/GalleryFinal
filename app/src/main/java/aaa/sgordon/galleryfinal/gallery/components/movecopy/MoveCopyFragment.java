@@ -292,7 +292,7 @@ public class MoveCopyFragment extends Fragment {
 
 			//Skip trashed items
 			if(item.isTrashed()) {
-				if(item.isLink)
+				if(item.isLink && !item.type.equals(ListItem.Type.LINKEXTERNAL))
 					trashedLink = item;
 				continue;
 			}

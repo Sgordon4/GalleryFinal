@@ -252,6 +252,9 @@ public class AdapterTouchSetup {
 	}
 
 	private static void launchDirFragment(DirFragment dirFragment, ListItem listItem) {
+		dirFragment.setExitTransition(null);
+		dirFragment.setExitSharedElementCallback(null);
+
 		DirFragment fragment = DirFragment.initialize(listItem);
 
 		dirFragment.getParentFragmentManager().beginTransaction()
@@ -262,6 +265,9 @@ public class AdapterTouchSetup {
 
 
 	private static void launchViewPager(DirFragment dirFragment, BaseViewHolder holder) {
+		dirFragment.setExitTransition(null);
+		dirFragment.setExitSharedElementCallback(null);
+
 		int pos = holder.getBindingAdapterPosition();		//Pos as Adapter sees it
 		//int pos = holder.getAbsoluteAdapterPosition();		//Pos as RecyclerView sees it
 
