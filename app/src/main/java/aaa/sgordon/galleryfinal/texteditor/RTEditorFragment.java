@@ -231,8 +231,6 @@ public class RTEditorFragment extends Fragment {
 	private void persistOnEffect() {
 		//Setting an effect doesn't trigger the onTextChangedListener, so we need to call persist manually
 		viewModel.content = rtEditText.getText(editorFormat);
-		System.out.println("Persisting with format "+editorFormat);
-		System.out.println(viewModel.content);
 		viewModel.persistContents();
 	}
 
