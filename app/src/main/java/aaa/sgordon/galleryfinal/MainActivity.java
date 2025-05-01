@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 			//Get the root directory UID from the shared preferences if it already exists, or create the test setup if not
 			SharedPreferences prefs = getSharedPreferences("gallery.rootUIDForTesting", Context.MODE_PRIVATE);
 			String rootUIDString = prefs.getString("UUID", null);
-			rootUIDString = null;
+			//rootUIDString = null;
 			if(rootUIDString == null)
 				rootUIDString = createTestSetup();
 
