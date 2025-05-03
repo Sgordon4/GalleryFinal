@@ -160,9 +160,11 @@ public class MainActivity extends AppCompatActivity {
 	protected void onStart() {
 		super.onStart();
 
+		//The number of fake files we add is ~50
 		//SharedPreferences prefs = getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
 		//prefs.edit().putInt("lastSyncLocal", 50).apply();
 
+		//For testing glide caching
 		//new Thread(() -> Glide.get(this).clearDiskCache()).start();
 		//Glide.get(this).clearMemory();
 	}
