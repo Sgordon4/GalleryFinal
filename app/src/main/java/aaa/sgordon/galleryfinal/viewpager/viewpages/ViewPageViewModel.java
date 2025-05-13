@@ -77,6 +77,7 @@ public class ViewPageViewModel extends ViewModel {
 			}
 		};
 		fileNameChangeRunnable = () -> {
+			if(fileName.isEmpty()) return;
 			try {
 				renameFile();
 			}
@@ -145,6 +146,7 @@ public class ViewPageViewModel extends ViewModel {
 
 
 		scheduler.execute(() -> {
+			if(fileName.isEmpty()) return;
 			try {
 				renameFile();
 			}

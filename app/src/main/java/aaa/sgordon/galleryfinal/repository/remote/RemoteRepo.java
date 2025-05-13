@@ -74,7 +74,9 @@ public class RemoteRepo {
 	}
 	private RemoteRepo() {
 		//TODO Store this in a file
-		deviceUID = UUID.fromString("fee96d0e-3953-4a51-aff3-55ce65a70bcc");
+		//deviceUID = UUID.fromString("fee96d0e-3953-4a51-aff3-55ce65a70bcc");			//ID for Sean
+		//deviceUID = UUID.fromString("6597c6b7-9f17-4c93-aad8-e9570affdbb9");			//ID for Marco
+		deviceUID = UUID.fromString("4d086537-5b27-40e6-83f2-12677cb4d1c9");			//ID for Bryce
 
 		OkHttpClient client = new OkHttpClient().newBuilder()
 				.addInterceptor(new LogInterceptor())

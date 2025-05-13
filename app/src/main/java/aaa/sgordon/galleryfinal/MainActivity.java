@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	protected void onStart() {
 		super.onStart();
-
+	//
 		//The number of fake files we add is ~50
 		//SharedPreferences prefs = getSharedPreferences("gallery.syncPointers", Context.MODE_PRIVATE);
 		//prefs.edit().putInt("lastSyncLocal", 50).apply();

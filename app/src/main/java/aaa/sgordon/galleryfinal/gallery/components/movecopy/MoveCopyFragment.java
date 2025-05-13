@@ -27,6 +27,7 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -167,8 +168,17 @@ public class MoveCopyFragment extends Fragment {
 		binding.searchClear.setOnClickListener(view2 -> binding.search.setText(""));
 
 
+
+		viewModel.getFileListLiveData().observe(getViewLifecycleOwner(), list -> {
+			list = hideTrashedItems(list);
+			filterController.onListUpdated(list);
+		});
+
+
 		//Update the adapter when the filtered list updates
 		filterController.registry.filteredList.observe(getViewLifecycleOwner(), list -> {
+			System.out.println("Items have changed: ");
+			System.out.println(Arrays.asList(list.toArray()));
 			//Remove duplicates
 			Set<UUID> seen = new HashSet<>();
 			list = list.stream().filter(item -> seen.add(item.fileUID)).collect(Collectors.toList());
