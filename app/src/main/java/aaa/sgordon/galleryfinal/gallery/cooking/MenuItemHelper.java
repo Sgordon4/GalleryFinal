@@ -329,14 +329,16 @@ public class MenuItemHelper {
 		Thread getProps = new Thread(() -> {
 			try {
 				//Get the props of the directory
-				UUID dirUID = dirFragment.dirViewModel.listItem.fileUID;
+				ListItem listItem = dirFragment.dirViewModel.listItem;
+				UUID dirUID = listItem.fileUID;
 				JsonObject props = AttrCache.getInstance().getAttr(dirUID);
 
 				//Launch a Settings fragment
 				Handler handler = new Handler(dirFragment.requireActivity().getMainLooper());
 				handler.post(() -> {
+
 					SettingsFragment settingsFragment = SettingsFragment
-							.newInstance(dirUID, dirFragment.dirViewModel.listItem.getPrettyName(), props);
+							.newInstance(dirUID, listItem.parentUID, listItem.getPrettyName(), props);
 					dirFragment.getChildFragmentManager().beginTransaction()
 							.replace(R.id.dir_child_container, settingsFragment)
 							.addToBackStack("Settings")

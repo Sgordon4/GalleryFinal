@@ -323,8 +323,8 @@ public class MoveCopyFragment extends Fragment {
 				|| listItem.type.equals(ListItem.Type.LINKDIRECTORY)
 				|| listItem.type.equals(ListItem.Type.LINKDIVIDER);
 		});
+		//Exclude hidden Directory items if the active query doesn't match their name exactly
 		filterController.addExtraQueryFilter(listItem -> {
-			//Exclude hidden Directory items if the active query doesn't match their name exactly
 			if(!listItem.isHidden()) return true;
 
 			String activeQuery = filterController.registry.activeQuery.getValue();

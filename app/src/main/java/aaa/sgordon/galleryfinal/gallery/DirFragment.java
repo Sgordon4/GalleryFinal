@@ -249,8 +249,8 @@ public class DirFragment extends Fragment {
 
 
 		FilterController filterController = new FilterController(dirViewModel.getFilterRegistry());
+		//Exclude hidden Directory items if the active query doesn't match their name exactly
 		filterController.addExtraQueryFilter(listItem -> {
-			//Exclude hidden Directory items if the active query doesn't match their name exactly
 			if(!listItem.isHidden()) return true;
 
 			String activeQuery = filterController.registry.activeQuery.getValue();

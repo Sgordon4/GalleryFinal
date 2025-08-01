@@ -23,13 +23,16 @@ import androidx.preference.SwitchPreferenceCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.FileNotFoundException;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.UUID;
 
 import aaa.sgordon.galleryfinal.R;
+import aaa.sgordon.galleryfinal.repository.gallery.ListItem;
 import aaa.sgordon.galleryfinal.repository.hybrid.HybridAPI;
 import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 
@@ -37,10 +40,11 @@ import aaa.sgordon.galleryfinal.repository.hybrid.types.HFile;
 public class SettingsFragment extends Fragment {
 	private static SettingsViewModel viewModel;
 
-	public static SettingsFragment newInstance(UUID directoryUID, String name, JsonObject startingProps) {
+	public static SettingsFragment newInstance(UUID directoryUID, UUID parentUID, String name, JsonObject startingProps) {
 		SettingsFragment fragment = new SettingsFragment();
 		Bundle args = new Bundle();
 		args.putString("DIRECTORYUID", directoryUID.toString());
+		args.putString("PARENTUID", parentUID.toString());
 		args.putString("NAME", name);
 		args.putString("STARTINGPROPS", startingProps.toString());
 		fragment.setArguments(args);
@@ -54,11 +58,12 @@ public class SettingsFragment extends Fragment {
 
 		Bundle args = requireArguments();
 		UUID directoryUID = UUID.fromString(args.getString("DIRECTORYUID"));
+		UUID parentUID = UUID.fromString(args.getString("PARENTUID"));
 		String name = args.getString("NAME");
 		JsonObject startingProps = new Gson().fromJson(args.getString("STARTINGPROPS"), JsonObject.class);
 
 		viewModel = new ViewModelProvider(this,
-				new SettingsViewModel.Factory(directoryUID, name, startingProps))
+				new SettingsViewModel.Factory(directoryUID, parentUID, name, startingProps))
 				.get(SettingsViewModel.class);
 	}
 
@@ -74,7 +79,7 @@ public class SettingsFragment extends Fragment {
 		super.onViewCreated(view, savedInstanceState);
 
 		MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
-		toolbar.setTitle(viewModel.name);
+		toolbar.setTitle(viewModel.listItem.getPrettyName());
 		toolbar.setNavigationOnClickListener(v -> {
 			requireActivity().getOnBackPressedDispatcher().onBackPressed();
 		});
@@ -148,7 +153,7 @@ public class SettingsFragment extends Fragment {
 					//Launch a confirmation dialog first
 					AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
 					builder.setTitle("Hide Directory?");
-					builder.setMessage("To reveal a hidden Directory, you must filter for its full name:\n"+viewModel.name);
+					builder.setMessage("To reveal a hidden Directory, you must filter for its full name:\n"+viewModel.listItem.getPrettyName());
 
 					builder.setPositiveButton("Yes", (dialogInterface, which) -> {
 						viewModel.isHidden = true;
@@ -179,37 +184,36 @@ public class SettingsFragment extends Fragment {
 
 
 	public static class SettingsViewModel extends ViewModel {
-		public final UUID thisDirUID;
-		public final String name;
+		public final ListItem listItem;
 		public String password = null;
-		public boolean isHidden = false;
+		public boolean isHidden;
 
-		public SettingsViewModel(@NonNull UUID directoryUID, @NonNull String name, @NonNull JsonObject startingProps) {
-			this.thisDirUID = directoryUID;
-			this.name = name;
+		public SettingsViewModel(@NonNull UUID directoryUID, @NonNull UUID parentUID, @NonNull String name, @NonNull JsonObject startingProps) {
+			listItem = new ListItem(directoryUID, parentUID, true, false, name, Paths.get(""), ListItem.Type.DIRECTORY);
 
-			//Grab only the props we care about
+			//We only care about hidden and password
+			isHidden = listItem.isHidden();
 			if(startingProps.has("password"))
 				password = startingProps.get("password").getAsString();
-			if(startingProps.has("hidden"))
-				isHidden = startingProps.get("hidden").getAsBoolean();
 		}
 
 		public void persistProps(Context context) {
+			//Persist password
 			Thread persist = new Thread(() -> {
 				HybridAPI hAPI = HybridAPI.getInstance();
 				try {
-					hAPI.lockLocal(thisDirUID);
-					HFile fileProps = hAPI.getFileProps(thisDirUID);
+					hAPI.lockLocal(listItem.fileUID);
+					HFile fileProps = hAPI.getFileProps(listItem.fileUID);
 					JsonObject currentAttr = fileProps.userattr;
 
-					//Overwrite password only
-					currentAttr.remove("password");
-					currentAttr.remove("hidden");
-					if(password != null) currentAttr.addProperty("password", password);
-					if(isHidden) currentAttr.addProperty("hidden", true);
-
-					hAPI.setAttributes(thisDirUID, currentAttr, fileProps.attrhash);
+					//Password is stored in attributes
+					JsonElement currPass = currentAttr.get("password");
+					//If nothing changed, don't overwrite (if both are null or both are identical)
+					if(!(currPass == null && password == null) && !(currPass != null && currPass.getAsString().equals(password))) {
+						currentAttr.remove("password");
+						if(password != null) currentAttr.addProperty("password", password);
+						hAPI.setAttributes(listItem.fileUID, currentAttr, fileProps.attrhash);
+					}
 				}
 				catch (FileNotFoundException e) {
 					new Handler(Looper.getMainLooper()).post(() ->
@@ -225,20 +229,26 @@ public class SettingsFragment extends Fragment {
 					throw new RuntimeException();
 				}
 				finally {
-					hAPI.unlockLocal(thisDirUID);
+					hAPI.unlockLocal(listItem.fileUID);
 				}
 			});
 			persist.start();
+
+			//Persist isHidden
+			if(isHidden != listItem.isHidden())
+				listItem.setHidden(isHidden);
 		}
 
 
 		public static class Factory implements ViewModelProvider.Factory {
 			private final UUID directoryUID;
+			private final UUID parentUID;
 			private final String name;
 			private final JsonObject startingProps;
 
-			public Factory(UUID directoryUID, String name, JsonObject startingProps) {
+			public Factory(UUID directoryUID, UUID parentUID, String name, JsonObject startingProps) {
 				this.directoryUID = directoryUID;
+				this.parentUID = parentUID;
 				this.name = name;
 				this.startingProps = startingProps;
 			}
@@ -247,7 +257,7 @@ public class SettingsFragment extends Fragment {
 			@Override
 			public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
 				if (modelClass.isAssignableFrom(SettingsViewModel.class)) {
-					return (T) new SettingsViewModel(directoryUID, name, startingProps);
+					return (T) new SettingsViewModel(directoryUID, parentUID, name, startingProps);
 				}
 				throw new IllegalArgumentException("Unknown ViewModel class");
 			}
